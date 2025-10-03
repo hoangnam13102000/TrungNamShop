@@ -11,13 +11,13 @@ import {
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white mt-10">
+    <footer className="bg-gray-900 text-gray-300 mt-10">
       <div className="container mx-auto px-6 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Cột 1: Introduce */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">PhoneStore</h3>
-            <p className="text-sm opacity-90 leading-relaxed">
+            <h3 className="text-lg font-bold mb-3 text-white">PhoneStore</h3>
+            <p className="text-sm leading-relaxed opacity-80">
               PhoneStore chuyên cung cấp điện thoại chính hãng, giá tốt nhất thị
               trường. <br />
               <span className="italic">Uy tín – Chất lượng – Bảo hành tận tâm.</span>
@@ -26,7 +26,7 @@ const Footer = () => {
 
           {/* Cột 2: Contact */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Liên hệ</h3>
+            <h3 className="text-lg font-bold mb-3 text-white">Liên hệ</h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
                 <FaPhoneAlt className="text-yellow-400" />
@@ -45,7 +45,7 @@ const Footer = () => {
 
           {/* Cột 3: Support */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Hỗ trợ khách hàng</h3>
+            <h3 className="text-lg font-bold mb-3 text-white">Hỗ trợ khách hàng</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="/about" className="hover:text-yellow-400">
@@ -72,65 +72,66 @@ const Footer = () => {
 
           {/* Cột 4: Promotions & Social */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Khuyến mãi & Ưu đãi</h3>
-            <p className="text-sm opacity-90 mb-3">
+            <h3 className="text-lg font-bold mb-3 text-white">Khuyến mãi & Ưu đãi</h3>
+            <p className="text-sm opacity-80 mb-3">
               Đăng ký email để nhận tin khuyến mãi và ưu đãi mới nhất.
             </p>
-            {/* Registration form */}
+
+            {/* Form đăng ký */}
             <form className="flex flex-col sm:flex-row gap-2 mb-4">
               <input
                 type="email"
                 placeholder="Nhập email của bạn"
-                className="flex-1 px-3 py-2 rounded-md text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                className="flex-1 px-3 py-2 rounded-md text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
               />
               <button
                 type="submit"
-                className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-medium px-4 py-2 rounded-md text-sm transition-colors"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-4 py-2 rounded-md text-sm transition"
               >
                 Đăng ký
               </button>
             </form>
 
             {/* Social */}
-            <div className="flex space-x-2">
+            <div className="flex space-x-3">
               <a
                 href="https://facebook.com/phonestore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/20 hover:bg-blue-600 p-2.5 rounded-md transition-all"
+                className="hover:opacity-80 transition"
               >
-                <FaFacebookSquare size={18} />
+                <FaFacebookSquare size={22} className="text-blue-500" />
               </a>
               <a
                 href="https://youtube.com/@phonestore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/20 hover:bg-red-600 p-2.5 rounded-md transition-all"
+                className="hover:opacity-80 transition"
               >
-                <FaYoutube size={18} />
+                <FaYoutube size={22} className="text-red-500" />
               </a>
               <a
                 href="https://instagram.com/phonestore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/20 hover:bg-pink-500 p-2.5 rounded-md transition-all"
+                className="hover:opacity-80 transition"
               >
-                <FaInstagramSquare size={18} />
+                <FaInstagramSquare size={22} className="text-pink-500" />
               </a>
               <a
                 href="https://twitter.com/phonestore"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/20 hover:bg-sky-500 p-2.5 rounded-md transition-all"
+                className="hover:opacity-80 transition"
               >
-                <FaTwitter size={18} />
+                <FaTwitter size={22} className="text-sky-500" />
               </a>
             </div>
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-white/20 mt-8 pt-4 text-center text-xs opacity-80">
+        <div className="border-t border-gray-700 mt-8 pt-4 text-center text-xs opacity-70">
           © {new Date().getFullYear()} PhoneStore. All rights reserved.
         </div>
       </div>
