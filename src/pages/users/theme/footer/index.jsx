@@ -1,4 +1,6 @@
 import { memo } from "react";
+import { Link } from "react-router-dom";
+
 import {
   FaFacebookSquare,
   FaYoutube,
@@ -48,9 +50,9 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-3 text-white">Hỗ trợ khách hàng</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="/about" className="hover:text-yellow-400">
+                <Link to="gioi-thieu" className="hover:text-yellow-400">
                   Giới thiệu
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="/policy" className="hover:text-yellow-400">
@@ -58,9 +60,9 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="/shipping" className="hover:text-yellow-400">
-                  Chính sách giao hàng
-                </a>
+                <Link to="lien-he" className="hover:text-yellow-400">
+                  Gửi góp ý, khiếu nại
+                </Link>
               </li>
               <li>
                 <a href="/payment" className="hover:text-yellow-400">
