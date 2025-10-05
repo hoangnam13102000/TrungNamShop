@@ -1,11 +1,9 @@
 import {memo} from "react"
-import Header from "../header";
-import Banner from "../banner";
-import Footer from "../footer";
+import Header from "../Header";
+import Footer from "../Footer";
 const MasterLayout = ({children ,...props})=>{
     return <div {...props}>
     <Header/>
-    <Banner/>
     {children}
     <Footer/>
     </div>;

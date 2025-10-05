@@ -9,7 +9,7 @@ const AboutPage = () => {
       role: "Sinh viên",
       birthYear: "2000",
       description: "Hoàng Trung Nam, sinh năm 2000, sinh viên của trường đại học sư phạm Thành phố Hồ Chí Minh ngành công nghệ thông tin.",
-      detail: "Là thành viên của dự án TrungNamStore, có vai trò là lập trình viên.",
+      detail: "Là chủ của dự án TechPhone, có vai trò là lập trình viên.",
       image: "https://via.placeholder.com/150/3B4252/FFFFFF?text=NHV"
     },
     {
@@ -63,35 +63,35 @@ const AboutPage = () => {
             <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10">
               <div className="prose prose-lg max-w-none">
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  <span className="font-bold text-gray-800">Công ty TrungNamStore</span> là nhà bán lẻ số 1 về điện thoại tại Việt Nam với phương châm luôn luôn đảm bảo về chất lượng và trải nghiệm của khách hàng. TrungNamStore luôn lắng nghe, thấu hiểu những góp ý của khách hàng và thay đổi để mang những gì tốt nhất đến với khách hàng của TrungNamStore. Sự ân cần và chu đáo của nhân viên là những lời khen mà khách hàng dành tặng cho TrungNamStore.
+                  <span className="font-bold text-gray-800">Công ty TechPhone</span> là nhà bán lẻ số 1 về điện thoại tại Việt Nam với phương châm luôn luôn đảm bảo về chất lượng và trải nghiệm của khách hàng. TrungNamStore luôn lắng nghe, thấu hiểu những góp ý của khách hàng và thay đổi để mang những gì tốt nhất đến với khách hàng của TrungNamStore. Sự ân cần và chu đáo của nhân viên là những lời khen mà khách hàng dành tặng cho TrungNamStore.
                 </p>
 
                 <ul className="space-y-4 text-gray-700">
                   <li className="flex">
                     <span className="mr-3 text-orange-500 font-bold">•</span>
                     <span>
-                      <span className="font-bold text-gray-800">TrungNamStore</span> tập trung xây dựng dịch vụ khách hàng khác biệt với chất lượng vượt trội, phù hợp với văn hoá đặt khách hàng làm trung tâm trong mọi suy nghĩ và hành động của công ty.
+                      <span className="font-bold text-gray-800">TechPhone</span> tập trung xây dựng dịch vụ khách hàng khác biệt với chất lượng vượt trội, phù hợp với văn hoá đặt khách hàng làm trung tâm trong mọi suy nghĩ và hành động của công ty.
                     </span>
                   </li>
                   
                   <li className="flex">
                     <span className="mr-3 text-orange-500 font-bold">•</span>
                     <span>
-                      <span className="font-bold text-gray-800">TrungNamStore</span> vinh dự khi liên tiếp lọt vào bảng xếp hạng TOP 100 công ty niêm yết tốt nhất Châu Á của tạp chí uy tín Forbes và là đại diện Việt Nam duy nhất trong Top 100 nhà bán lẻ hàng đầu Châu Á – Thái Bình Dương do Tạp chí bán lẻ châu Á (Retail Asia) và Tập đoàn nghiên cứu thị trường Euromonitor bình chọn.
+                      <span className="font-bold text-gray-800">TechPhone</span> vinh dự khi liên tiếp lọt vào bảng xếp hạng TOP 100 công ty niêm yết tốt nhất Châu Á của tạp chí uy tín Forbes và là đại diện Việt Nam duy nhất trong Top 100 nhà bán lẻ hàng đầu Châu Á – Thái Bình Dương do Tạp chí bán lẻ châu Á (Retail Asia) và Tập đoàn nghiên cứu thị trường Euromonitor bình chọn.
                     </span>
                   </li>
                   
                   <li className="flex">
                     <span className="mr-3 text-orange-500 font-bold">•</span>
                     <span>
-                      <span className="font-bold text-gray-800">TrungNamStore</span> nhiều năm liên có tên trong các bảng xếp hạng danh giá như TOP 100 nhà bán lẻ hàng đầu Châu Á – Thái Bình Dương (Retail Asia) và dẫn đầu TOP 100 công ty kinh doanh hiệu quả nhất Việt Nam (Nhịp Cầu Đầu Tư)... Sự phát triển của TrungNamStore cũng là một điển hình tốt được nghiên cứu tại các trường Đại học hàng đầu như Harvard, UC Berkeley, trường kinh doanh Tuck (Mỹ).
+                      <span className="font-bold text-gray-800">TechPhone</span> nhiều năm liên có tên trong các bảng xếp hạng danh giá như TOP 100 nhà bán lẻ hàng đầu Châu Á – Thái Bình Dương (Retail Asia) và dẫn đầu TOP 100 công ty kinh doanh hiệu quả nhất Việt Nam (Nhịp Cầu Đầu Tư)... Sự phát triển của TrungNamStore cũng là một điển hình tốt được nghiên cứu tại các trường Đại học hàng đầu như Harvard, UC Berkeley, trường kinh doanh Tuck (Mỹ).
                     </span>
                   </li>
                   
                   <li className="flex">
                     <span className="mr-3 text-orange-500 font-bold">•</span>
                     <span>
-                      Không chỉ là một doanh nghiệp hoạt động hiệu quả được nhìn nhận bởi nhà đầu tư và các tổ chức đánh giá chuyên nghiệp, <span className="font-bold text-gray-800">TrungNamStore</span> còn được người lao động tin yêu khi lần thứ 4 liên tiếp được vinh danh trong TOP 100 Doanh nghiệp có môi trường làm việc tốt nhất Việt Nam và là doanh nghiệp xuất sắc nhất tại giải thường Vietnam HR Awards – "Chiến lược nhân sự hiệu quả".
+                      Không chỉ là một doanh nghiệp hoạt động hiệu quả được nhìn nhận bởi nhà đầu tư và các tổ chức đánh giá chuyên nghiệp, <span className="font-bold text-gray-800">TechPhone</span> còn được người lao động tin yêu khi lần thứ 4 liên tiếp được vinh danh trong TOP 100 Doanh nghiệp có môi trường làm việc tốt nhất Việt Nam và là doanh nghiệp xuất sắc nhất tại giải thường Vietnam HR Awards – "Chiến lược nhân sự hiệu quả".
                     </span>
                   </li>
                 </ul>

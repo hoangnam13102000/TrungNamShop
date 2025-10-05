@@ -50,7 +50,7 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-3 text-white">Hỗ trợ khách hàng</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="gioi-thieu" className="hover:text-yellow-400">
+                <Link to="/gioi-thieu" className="hover:text-yellow-400">
                   Giới thiệu
                 </Link>
               </li>
@@ -60,7 +60,7 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <Link to="lien-he" className="hover:text-yellow-400">
+                <Link to="/lien-he" className="hover:text-yellow-400">
                   Gửi góp ý, khiếu nại
                 </Link>
               </li>
