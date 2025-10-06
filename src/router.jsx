@@ -1,15 +1,18 @@
 import { Routes, Route } from "react-router-dom";
-import ScrollToTop from "./utils/navigation";
+import ScrollToTop from "./routers/navigation";
 import Homepage from "@page/HomePage";
 import ProfilePage from "@page/ProfilePage";
 import AboutPage from "@page/IntroPage";
 import FeedbackPage from "@page/ContactPage";
 import Login from "@page/Login";
+import ProductList from "@page/product/ProductList"
+import ProductsDetails from "@page/product/ProductsDetails";
 import  Register from "@page/Register";
 import ForgotPassword from "@page/ForgotPassword";
-import ProdutcsPage from "@page/ProductsPage";
-import { ROUTERS } from "./utils/router";
+import { ROUTERS } from "./routers/router";
 import MasterLayout from "./pages/users/theme/MasterLayout";
+import Cart from "./pages/users/Cart";
+import Payment from "./pages/users/Payment";
 
 const RouterCustom = () => {
   const userRouter = [
@@ -34,8 +37,12 @@ const RouterCustom = () => {
       component: <ProfilePage />,
     },
     {
-      path: ROUTERS.USER.PRODUCTS,
-      component: <ProdutcsPage />,
+      path: ROUTERS.USER.PRODUCTLIST,
+      component: <ProductList />,
+    },
+    {
+      path: ROUTERS.USER.PRODUCTDETAILS,
+      component: <ProductsDetails />,
     },
     {
       path: ROUTERS.USER.INTRODUCE,
@@ -44,6 +51,14 @@ const RouterCustom = () => {
     {
       path: ROUTERS.USER.CONTACT,
       component: <FeedbackPage />,
+    },
+    {
+      path: ROUTERS.USER.CART,
+      component: <Cart />,
+    },
+    {
+      path: ROUTERS.USER.PAYMENT,
+      component: <Payment />,
     },
   ];
 

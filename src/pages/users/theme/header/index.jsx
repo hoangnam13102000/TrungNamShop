@@ -1,5 +1,6 @@
-import { memo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { memo, useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Dropdown from "../../../../components/DropDown";
 import {
   FaFacebookSquare,
   FaYoutube,
@@ -11,11 +12,6 @@ import {
   FaMapMarkerAlt,
   FaShoppingCart,
   FaSearch,
-  FaMobileAlt,
-  FaApple,
-  FaFire,
-  FaHeadphones,
-  FaThList,
   FaBars,
   FaTimes,
 } from "react-icons/fa";
@@ -37,11 +33,11 @@ const SOCIAL_LINKS = [
 ];
 
 const CATEGORIES = [
-  { id: "iphone", name: "iPhone", icon: FaApple, link: "/products/iphone" },
-  { id: "samsung", name: "Samsung", icon: FaMobileAlt, link: "/products/samsung" },
-  { id: "xiaomi", name: "Xiaomi", icon: FaFire, link: "/products/xiaomi" },
-  { id: "oppo", name: "OPPO", icon: FaMobileAlt, link: "/products/oppo" },
-  { id: "accessories", name: "Phụ kiện", icon: FaHeadphones, link: "/products/accessories" },
+  { id: "iphone", name: "iPhone", link: "/products/iphone" },
+  { id: "samsung", name: "Samsung", link: "/products/samsung" },
+  { id: "xiaomi", name: "Xiaomi", link: "/products/xiaomi" },
+  { id: "oppo", name: "OPPO", link: "/products/oppo" },
+  { id: "accessories", name: "Phụ kiện", link: "/products/accessories" },
 ];
 
 /* ================= Sub Components ================= */
@@ -85,10 +81,22 @@ const Header = () => {
   const [cartCount] = useState(3);
   const [showMenu, setShowMenu] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [showCategories, setShowCategories] = useState(false);
+  const [dropdownKey, setDropdownKey] = useState(0);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const showBanner = location.pathname === "/";
+
+  // Reset dropdown when navigating to a new page
+  useEffect(() => {
+    setDropdownKey((prev) => prev + 1);
+  }, [location.pathname]);
+
+  const dropdownOptions = CATEGORIES.map((cat) => ({
+    label: cat.name,
+    value: cat.id,
+    link: cat.link,
+  }));
 
   return (
     <>
@@ -141,7 +149,10 @@ const Header = () => {
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex items-center justify-between py-2 sm:py-3 gap-2 sm:gap-4">
               {/* Logo */}
-              <Link to="/" className="flex items-center flex-shrink-0 justify-center">
+              <Link
+                to="/"
+                className="flex items-center flex-shrink-0 justify-center"
+              >
                 <div className="w-24 sm:w-28 md:w-32 lg:w-36 flex justify-center">
                   <img
                     src="/logo.png"
@@ -151,43 +162,25 @@ const Header = () => {
                 </div>
               </Link>
 
-              {/* Search Desktop */}
+              {/* Search Desktop + Dropdown */}
               <div className="hidden lg:flex flex-1 max-w-2xl relative">
-                <div className="flex items-center border-2 border-red-400 rounded-full bg-white w-full h-11 overflow-hidden">
-                  <button
-                    onClick={() => setShowCategories(!showCategories)}
-                    className="flex items-center space-x-2 px-4 bg-red-50 hover:bg-red-100 border-r border-red-200 h-full whitespace-nowrap relative"
-                  >
-                    <FaThList className="text-red-600 text-sm" />
-                    <span className="text-sm font-medium text-gray-700">Danh mục</span>
-                  </button>
-
+                <div className="flex items-center border-2 border-red-400 bg-white w-full h-11 rounded-none">
+                  <Dropdown
+                    key={dropdownKey}
+                    label="Danh mục"
+                    options={dropdownOptions}
+                    onSelect={(option) => navigate(option.link)}
+                    className="min-w-[180px] border-r border-red-400"
+                  />
                   <input
                     type="text"
                     placeholder="Tìm kiếm sản phẩm..."
                     className="flex-1 px-4 text-sm outline-none h-full min-w-0"
                   />
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center">
+                  <button className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
                     <FaSearch size={16} />
                   </button>
                 </div>
-
-                {/* Dropdown Categories */}
-                {showCategories && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border shadow-lg rounded-lg w-60 z-50">
-                    {CATEGORIES.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        to={cat.link}
-                        className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition"
-                        onClick={() => setShowCategories(false)}
-                      >
-                        <cat.icon className="text-red-600 text-lg flex-shrink-0" />
-                        <span className="text-sm font-medium">{cat.name}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Actions */}
@@ -200,7 +193,7 @@ const Header = () => {
                 </button>
 
                 <Link
-                  to="/cart"
+                  to="/gio-hang"
                   className="relative p-2 text-gray-600 hover:text-red-600 transition"
                 >
                   <FaShoppingCart className="text-lg sm:text-xl" />
@@ -215,7 +208,11 @@ const Header = () => {
                   onClick={() => setShowMenu(!showMenu)}
                   className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
                 >
-                  {showMenu ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
+                  {showMenu ? (
+                    <FaTimes className="text-lg" />
+                  ) : (
+                    <FaBars className="text-lg" />
+                  )}
                 </button>
               </div>
             </div>
@@ -223,7 +220,7 @@ const Header = () => {
             {/* Mobile Search */}
             {mobileSearchOpen && (
               <div className="lg:hidden pb-3 animate-in slide-in-from-top">
-                <div className="flex border-2 border-red-400 rounded-lg overflow-hidden">
+                <div className="flex border-2 border-red-400 bg-white overflow-hidden rounded-none">
                   <input
                     type="text"
                     placeholder="Tìm kiếm sản phẩm..."
@@ -248,7 +245,6 @@ const Header = () => {
                       className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition"
                       onClick={() => setShowMenu(false)}
                     >
-                      <cat.icon className="text-red-600 text-lg flex-shrink-0" />
                       <span className="text-sm font-medium">{cat.name}</span>
                     </Link>
                   ))}

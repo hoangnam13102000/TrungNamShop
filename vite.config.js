@@ -17,6 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@banner": path.resolve(__dirname, "src/assets/users/images/banner"),
+      "@products": path.resolve(__dirname, "src/assets/users/images/products"),
       "@categories": path.resolve(__dirname, "src/assets/users/images/categories"),
       "@page": path.resolve(__dirname, "src/pages/users"),
     }
