@@ -2,9 +2,10 @@ import { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaCreditCard } from "react-icons/fa";
 import BreadCrumb from "../theme/BreadCrumb";
+import { validateGeneral } from "../../../utils/validate"; 
 
 const Payment = () => {
-  const [cartItems,  setCartItems] = useState([
+  const [cartItems] = useState([
     {
       id: 1,
       name: "iPhone 13 128GB - Xanh dương",
@@ -27,9 +28,15 @@ const Payment = () => {
     address: "",
   });
 
+  const [errors, setErrors] = useState({});
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCustomerInfo((prev) => ({ ...prev, [name]: value }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const getTotal = () => {
@@ -41,8 +48,23 @@ const Payment = () => {
   }, []);
 
   const handlePayment = () => {
-    // TODO: xử lý thanh toán, gửi data lên server
+    // Validate form
+    const rules = {
+      name: { required: true, message: "Vui lòng nhập họ và tên" },
+      phone: { required: true, type: "phone", message: "Số điện thoại không hợp lệ" },
+      address: { required: true, message: "Vui lòng nhập địa chỉ nhận hàng" },
+    };
+
+    const validationErrors = validateGeneral(customerInfo, rules);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    // TODO: Process payments, send data to server
     alert("Thanh toán thành công!");
+    // reset form nếu cần
+    setCustomerInfo({ name: "", phone: "", address: "" });
   };
 
   return (
@@ -54,37 +76,52 @@ const Payment = () => {
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Thông tin khách hàng */}
+        {/* Info Customer */}
         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow space-y-4">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Thông tin người nhận</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="name"
-              placeholder="Họ và tên"
-              value={customerInfo.name}
-              onChange={handleInputChange}
-              className="border p-3 rounded-lg w-full"
-            />
-            <input
-              type="text"
-              name="phone"
-              placeholder="Số điện thoại"
-              value={customerInfo.phone}
-              onChange={handleInputChange}
-              className="border p-3 rounded-lg w-full"
-            />
-            <input
-              type="text"
-              name="address"
-              placeholder="Địa chỉ nhận hàng"
-              value={customerInfo.address}
-              onChange={handleInputChange}
-              className="border p-3 rounded-lg w-full sm:col-span-2"
-            />
+            <div>
+              <input
+                type="text"
+                name="name"
+                placeholder="Họ và tên"
+                value={customerInfo.name}
+                onChange={handleInputChange}
+                className={`border p-3 rounded-lg w-full ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
+            <div>
+              <input
+                type="text"
+                name="phone"
+                placeholder="Số điện thoại"
+                value={customerInfo.phone}
+                onChange={handleInputChange}
+                className={`border p-3 rounded-lg w-full ${
+                  errors.phone ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            </div>
+            <div className="sm:col-span-2">
+              <input
+                type="text"
+                name="address"
+                placeholder="Địa chỉ nhận hàng"
+                value={customerInfo.address}
+                onChange={handleInputChange}
+                className={`border p-3 rounded-lg w-full ${
+                  errors.address ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+            </div>
           </div>
 
-          {/* Danh sách sản phẩm */}
+          {/* Product list */}
           <div>
             <h3 className="font-semibold text-gray-700 mb-2">Sản phẩm trong giỏ</h3>
             <div className="space-y-2">
@@ -107,7 +144,7 @@ const Payment = () => {
           </div>
         </div>
 
-        {/* Tóm tắt đơn hàng */}
+        {/* Order Summary */}
         <div className="bg-white p-6 rounded-xl shadow h-fit space-y-4">
           <h2 className="text-xl font-semibold text-gray-800">Tóm tắt đơn hàng</h2>
           <div className="flex justify-between text-gray-700">

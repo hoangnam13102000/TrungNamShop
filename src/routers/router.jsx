@@ -1,4 +1,11 @@
+export const ADMIN_PATH="/quan-tri";
 export const ROUTERS = {
+    ADMIN:{
+        LOGIN:`${ADMIN_PATH}/dang-nhap`,
+        ADMINPAGE:`${ADMIN_PATH}/bang-dieu-khien`,
+        PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
+    },
+
     USER: {
         HOME:"",
         LOGIN:"dang-nhap",
@@ -11,5 +18,7 @@ export const ROUTERS = {
         FORGOTPASSWORD:"quen-mat-khau",
         CART:"gio-hang",
         PAYMENT:"thanh-toan",
+        
     }
+
 }

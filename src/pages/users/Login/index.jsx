@@ -2,15 +2,39 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
+import { validateGeneral } from "../../../utils/validate"; // import validateGeneral
+
 export default function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+
+  // rules validate
+  const rules = {
+    username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
+    password: { required: true, minLength: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Xử lý đăng nhập
-    console.log({ username, password });
+    const validationErrors = validateGeneral(formData, rules);
+    if (Object.keys(validationErrors).length === 0) {
+      console.log("Login form submitted:", formData);
+      // xử lý đăng nhập
+    } else {
+      setErrors(validationErrors);
+    }
   };
 
   return (
@@ -21,20 +45,33 @@ export default function Login() {
           <div>
             <input
               type="text"
+              name="username"
               placeholder="Nhập tên đăng nhập"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+              value={formData.username}
+              onChange={handleChange}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                errors.username ? "border-red-500" : ""
+              }`}
             />
+            {errors.username && (
+              <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+            )}
           </div>
+
           <div>
             <input
               type={showPassword ? "text" : "password"}
+              name="password"
               placeholder="Nhập mật khẩu"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+              value={formData.password}
+              onChange={handleChange}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                errors.password ? "border-red-500" : ""
+              }`}
             />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
             <div className="flex items-center mt-2">
               <input
                 type="checkbox"
@@ -48,6 +85,7 @@ export default function Login() {
               </label>
             </div>
           </div>
+
           <button
             type="submit"
             className="w-full bg-red-500 text-white py-2 rounded-xl shadow-md hover:bg-red-600 transition"
@@ -55,6 +93,7 @@ export default function Login() {
             ĐĂNG NHẬP
           </button>
         </form>
+
         <div className="mt-4 text-center text-sm">
           <p>
             <Link to="/quen-mat-khau" className="text-red-500 hover:underline">
@@ -68,6 +107,7 @@ export default function Login() {
             </Link>
           </p>
         </div>
+
         <div className="mt-6 flex items-center justify-center">
           <button className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition">
             <FcGoogle className="mr-2" size={24} />

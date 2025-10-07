@@ -1,14 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import display from "@banner/Forgot-password.png";
+import { validateGeneral } from "../../../utils/validate"; // import validate general
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const errors = validateGeneral({ email }, { email: { required: true, type: "email" } });
+    if (Object.keys(errors).length > 0) {
+      setError(errors.email);
+      return;
+    }
+
     console.log("Email gửi reset:", email);
     alert("Liên kết đặt lại mật khẩu đã được gửi!");
+    setEmail("");
+    setError("");
   };
 
   return (
@@ -38,9 +49,12 @@ function ForgotPassword() {
               placeholder="Nhập email của bạn"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
+                error ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-red-400"
+              }`}
             />
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
             <button
               type="submit"
               className="w-full bg-red-600 text-white py-3 rounded-lg shadow-md hover:bg-red-700 active:scale-95 transition transform font-semibold"
@@ -54,7 +68,7 @@ function ForgotPassword() {
               to="/dang-nhap"
               className="text-red-600 hover:underline text-sm md:text-base"
             >
-               Quay lại đăng nhập
+              Quay lại đăng nhập
             </Link>
           </div>
         </div>
