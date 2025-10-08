@@ -15,7 +15,7 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
-import HomeBanner from "@page/theme/Header/Banner.jsx";
+import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 
 /* ================= Constants ================= */
 const CONTACT_INFO = {

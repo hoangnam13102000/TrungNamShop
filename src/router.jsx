@@ -2,23 +2,25 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import ScrollToTop from "./routers/navigation";
 
 // ADMIN PATH
-import AdminDashboard from "./pages/admin/AdminPage";
-import ProductManagement from "./pages/admin/Product/ProductManagement";
-import MasterAdLayout from "./pages/admin/theme/MasterAdLayout";
+import AdminMain from "@page_admin/AdminPage";
+import ProductManagement from "@page_admin/product/ProductManagement/ProductManagement";
+import AddProduct from "./pages/admin/product/ProductManagement/AddProduct";
+import BrandManagement from "@page_admin/product/brand/BrandManagement";
+import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 
 // HOMEPAGE PATH
-import Homepage from "@page/HomePage";
-import ProfilePage from "@page/ProfilePage";
-import AboutPage from "@page/IntroPage";
-import FeedbackPage from "@page/ContactPage";
-import Login from "@page/Login";
-import ProductList from "@page/product/ProductList";
-import ProductsDetails from "@page/product/ProductsDetails";
-import Register from "@page/Register";
-import ForgotPassword from "@page/ForgotPassword";
-import MasterLayout from "./pages/users/theme/MasterLayout";
-import Cart from "./pages/users/Cart";
-import Payment from "./pages/users/Payment";
+import Homepage from "@page_user/HomePage";
+import ProfilePage from "@page_user/ProfilePage";
+import AboutPage from "@page_user/IntroPage";
+import FeedbackPage from "@page_user/ContactPage";
+import Login from "@page_user/Login";
+import ProductList from "@page_user/product/ProductList";
+import ProductsDetails from "@page_user/product/ProductsDetails";
+import Register from "@page_user/Register";
+import ForgotPassword from "@page_user/ForgotPassword";
+import MasterLayout from "@page_user/theme/MasterLayout";
+import Cart from "@page_user/Cart";
+import Payment from "@page_user/Payment";
 
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
 
@@ -26,11 +28,19 @@ const renderAdminRouter = () => {
   const adminRouter = [
     {
       path: ROUTERS.ADMIN.ADMINPAGE,
-      component: <AdminDashboard />,
+      component: <AdminMain />,
     },
     {
       path: ROUTERS.ADMIN.PRODUCTMANAGEMENT,
       component: <ProductManagement />,
+    },
+     {
+      path: ROUTERS.ADMIN.ADDPRODUCT,
+      component: <AddProduct />,
+    },
+    {
+      path: ROUTERS.ADMIN.BRANDMANAGEMENT,
+      component: <BrandManagement />,
     },
   ];
 

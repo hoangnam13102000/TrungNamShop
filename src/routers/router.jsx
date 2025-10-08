@@ -4,6 +4,9 @@ export const ROUTERS = {
         LOGIN:`${ADMIN_PATH}/dang-nhap`,
         ADMINPAGE:`${ADMIN_PATH}/bang-dieu-khien`,
         PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
+        ADDPRODUCT:`${ADMIN_PATH}/them-san-pham`,
+        BRANDMANAGEMENT:`${ADMIN_PATH}/quan-ly-thuong-hieu`,
+
     },
 
     USER: {
