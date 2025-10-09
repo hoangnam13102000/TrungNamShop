@@ -23,7 +23,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
 
   const menuItems = [
     { label: "Bảng điều khiển", icon: <FaThLarge />, path: "/quan-tri/bang-dieu-khien" },
-    { label: "Đơn hàng", icon: <FaShoppingCart />, path: "/quan-tri/don-hang" },
+    { label: "Đơn hàng", icon: <FaShoppingCart />, path: "/quan-tri/quan-ly-don-hang" },
     { label: "Khách hàng", icon: <FaUsers />, path: "/quan-tri/khach-hang" },
     {
       label: "Sản phẩm",
@@ -32,7 +32,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
         { label: "Quản lý sản phẩm", path: "/quan-tri/quan-ly-san-pham" },
         { label: "Quản lý thương hiệu", path: "/quan-tri/quan-ly-thuong-hieu" },
         { label: "Quản lý khuyến mãi", path: "/quan-tri/quan-ly-khuyen-mai" },
-        { label: "Quản lý giảm giá", path: "/quan-tri/quan-ly-phieu-giam-gia" },
+        { label: "Quản lý giảm giá", path: "/quan-tri/quan-ly-giam-gia" },
       ],
     },
     { label: "Linh kiện", icon: <FaBox />, path: "/quan-tri/linh-kien" },

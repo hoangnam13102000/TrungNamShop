@@ -2,10 +2,13 @@ export const ADMIN_PATH="/quan-tri";
 export const ROUTERS = {
     ADMIN:{
         LOGIN:`${ADMIN_PATH}/dang-nhap`,
-        ADMINPAGE:`${ADMIN_PATH}/bang-dieu-khien`,
+        DASHBOARD:`${ADMIN_PATH}/bang-dieu-khien`,
         PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
-        ADDPRODUCT:`${ADMIN_PATH}/them-san-pham`,
         BRANDMANAGEMENT:`${ADMIN_PATH}/quan-ly-thuong-hieu`,
+        PROMOTION:`${ADMIN_PATH}/quan-ly-khuyen-mai`,
+        DISCOUNT:`${ADMIN_PATH}/quan-ly-giam-gia`,
+        ORDERMANAGEMENT:`${ADMIN_PATH}/quan-ly-don-hang`,
+        
 
     },
 
