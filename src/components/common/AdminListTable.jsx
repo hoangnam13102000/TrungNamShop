@@ -27,13 +27,13 @@ export default function AdminListTable({
       <table className="min-w-full border-collapse">
         <thead className="bg-red-600 text-white text-sm">
           <tr>
-            <th className="p-3 text-center w-10">#</th>
+            <th className="p-3 text-center w-10">STT</th>
             {columns.map((col, idx) => (
               <th key={idx} className="p-3 text-left whitespace-nowrap">
                 {col.label}
               </th>
             ))}
-            {actions.length > 0 && <th className="p-3 text-center">Actions</th>}
+            {actions.length > 0 && <th className="p-3 text-center">Hành động</th>}
           </tr>
         </thead>
 
@@ -110,7 +110,7 @@ export default function AdminListTable({
                 colSpan={columns.length + 2}
                 className="text-center py-4 text-gray-500 italic"
               >
-                No data available.
+                Không có dữ liệu.
               </td>
             </tr>
           )}

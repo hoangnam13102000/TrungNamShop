@@ -1,17 +1,17 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 import DropdownSidebarItem from "../../../../components/DropdownSidebarItem";
-import LogoutButton from "../../../../components/LogoutButton"; 
-import { 
-  FaBars, 
-  FaThLarge, 
-  FaShoppingCart, 
-  FaUsers, 
-  FaMobileAlt, 
-  FaBox, 
-  FaUser, 
-  FaKey, 
-  FaWarehouse 
+import LogoutButton from "../../../../components/LogoutButton";
+import {
+  FaBars,
+  FaThLarge,
+  FaShoppingCart,
+  FaUsers,
+  FaMobileAlt,
+  FaBox,
+  FaUser,
+  FaKey,
+  FaWarehouse
 } from "react-icons/fa";
 
 
@@ -24,7 +24,14 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
   const menuItems = [
     { label: "Bảng điều khiển", icon: <FaThLarge />, path: "/quan-tri/bang-dieu-khien" },
     { label: "Đơn hàng", icon: <FaShoppingCart />, path: "/quan-tri/quan-ly-don-hang" },
-    { label: "Khách hàng", icon: <FaUsers />, path: "/quan-tri/khach-hang" },
+    {
+      label: "Khách hàng",
+      icon: <FaUsers />,
+      dropdown: [
+        { label: "Quản lý khách hàng", path: "/quan-tri/quan-ly-khach-hang" },
+        { label: "Quản lý bậc thành viên", path: "/quan-tri/quan-ly-bac-thanh-vien" },
+      ],
+    },
     {
       label: "Sản phẩm",
       icon: <FaMobileAlt />,
@@ -37,7 +44,14 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
     },
     { label: "Linh kiện", icon: <FaBox />, path: "/quan-tri/linh-kien" },
     { label: "Nhân viên", icon: <FaUser />, path: "/quan-tri/nhan-vien" },
-    { label: "Tài khoản", icon: <FaKey />, path: "/quan-tri/tai-khoan" },
+    {
+      label: "Tài khoản",
+      icon: <FaKey />,
+      dropdown: [
+        { label: "Quản lý loại tài khoản", path: "/quan-tri/quan-ly-loai-tai-khoan" },
+        { label: "Quản lý tài khoản nhân viên", path: "/quan-tri/quan-ly-tai-khoan-nhan-vien" },
+      ],
+    },
     { label: "Kho, cửa hàng", icon: <FaWarehouse />, path: "/quan-tri/kho" },
   ];
 

@@ -13,7 +13,7 @@ export default function DynamicForm({
   const [formData, setFormData] = useState({});
   const [preview, setPreview] = useState("");
 
-  // Gán dữ liệu ban đầu (edit hoặc view)
+  // Assign initial data (edit or view)
   useEffect(() => {
     setFormData(initialData || {});
     if (initialData?.image && !preview) {
@@ -21,12 +21,12 @@ export default function DynamicForm({
     }
   }, [initialData]);
 
-  // Cập nhật các input thường
+  // Update common inputs
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Xử lý upload file
+  // Handling upload file
   const handleFileChange = (name, file) => {
     if (!file) return;
     const reader = new FileReader();
@@ -37,7 +37,7 @@ export default function DynamicForm({
     reader.readAsDataURL(file);
   };
 
-  // Lưu dữ liệu
+  // Save
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
@@ -52,7 +52,7 @@ export default function DynamicForm({
     onSave(formData);
   };
 
-  // Tiêu đề động
+  // DynamicTitle
   const renderTitle =
     title ||
     (mode === "edit"
@@ -145,7 +145,7 @@ export default function DynamicForm({
             </div>
           ))}
 
-          {/* Nút hành động */}
+          {/* Action Button */}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

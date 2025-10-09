@@ -47,11 +47,13 @@ export default function useAdminCrud(initialData = []) {
     setEditingItem(null);
   };
 
-  // Fliter
+  // ✅ Filter theo tất cả giá trị có thể tìm được
   const filteredItems = items.filter((item) =>
-    item.name?.toLowerCase().includes(search.toLowerCase())
+    Object.values(item).some((value) =>
+      String(value).toLowerCase().includes(search.toLowerCase())
+    )
   );
-  
+
   return {
     items,
     setItems,

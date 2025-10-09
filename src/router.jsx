@@ -9,6 +9,9 @@ import PromotionList from "./pages/admin/product/PromotionManagement";
 import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 import OrderManagement from "@page_admin/OrderManagement";
 import DiscountList from "./pages/admin/product/DiscountManagement";
+import EmployeeAccountList from "./pages/admin/account/EmployeeAccountList";
+import AccountTypeList from "./pages/admin/account/AccountType";
+import MemberLevelList from "./pages/admin/customer/MemberLevelList";
 
 // HOMEPAGE PATH
 import Homepage from "@page_user/HomePage";
@@ -23,8 +26,8 @@ import ForgotPassword from "@page_user/ForgotPassword";
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
-
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
+
 
 const renderAdminRouter = () => {
   const adminRouter = [
@@ -51,6 +54,18 @@ const renderAdminRouter = () => {
     {
       path: ROUTERS.ADMIN.ORDERMANAGEMENT,
       component: <OrderManagement />,
+    },
+     {
+      path: ROUTERS.ADMIN.ACCOUNTTYPE,
+      component: <AccountTypeList />,
+    },
+    {
+      path: ROUTERS.ADMIN.EMPLOYEEACOUNT,
+      component: <EmployeeAccountList />,
+    },
+    {
+      path: ROUTERS.ADMIN.MEMBERLEVEL,
+      component: <MemberLevelList />,
     },
   ];
 

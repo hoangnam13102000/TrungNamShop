@@ -8,8 +8,9 @@ export const ROUTERS = {
         PROMOTION:`${ADMIN_PATH}/quan-ly-khuyen-mai`,
         DISCOUNT:`${ADMIN_PATH}/quan-ly-giam-gia`,
         ORDERMANAGEMENT:`${ADMIN_PATH}/quan-ly-don-hang`,
-        
-
+        ACCOUNTTYPE:`${ADMIN_PATH}/quan-ly-loai-tai-khoan`,
+        EMPLOYEEACOUNT:`${ADMIN_PATH}/quan-ly-tai-khoan-nhan-vien`,
+        MEMBERLEVEL:`${ADMIN_PATH}/quan-ly-bac-thanh-vien`,
     },
 
     USER: {
