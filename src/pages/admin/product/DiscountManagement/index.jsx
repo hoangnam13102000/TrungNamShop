@@ -1,10 +1,10 @@
-import React, { useState } from "react";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
+import useAdminCrud from "../../../../utils/useAdminCrud";
 
 export default function DiscountList() {
-  const [discounts, setDiscounts] = useState([
+  const initialDiscounts = [
     {
       id: 1,
       code: "SUMMER2024",
@@ -13,51 +13,20 @@ export default function DiscountList() {
       startDate: "2024-06-01",
       endDate: "2024-08-30",
     },
-  ]);
+  ];
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingDiscount, setEditingDiscount] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Filter List
-  const filteredDiscounts = discounts.filter((discount) =>
-    discount.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Save
-  const handleSave = (data) => {
-    if (data.id) {
-      setDiscounts((prev) =>
-        prev.map((item) => (item.id === data.id ? data : item))
-      );
-    } else {
-      setDiscounts((prev) => [
-        ...prev,
-        { ...data, id: Date.now() },
-      ]);
-    }
-    setIsModalOpen(false);
-    setEditingDiscount(null);
-  };
-
-  // Chỉnh sửa
-  const handleEdit = (discount) => {
-    setEditingDiscount(discount);
-    setIsModalOpen(true);
-  };
-
-  // Delete
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa mã giảm giá này không?")) {
-      setDiscounts((prev) => prev.filter((item) => item.id !== id));
-    }
-  };
-
-  // Add New
-  const handleAdd = () => {
-    setEditingDiscount(null);
-    setIsModalOpen(true);
-  };
+  const {
+    items: filteredDiscounts,
+    search,
+    setSearch,
+    showForm,
+    editingItem,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleSave,
+    handleCloseModal,
+  } = useAdminCrud(initialDiscounts);
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -73,13 +42,13 @@ export default function DiscountList() {
         <input
           type="text"
           placeholder="Tìm kiếm mã giảm giá..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
       </div>
 
-      {/* Bảng danh sách */}
+      {/* Table List */}
       <AdminListTable
         columns={[
           { field: "code", label: "Mã giảm giá" },
@@ -89,28 +58,20 @@ export default function DiscountList() {
           { field: "endDate", label: "Ngày kết thúc" },
         ]}
         data={filteredDiscounts}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
         imageFields={[]}
+        actions={[
+          { icon: <FaEdit />, label: "Edit", onClick: handleEdit },
+          { icon: <FaTrash />, label: "Delete", onClick: (row) => handleDelete(row.id) },
+        ]}
       />
 
-      {/* Form thêm/sửa */}
-      {isModalOpen && (
+      {/* Form Add/Edit */}
+      {showForm && (
         <DynamicForm
-          title={editingDiscount ? "Sửa mã giảm giá" : "Thêm mã giảm giá"}
+          title={editingItem ? "Sửa mã giảm giá" : "Thêm mã giảm giá"}
           fields={[
-            {
-              name: "code",
-              label: "Mã giảm giá",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "description",
-              label: "Mô tả",
-              type: "textarea",
-              required: true,
-            },
+            { name: "code", label: "Mã giảm giá", type: "text", required: true },
+            { name: "description", label: "Mô tả", type: "textarea", required: true },
             {
               name: "discountPercent",
               label: "Phần trăm giảm",
@@ -119,22 +80,12 @@ export default function DiscountList() {
               min: 1,
               max: 100,
             },
-            {
-              name: "startDate",
-              label: "Ngày bắt đầu",
-              type: "date",
-              required: true,
-            },
-            {
-              name: "endDate",
-              label: "Ngày kết thúc",
-              type: "date",
-              required: true,
-            },
+            { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true },
+            { name: "endDate", label: "Ngày kết thúc", type: "date", required: true },
           ]}
-          initialData={editingDiscount}
+          initialData={editingItem}
           onSave={handleSave}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
         />
       )}
     </div>

@@ -1,12 +1,25 @@
-import { memo, useState } from "react";
-import { FaPlus } from "react-icons/fa";
-import DynamicForm from "../../../../../components/DynamicForm";
-import AdminListTable from "../../../../../components/common/AdminListTable";
+import { memo } from "react";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import DynamicForm from "../../../../components/DynamicForm";
+import AdminListTable from "../../../../components/common/AdminListTable";
+import useAdminCrud from "../../../../utils/useAdminCrud";
 
 const AdminProductPage = () => {
   const categories = ["iPhone", "Samsung", "Oppo", "Xiaomi", "Vivo"];
 
-  const [products, setProducts] = useState([
+  const {
+    items:
+    filteredItems,
+    search,
+    setSearch,
+    showForm,
+    editingItem,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleSave,
+    handleCloseModal,
+  } = useAdminCrud([
     {
       id: 1,
       name: "OPPO Reno6 Z 5G",
@@ -16,39 +29,6 @@ const AdminProductPage = () => {
       image: "",
     },
   ]);
-
-  const [search, setSearch] = useState("");
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
-      setProducts(products.filter((p) => p.id !== id));
-    }
-  };
-
-  const handleSave = (product) => {
-    if (product.id) {
-      setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
-    } else {
-      setProducts((prev) => [...prev, { ...product, id: Date.now() }]);
-    }
-    setIsModalOpen(false);
-  };
-
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    setIsModalOpen(true);
-  };
-
-  const handleAdd = () => {
-    setEditingProduct(null);
-    setIsModalOpen(true);
-  };
-
-  const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -77,7 +57,7 @@ const AdminProductPage = () => {
         />
       </div>
 
-      {/* Table - Sử dụng AdminListTable */}
+      {/* Table */}
       <AdminListTable
         columns={[
           { field: "image", label: "Ảnh" },
@@ -86,16 +66,18 @@ const AdminProductPage = () => {
           { field: "description", label: "Mô tả" },
           { field: "status", label: "Trạng thái" },
         ]}
-        data={filteredProducts}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        data={filteredItems}
         imageFields={["image"]}
+        actions={[
+            { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
+            { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
+          ]}
       />
 
-      {/* Modal */}
-      {isModalOpen && (
+      {/* Modal Form */}
+      {showForm && (
         <DynamicForm
-          title={editingProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}
+          title={editingItem ? "Sửa sản phẩm" : "Thêm sản phẩm"}
           fields={[
             { name: "name", label: "Tên sản phẩm", type: "text", required: true },
             {
@@ -115,9 +97,10 @@ const AdminProductPage = () => {
             },
             { name: "image", label: "Ảnh sản phẩm", type: "file" },
           ]}
-          initialData={editingProduct}
+          initialData={editingItem}
           onSave={handleSave}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
+          
         />
       )}
     </div>

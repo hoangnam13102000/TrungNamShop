@@ -1,10 +1,22 @@
-import React, { useState } from "react";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
+import useAdminCrud from "../../../../utils/useAdminCrud";
 
 export default function PromotionList() {
-  const [promotions, setPromotions] = useState([
+  const {
+    items:
+    filteredItems,
+    search,
+    setSearch,
+    showForm,
+    editingItem,
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleSave,
+    handleCloseModal,
+  } = useAdminCrud([
     {
       id: 1,
       name: "Khuyến mãi mùa hè 2024",
@@ -12,45 +24,6 @@ export default function PromotionList() {
       endDate: "2024-08-30",
     },
   ]);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingPromo, setEditingPromo] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const filteredPromos = promotions.filter((promo) =>
-    promo.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleSave = (promoData) => {
-    if (promoData.id) {
-      setPromotions((prev) =>
-        prev.map((p) => (p.id === promoData.id ? promoData : p))
-      );
-    } else {
-      setPromotions((prev) => [
-        ...prev,
-        { ...promoData, id: Date.now() },
-      ]);
-    }
-    setIsModalOpen(false);
-    setEditingPromo(null);
-  };
-
-  const handleEdit = (promo) => {
-    setEditingPromo(promo);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa khuyến mãi này không?")) {
-      setPromotions((prev) => prev.filter((p) => p.id !== id));
-    }
-  };
-
-  const handleAdd = () => {
-    setEditingPromo(null);
-    setIsModalOpen(true);
-  };
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -66,52 +39,38 @@ export default function PromotionList() {
         <input
           type="text"
           placeholder="Tìm kiếm khuyến mãi..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-red-500"
         />
       </div>
 
-      {/* Table - Using AdminListTable */}
+      {/* List Table */}
       <AdminListTable
         columns={[
           { field: "name", label: "Tên khuyến mãi" },
           { field: "startDate", label: "Ngày bắt đầu" },
           { field: "endDate", label: "Ngày kết thúc" },
         ]}
-        data={filteredPromos}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        imageFields={[]}
+        data={filteredItems}
+        actions={[
+          { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
+          { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
+        ]}
       />
 
-      {/* Dynamic Form */}
-      {isModalOpen && (
+      {/* Modal form Add / Edit */}
+      {showForm && (
         <DynamicForm
-          title={editingPromo ? "Sửa khuyến mãi" : "Thêm khuyến mãi"}
+          title={editingItem ? "Sửa khuyến mãi" : "Thêm khuyến mãi"}
           fields={[
-            {
-              name: "name",
-              label: "Tên khuyến mãi",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "startDate",
-              label: "Ngày bắt đầu",
-              type: "date",
-              required: true,
-            },
-            {
-              name: "endDate",
-              label: "Ngày kết thúc",
-              type: "date",
-              required: true,
-            },
+            { name: "name", label: "Tên khuyến mãi", type: "text", required: true },
+            { name: "startDate", label: "Ngày bắt đầu", type: "date", required: true },
+            { name: "endDate", label: "Ngày kết thúc", type: "date", required: true },
           ]}
-          initialData={editingPromo}
+          initialData={editingItem}
           onSave={handleSave}
-          onClose={() => setIsModalOpen(false)}
+          onClose={handleCloseModal}
         />
       )}
     </div>

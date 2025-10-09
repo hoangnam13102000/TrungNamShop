@@ -3,7 +3,7 @@ import ScrollToTop from "./routers/navigation";
 
 // ADMIN PATH
 import DashBoard from "@page_admin/DashBoard";
-import ProductManagement from "@page_admin/product/ProductManagement/ProductManagement";
+import ProductManagement from "@page_admin/product/ProductManagement";
 import BrandManagement from "@page_admin/product/BrandManagement";
 import PromotionList from "./pages/admin/product/PromotionManagement";
 import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
