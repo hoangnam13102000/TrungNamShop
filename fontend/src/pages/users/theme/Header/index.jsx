@@ -1,6 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Dropdown from "../../../../components/DropDown";
+import useGetStores from "../../../../api/homePage/queries";
 import {
   FaFacebookSquare,
   FaYoutube,
@@ -18,13 +19,6 @@ import {
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 
 /* ================= Constants ================= */
-const CONTACT_INFO = {
-  phone: "1800 1234",
-  phoneLink: "tel:18001234",
-  email: "support@phonestore.com",
-  address: "Đường số 7, Hiệp Bình Phước, Q.Thủ Đức, TP.HCM",
-};
-
 const SOCIAL_LINKS = [
   { icon: FaFacebookSquare, url: "https://facebook.com/phonestore" },
   { icon: FaYoutube, url: "https://youtube.com/@phonestore" },
@@ -83,11 +77,12 @@ const Header = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [dropdownKey, setDropdownKey] = useState(0);
 
+  const { data: stores, isLoading } = useGetStores();
   const location = useLocation();
   const navigate = useNavigate();
   const showBanner = location.pathname === "/";
 
-  // Reset dropdown when navigating to a new page
+  // Reset dropdown when navigating
   useEffect(() => {
     setDropdownKey((prev) => prev + 1);
   }, [location.pathname]);
@@ -98,6 +93,8 @@ const Header = () => {
     link: cat.link,
   }));
 
+  const mainStore = stores?.[0];
+
   return (
     <>
       {/* Header */}
@@ -107,23 +104,40 @@ const Header = () => {
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex justify-between items-center py-2 gap-2">
               <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0 overflow-x-auto">
-                <ContactLink
-                  href={CONTACT_INFO.phoneLink}
-                  icon={FaPhoneAlt}
-                  value={CONTACT_INFO.phone}
-                />
-                <ContactLink
-                  href="/lien-he"
-                  icon={FaEnvelope}
-                  value={CONTACT_INFO.email}
-                  hideOnMobile={true}
-                />
-                <ContactLink
-                  href="/stores"
-                  icon={FaMapMarkerAlt}
-                  value={CONTACT_INFO.address}
-                  hideOnMobile={true}
-                />
+                {/* Info Store */}
+                {isLoading ? (
+                  <span className="text-xs opacity-80">
+                    Đang tải thông tin cửa hàng...
+                  </span>
+                ) : mainStore ? (
+                  <>
+                    <ContactLink
+                      href={`tel:${mainStore.phone || ""}`}
+                      icon={FaPhoneAlt}
+                      value={mainStore.phone || "Chưa có SĐT"}
+                    />
+                    <ContactLink
+                      href="/lien-he"
+                      icon={FaEnvelope}
+                      value={mainStore.email || "Chưa có email"}
+                      hideOnMobile={true}
+                    />
+                    <ContactLink
+                      href={mainStore.google_map || "Chưa có liên kết"}
+                      icon={FaMapMarkerAlt}
+                      value={
+                        mainStore.name
+                          ? `${mainStore.name} - ${mainStore.address}`
+                          : mainStore.address
+                      }
+                      hideOnMobile={true}
+                    />
+                  </>
+                ) : (
+                  <span className="text-xs opacity-80">
+                    Không có dữ liệu cửa hàng.
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -267,7 +281,7 @@ const Header = () => {
       {/* Spacer avoids covering content */}
       <div className="pt-[120px]"></div>
 
-      {/* Banner component - Display only on HomePage */}
+      {/* Banner */}
       {showBanner && <HomeBanner />}
     </>
   );

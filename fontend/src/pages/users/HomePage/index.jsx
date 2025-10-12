@@ -95,6 +95,7 @@ const ProductCarousel = ({ products }) => {
   );
 };
 
+
 /* ================== HomePage ================== */
 const HomePage = () => {
   return (
