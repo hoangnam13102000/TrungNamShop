@@ -14,16 +14,16 @@ export const getStoresAPI = async () => {
   }
 };
 export const createStoreAPI = async (data) => {
-  const res = await api.post(END_POINT, data);
+  const res = await api.post(END_POINT.STORES, data);
   return res.data;
 };
 
 export const updateStoreAPI = async (id, data) => {
-  const res = await api.put(`${END_POINT}/${id}`, data);
+  const res = await api.put(`${END_POINT.STORES}/${id}`, data);
   return res.data;
 };
 
 export const deleteStoreAPI = async (id) => {
-  await api.delete(`${END_POINT}/${id}`);
+  await api.delete(`${END_POINT.STORES}/${id}`);
   return id;
 };

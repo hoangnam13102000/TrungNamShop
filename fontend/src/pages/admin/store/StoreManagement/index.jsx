@@ -7,8 +7,10 @@ import useGetStores from "../../../../api/homePage/queries";
 import { createStoreAPI, updateStoreAPI, deleteStoreAPI } from "../../../../api/homePage/request";
 
 const StoreManagement = () => {
+  // Fetch dữ liệu từ server
   const { data: stores, isLoading, isError, refetch } = useGetStores();
 
+  // Hook quản lý CRUD tổng quát
   const {
     filteredItems,
     setItems,
@@ -19,37 +21,34 @@ const StoreManagement = () => {
     handleAdd,
     handleEdit,
     handleCloseModal,
-    setShowForm,
-    setEditingItem,
-  } = useAdminCrud([]);
+    handleSave,
+    handleDelete,
+  } = useAdminCrud([], {
+    api: {
+      create: createStoreAPI,
+      update: updateStoreAPI,
+      delete: deleteStoreAPI,
+    },
+  });
 
+  // Đồng bộ dữ liệu server → items
   useEffect(() => {
-    if (stores) setItems(stores);
+    if (stores) setItems(Array.isArray(stores) ? stores : []);
   }, [stores, setItems]);
 
-  const handleSave = async (formData) => {
-    try {
-      if (editingItem) {
-        await updateStoreAPI(editingItem.id, formData);
-      } else {
-        await createStoreAPI(formData);
-      }
-      await refetch();
-      setShowForm(false);
-      setEditingItem(null);
-    } catch (error) {
-      console.error("Lỗi lưu cửa hàng:", error);
+  // Override handleSave để refetch sau khi lưu
+  const onSave = async (formData) => {
+    const success = await handleSave(formData);
+    if (success) {
+      await refetch(); // reload dữ liệu server
     }
   };
 
-  const handleDelete = async (id) => {
+  // Override handleDelete để refetch sau khi xóa
+  const onDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa cửa hàng này?")) {
-      try {
-        await deleteStoreAPI(id);
-        await refetch();
-      } catch (error) {
-        console.error("Lỗi khi xóa cửa hàng:", error);
-      }
+      await handleDelete(id);
+      await refetch();
     }
   };
 
@@ -60,6 +59,7 @@ const StoreManagement = () => {
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý cửa hàng</h1>
 
+      {/* Thêm cửa hàng + Search */}
       <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
         <button
           onClick={handleAdd}
@@ -77,6 +77,7 @@ const StoreManagement = () => {
         />
       </div>
 
+      {/* Bảng danh sách */}
       <AdminListTable
         columns={[
           { field: "name", label: "Tên cửa hàng" },
@@ -87,10 +88,11 @@ const StoreManagement = () => {
         data={filteredItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: (row) => handleDelete(row.id) },
+          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.id) },
         ]}
       />
 
+      {/* Form Thêm/Sửa */}
       {showForm && (
         <DynamicForm
           title={editingItem ? "Sửa cửa hàng" : "Thêm cửa hàng"}
@@ -101,7 +103,7 @@ const StoreManagement = () => {
             { name: "phone", label: "Số điện thoại", type: "text" },
           ]}
           initialData={editingItem}
-          onSave={handleSave}
+          onSave={onSave}
           onClose={handleCloseModal}
         />
       )}
