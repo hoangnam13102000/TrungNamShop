@@ -8,40 +8,45 @@ export default function DynamicForm({
   onSave,
   onClose,
   readOnly = false,
-  mode = "create", // "create" | "edit" | "view"
+  mode = "create",
+  errors = {},
 }) {
   const [formData, setFormData] = useState({});
-  const [preview, setPreview] = useState("");
+  const [preview, setPreview] = useState({});
 
-  // Assign initial data (edit or view)
+  // Init Data
   useEffect(() => {
-    setFormData(initialData || {});
-    if (initialData?.image && !preview) {
-      setPreview(initialData.image);
+    if (initialData) {
+      setFormData(initialData);
+      const initialPreview = {};
+      fields.forEach((field) => {
+        if (field.type === "file" && initialData[field.name]) {
+          initialPreview[field.name] = initialData[field.name];
+        }
+      });
+      setPreview(initialPreview);
     }
-  }, [initialData]);
+  }, [initialData, fields]);
 
-  // Update common inputs
   const handleChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handling upload file
   const handleFileChange = (name, file) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
+      setPreview((prev) => ({ ...prev, [name]: reader.result }));
       setFormData((prev) => ({ ...prev, [name]: reader.result }));
     };
     reader.readAsDataURL(file);
   };
 
-  // Save
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (readOnly) return;
+    if (readOnly || mode === "view") return;
 
+    // Check required
     for (const field of fields) {
       if (field.required && !formData[field.name]) {
         alert(`Vui lòng nhập ${field.label}!`);
@@ -52,14 +57,8 @@ export default function DynamicForm({
     onSave(formData);
   };
 
-  // DynamicTitle
   const renderTitle =
-    title ||
-    (mode === "edit"
-      ? "Cập nhật thông tin"
-      : mode === "view"
-      ? "Xem chi tiết"
-      : "Thêm mới");
+    title || (mode === "edit" ? "Cập nhật" : mode === "view" ? "Xem chi tiết" : "Thêm mới");
 
   return (
     <div
@@ -71,12 +70,11 @@ export default function DynamicForm({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-semibold mb-4">{renderTitle}</h2>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.map((field) => (
             <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.label}
+                {field.label} {field.required && <span className="text-red-500">*</span>}
               </label>
 
               {readOnly || mode === "view" ? (
@@ -92,60 +90,75 @@ export default function DynamicForm({
                   )}
                 </div>
               ) : field.type === "textarea" ? (
-                <textarea
-                  value={formData[field.name] || ""}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <>
+                  <textarea
+                    value={formData[field.name] || ""}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                  {errors[field.name] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[field.name]}</p>
+                  )}
+                </>
               ) : field.type === "select" ? (
-                <select
-                  value={formData[field.name] || ""}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2"
-                >
-                  <option value="">-- Chọn --</option>
-                  {field.options?.map((opt) => (
-                    <option key={opt.value || opt} value={opt.value || opt}>
-                      {opt.label || opt}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    value={formData[field.name] || ""}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="">-- Chọn --</option>
+                    {field.options?.map((opt) => (
+                      <option key={opt.value || opt} value={opt.value || opt}>
+                        {opt.label || opt}
+                      </option>
+                    ))}
+                  </select>
+                  {errors[field.name] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[field.name]}</p>
+                  )}
+                </>
               ) : field.type === "file" ? (
-                <div className="flex flex-col items-center gap-2 w-full">
-                  <div
-                    className="w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover cursor-pointer"
-                    style={{
-                      backgroundImage: `url(${preview || placeholder})`,
-                    }}
-                    onClick={() =>
-                      document.getElementById(field.name + "-file").click()
-                    }
-                  />
-                  <input
-                    id={field.name + "-file"}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleFileChange(field.name, e.target.files[0])
-                    }
-                    className="hidden"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Nhấn vào ảnh để tải lên
-                  </p>
-                </div>
+                <>
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div
+                      className="w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover cursor-pointer"
+                      style={{ backgroundImage: `url(${preview[field.name] || placeholder})` }}
+                      onClick={() =>
+                        document.getElementById(field.name + "-file").click()
+                      }
+                    />
+                    <input
+                      id={field.name + "-file"}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        handleFileChange(field.name, e.target.files[0])
+                      }
+                      className="hidden"
+                    />
+                    <p className="text-xs text-gray-500">Nhấn vào ảnh để tải lên</p>
+                  </div>
+                  {errors[field.name] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[field.name]}</p>
+                  )}
+                </>
               ) : (
-                <input
-                  type={field.type}
-                  value={formData[field.name] || ""}
-                  onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <>
+                  <input
+                    type={field.type}
+                    value={formData[field.name] || ""}
+                    onChange={(e) => handleChange(field.name, e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                  {errors[field.name] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[field.name]}</p>
+                  )}
+                </>
               )}
             </div>
           ))}
 
-          {/* Action Button */}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

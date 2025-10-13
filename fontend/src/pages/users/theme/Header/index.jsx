@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Dropdown from "../../../../components/DropDown";
-import useGetStores from "../../../../api/homePage/queries";
+import useGetStores from "../../../../api/stores/queries";
 import {
   FaFacebookSquare,
   FaYoutube,

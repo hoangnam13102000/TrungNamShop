@@ -1,62 +1,90 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { validateGeneral } from "../utils/validate";
 
 /**
- * useAdminCrud: hook CRUD tổng quát
- * @param {Array} initialData - dữ liệu khởi tạo
+ * General CRUD hook, used for many forms
+ * @param {Array} initialData - Init Data 
  * @param {Object} options - {
  *   rules: object validation,
- *   api: {
- *     fetch: async function để lấy data,
- *     create: async function(data),
- *     update: async function(id, data),
- *     delete: async function(id)
- *   }
+ *   api: { fetch, create, update, delete },
+ *   hooks: { beforeSave: async (data, editingItem) => boolean }
  * }
  */
 export default function useAdminCrud(initialData = [], options = {}) {
-  const { rules = {}, api = {} } = options;
+  const { rules = {}, api = {}, hooks = {} } = options;
 
   const [items, setItems] = useState(Array.isArray(initialData) ? initialData : []);
   const [editingItem, setEditingItem] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [viewMode, setViewMode] = useState(false);
   const [search, setSearch] = useState("");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // ===== Filter theo search =====
+  // Filter theo search
   const filteredItems = useMemo(() => {
     if (!items || !Array.isArray(items)) return [];
     if (!search) return items;
     return items.filter((item) =>
-      Object.values(item).some((value) =>
-        String(value).toLowerCase().includes(search.toLowerCase())
+      Object.values(item).some((v) =>
+        String(v).toLowerCase().includes(search.toLowerCase())
       )
     );
   }, [items, search]);
 
-  // ===== CRUD =====
+  // Fetch data from server
+  const fetchData = async () => {
+    if (!api.fetch) return;
+    setLoading(true);
+    try {
+      const data = await api.fetch();
+      setItems(Array.isArray(data) ? data : []);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Save (create/update)
   const handleSave = async (data) => {
-    if (!api.create || !api.update) {
-      console.warn("API create/update không được truyền vào hook");
+    if (!api.create || !api.update) return false;
+
+    // Validate according to general rules
+    const validationErrors = validateGeneral(data, rules);
+
+    // Check existence: if field name exists, check for duplicates
+    if (!editingItem && data.name) {
+      const isDuplicate = items.some(
+        (item) => item.name.toLowerCase() === data.name.toLowerCase()
+      );
+      if (isDuplicate) validationErrors.name = "Tên đã tồn tại";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors); 
       return false;
     }
 
-    const validationErrors = validateGeneral(data, rules);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return false;
+    // beforeSave hook (confirm)
+    if (hooks.beforeSave) {
+      const ok = await hooks.beforeSave(data, editingItem);
+      if (!ok) return false;
     }
 
     try {
+      let res;
       if (editingItem) {
-        const res = await api.update(editingItem.id, data);
-        setItems((prev) =>
-          (prev || []).map((item) => (item.id === editingItem.id ? res : item))
-        );
+        res = await api.update(editingItem.id, data);
+        setItems((prev) => (prev || []).map((i) => (i.id === editingItem.id ? res : i)));
       } else {
-        const res = await api.create(data);
+        res = await api.create(data);
         setItems((prev) => [...(prev || []), res]);
       }
 
@@ -64,75 +92,61 @@ export default function useAdminCrud(initialData = [], options = {}) {
       setEditingItem(null);
       setErrors({});
       return true;
-    } catch (error) {
-      console.error("Error saving item:", error);
+    } catch (err) {
+      console.error("Error saving:", err);
       return false;
     }
   };
 
+  // Delete
   const handleDelete = async (itemOrId) => {
-    if (!api.delete) {
-      console.warn("API delete không được truyền vào hook");
-      return;
-    }
+    if (!api.delete) return false;
     const id = typeof itemOrId === "object" ? itemOrId.id : itemOrId;
-    if (window.confirm("Bạn có chắc chắn muốn xoá mục này không?")) {
-      try {
-        await api.delete(id);
-        setItems((prev) => (prev || []).filter((item) => item.id !== id));
-      } catch (error) {
-        console.error("Error deleting:", error);
-      }
+    try {
+      await api.delete(id);
+      setItems((prev) => (prev || []).filter((i) => i.id !== id));
+      return true;
+    } catch (err) {
+      console.error("Error deleting:", err);
+      return false;
     }
   };
 
+  // Form control
   const handleEdit = (item) => {
     setEditingItem(item);
     setShowForm(true);
     setErrors({});
   };
-
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
     setErrors({});
   };
-
   const handleCloseModal = () => {
     setShowForm(false);
     setEditingItem(null);
-    setSelectedItem(null);
     setErrors({});
-    setViewMode(false);
-  };
-
-  const handleView = (item) => {
-    setSelectedItem(item);
-    setViewMode(true);
-    setShowForm(true);
   };
 
   return {
     items,
     setItems,
     editingItem,
-    selectedItem,
     showForm,
-    viewMode,
     search,
     setSearch,
     filteredItems,
     errors,
     setErrors,
-
-    setShowForm,
-    setEditingItem,
+    loading,
+    error,
 
     handleAdd,
     handleEdit,
     handleDelete,
     handleSave,
     handleCloseModal,
-    handleView,
+    fetchData,
   };
 }

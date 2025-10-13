@@ -29,7 +29,7 @@ export const validateGeneral = (formData, rules) => {
       continue;
     }
 
-    // Match 
+    // Match
     if (match && value && value !== formData[match]) {
       errors[field] = message || "Giá trị không khớp";
       continue;
