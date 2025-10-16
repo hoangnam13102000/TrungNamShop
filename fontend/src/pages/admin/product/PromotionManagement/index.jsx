@@ -37,25 +37,28 @@ const PromotionManagement = () => {
       name: { required: true, message: "Tên khuyến mãi là bắt buộc" },
       start_date: { required: true, message: "Ngày bắt đầu là bắt buộc" },
       end_date: { required: true, message: "Ngày kết thúc là bắt buộc" },
-      description: { max: 255, message: "Mô tả tối đa 255 ký tự" },
     },
     hooks: {
-      beforeSave: async (data, editingItem) => {
-        if (!editingItem) {
-          return window.confirm(
-            `Bạn có chắc chắn muốn thêm khuyến mãi "${data.name}" không?`
-          );
+      beforeSave: async (data) => {
+        // Kiểm tra logic ngày tháng
+        if (new Date(data.start_date) > new Date(data.end_date)) {
+          alert("Ngày bắt đầu không được sau ngày kết thúc!");
+          return false;
         }
-        return true;
+
+        // Xác nhận thêm/sửa
+        return window.confirm("Bạn có chắc chắn muốn lưu khuyến mãi này?");
       },
     },
   });
 
+  // Lưu form
   const onSave = async (formData) => {
     const success = await handleSave(formData);
     if (success) await fetchData();
   };
 
+  // Xóa
   const onDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa khuyến mãi này?")) {
       const success = await handleDelete(id);
@@ -63,6 +66,7 @@ const PromotionManagement = () => {
     }
   };
 
+  // Loading / Error
   if (loading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
   if (error)
@@ -72,10 +76,12 @@ const PromotionManagement = () => {
       </div>
     );
 
+  // Giao diện chính
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý khuyến mãi</h1>
 
+      {/* Thanh công cụ */}
       <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
         <button
           onClick={handleAdd}
@@ -93,6 +99,7 @@ const PromotionManagement = () => {
         />
       </div>
 
+      {/* Bảng danh sách */}
       <AdminListTable
         columns={[
           { field: "name", label: "Tên khuyến mãi" },
@@ -107,16 +114,25 @@ const PromotionManagement = () => {
         ]}
       />
 
+      {/* Form thêm/sửa */}
       {showForm && (
         <DynamicForm
           title={editingItem ? "Sửa khuyến mãi" : "Thêm khuyến mãi"}
           fields={[
             { name: "name", label: "Tên khuyến mãi", type: "text", required: true },
+            { name: "description", label: "Mô tả", type: "textarea" },
             { name: "start_date", label: "Ngày bắt đầu", type: "date", required: true },
             { name: "end_date", label: "Ngày kết thúc", type: "date", required: true },
-            { name: "description", label: "Mô tả", type: "textarea" },
           ]}
-          initialData={editingItem}
+          initialData={
+            editingItem
+              ? {
+                  ...editingItem,
+                  start_date: editingItem.start_date?.split("T")[0],
+                  end_date: editingItem.end_date?.split("T")[0],
+                }
+              : null
+          }
           onSave={onSave}
           onClose={handleCloseModal}
           errors={errors}

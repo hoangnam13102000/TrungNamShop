@@ -68,7 +68,7 @@ export default function useAdminCrud(initialData = [], options = {}) {
     }
 
     if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors); 
+      setErrors(validationErrors);
       return false;
     }
 
@@ -114,10 +114,11 @@ export default function useAdminCrud(initialData = [], options = {}) {
 
   // Form control
   const handleEdit = (item) => {
-    setEditingItem(item);
+    setEditingItem({ ...item });
     setShowForm(true);
     setErrors({});
   };
+
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);

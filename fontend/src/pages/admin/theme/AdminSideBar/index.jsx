@@ -43,7 +43,14 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
       ],
     },
     { label: "Linh kiện", icon: <FaBox />, path: "/quan-tri/linh-kien" },
-    { label: "Nhân viên", icon: <FaUser />, path: "/quan-tri/quan-ly-nhan-vien" },
+    { label: "Nhân viên",
+       icon: <FaUser />, 
+       dropdown: [
+        { label: "Quản lý nhân viên", path: "/quan-tri/quan-ly-nhan-vien" },
+        { label: "Quản lý chức vụ", path: "/quan-tri/quan-ly-chuc-vu" },
+        { label: "Quản lý thưởng", path: "/quan-tri/quan-ly-thuong" },
+      ],
+    },
     {
       label: "Tài khoản",
       icon: <FaKey />,

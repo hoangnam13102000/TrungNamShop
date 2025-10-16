@@ -1,7 +1,7 @@
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import AdminListTable from "../../../components/common/AdminListTable";
-import DynamicForm from "../../../components/DynamicForm";
-import useAdminCrud from "../../../utils/useAdminCrud";
+import AdminListTable from "../../../../components/common/AdminListTable";
+import DynamicForm from "../../../../components/DynamicForm";
+import useAdminCrud from "../../../../utils/useAdminCrud";
 
 const initialEmployees = [
   {

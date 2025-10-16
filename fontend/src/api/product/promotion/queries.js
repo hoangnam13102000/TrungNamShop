@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getPromotionsAPI } from "./request";
 import { optionUseQuery } from "../../../utils/common";
 
-// Custom React Query Hook cho promotions
+// Custom React Query Hook for promotions
 export default function useGetPromotions(options = {}) {
   return useQuery({
     queryKey: ["promotions"],

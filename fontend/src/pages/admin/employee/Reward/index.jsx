@@ -4,13 +4,13 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/DynamicForm";
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
-  getAccountTypeAPI,
-  createAccountTypeAPI,
-  updateAccountTypeAPI,
-  deleteAccountTypeAPI,
-} from "../../../../api/account/accountType/request";
+  getRewardsAPI,
+  createRewardAPI,
+  updateRewardAPI,
+  deleteRewardAPI,
+} from "../../../../api/employee/reward/request";
 
-const AccountTypeList = () => {
+const RewardList = () => {
   const {
     filteredItems,
     search,
@@ -28,19 +28,20 @@ const AccountTypeList = () => {
     fetchData,
   } = useAdminCrud([], {
     api: {
-      fetch: getAccountTypeAPI,
-      create: createAccountTypeAPI,
-      update: updateAccountTypeAPI,
-      delete: deleteAccountTypeAPI,
+      fetch: getRewardsAPI,
+      create: createRewardAPI,
+      update: updateRewardAPI,
+      delete: deleteRewardAPI,
     },
     rules: {
-      account_type_name: { required: true, message: "Tên loại tài khoản là bắt buộc" },
+      reward_name: { required: true, message: "Tên thưởng là bắt buộc" },
+      reward_money: { required: true, message: "Số tiền thưởng là bắt buộc" },
     },
     hooks: {
       beforeSave: async (data, editingItem) => {
         if (!editingItem) {
           return window.confirm(
-            `Bạn có chắc chắn muốn thêm loại tài khoản "${data.account_type_name}" không?`
+            `Bạn có chắc chắn muốn thêm thưởng "${data.reward_name}" với số tiền "${data.reward_money}" không?`
           );
         }
         return true;
@@ -48,28 +49,34 @@ const AccountTypeList = () => {
     },
   });
 
+  // Save
   const onSave = async (formData) => {
     const success = await handleSave(formData);
     if (success) {
-      await fetchData(); // refresh data
-      handleCloseModal(); // close modal
+      await fetchData();
+      handleCloseModal();
     }
   };
 
+  // Delete
   const onDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa loại tài khoản này?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa thưởng này?")) return;
     const success = await handleDelete(id);
     if (success) {
-      await fetchData(); // refresh data
+      await fetchData();
     }
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (error) return <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>;
+  if (loading)
+    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
+  if (error)
+    return (
+      <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>
+    );
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Quản lý loại tài khoản</h1>
+      <h1 className="text-2xl font-semibold mb-6">Quản lý thưởng</h1>
 
       {/* Header */}
       <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
@@ -77,38 +84,49 @@ const AccountTypeList = () => {
           onClick={handleAdd}
           className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition w-full sm:w-auto"
         >
-          <FaPlus /> Thêm loại tài khoản
+          <FaPlus /> Thêm thưởng
         </button>
 
         <input
           type="text"
-          placeholder="Tìm kiếm loại tài khoản..."
+          placeholder="Tìm kiếm theo tên hoặc số tiền thưởng..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-red-500"
         />
       </div>
 
-      {/* Table */}
+      {/* Table List */}
       <AdminListTable
-        columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
+        columns={[
+          { field: "reward_name", label: "Tên thưởng" },
+          {field: "reward_money", label: "Số tiền thưởng (VNĐ)",
+            render: (value) => Number(value ?? 0).toLocaleString("vi-VN") + " VNĐ"},
+        ]}
         data={filteredItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.id) },
+          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.reward_id) },
         ]}
       />
 
-      {/* Add/Edit Form */}
+      {/* Form Add / Edit */}
       {showForm && (
         <DynamicForm
-          title={editingItem ? "Sửa loại tài khoản" : "Thêm loại tài khoản"}
+          title={editingItem ? "Sửa thưởng" : "Thêm thưởng"}
           fields={[
             {
-              name: "account_type_name",
-              label: "Tên loại tài khoản",
+              name: "reward_name",
+              label: "Tên thưởng",
               type: "text",
               required: true,
+            },
+            {
+              name: "reward_money",
+              label: "Số tiền thưởng (VNĐ)",
+              type: "number",
+              required: true,
+              min: 0,
             },
           ]}
           initialData={editingItem}
@@ -121,4 +139,4 @@ const AccountTypeList = () => {
   );
 };
 
-export default memo(AccountTypeList);
+export default memo(RewardList);

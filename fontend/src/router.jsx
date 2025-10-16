@@ -9,13 +9,15 @@ import PromotionList from "./pages/admin/product/PromotionManagement";
 import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 import OrderManagement from "@page_admin/OrderManagement";
 import DiscountList from "@page_admin/product/DiscountManagement";
-import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
 import EmployeeAccountList from "@page_admin/account/EmployeeAccountList";
 import AccountTypeList from "@page_admin/account/AccountType";
 import MemberLevelList from "@page_admin/customer/MemberLevelList";
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
 import StoreManagement from "@page_admin/store/StoreManagement";
 import WarehouseManagement from "@page_admin/store/WarehouseManagement";
+import Reward from "./pages/admin/employee/Reward";
+import PositionManagement from  "./pages/admin/employee/Position";
 
 
 // HOMEPAGE PATH
@@ -31,6 +33,7 @@ import ForgotPassword from "@page_user/ForgotPassword";
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
+
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
 
 
@@ -71,6 +74,14 @@ const renderAdminRouter = () => {
     {
       path: ROUTERS.ADMIN.EMPLOYEEACOUNT,
       component: <EmployeeAccountList />,
+    },
+    {
+      path: ROUTERS.ADMIN.POSITION,
+      component: <PositionManagement />,
+    },
+    {
+      path: ROUTERS.ADMIN.REWARD,
+      component: <Reward />,
     },
     {
       path: ROUTERS.ADMIN.CUSTOMERMANAGEMENTL,
