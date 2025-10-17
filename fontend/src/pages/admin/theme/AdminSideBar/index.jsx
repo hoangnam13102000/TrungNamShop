@@ -22,7 +22,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
   };
 
   const menuItems = [
-    { label: "Bảng điều khiển", icon: <FaThLarge />, path: "/quan-tri/bang-dieu-khien" },
+    { label: "Bảng điều khiển", icon: <FaThLarge />, path: "/quan-tri/" },
     { label: "Đơn hàng", icon: <FaShoppingCart />, path: "/quan-tri/quan-ly-don-hang" },
     {
       label: "Khách hàng",
@@ -56,7 +56,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
       icon: <FaKey />,
       dropdown: [
         { label: "Quản lý loại tài khoản", path: "/quan-tri/quan-ly-loai-tai-khoan" },
-        { label: "Quản lý tài khoản nhân viên", path: "/quan-tri/quan-ly-tai-khoan-nhan-vien" },
+        { label: "Quản lý tài khoản", path: "/quan-tri/quan-ly-tai-khoan" },
       ],
     },
     { label: "Kho, cửa hàng", 
@@ -101,7 +101,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-red-500">
-          <Link to="/quan-tri/bang-dieu-khien"
+          <Link to="/quan-tri/"
             className={`text-2xl font-bold whitespace-nowrap overflow-hidden transition-all duration-300
             ${sidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0"}`}
           >

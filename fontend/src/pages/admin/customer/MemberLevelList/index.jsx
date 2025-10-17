@@ -30,7 +30,6 @@ const MemberLevelingList = () => {
     api: {
       fetch: async () => {
         const data = await getAccountLevelingAPI();
-        // Ép limit về số nguyên ngay khi fetch
         return data.map((item) => ({
           ...item,
           limit: item.limit != null ? Math.floor(Number(item.limit)) : null,
@@ -46,6 +45,10 @@ const MemberLevelingList = () => {
     },
     hooks: {
       beforeSave: async (data, editingItem) => {
+        if (editingItem?.id === 1) {
+          alert(" Không thể sửa bậc thành viên này!");
+          return false;
+        }
         if (data.limit != null) data.limit = Math.floor(Number(data.limit));
         if (!editingItem) {
           return window.confirm(`Bạn có chắc chắn muốn thêm bậc thành viên "${data.name}" không?`);
@@ -58,17 +61,22 @@ const MemberLevelingList = () => {
   const onSave = async (formData) => {
     const success = await handleSave(formData);
     if (success) {
-      await fetchData(); // refresh dữ liệu
-      handleCloseModal(); // đóng form
+      await fetchData();
+      handleCloseModal();
       alert(editingItem ? "Cập nhật thành công!" : "Thêm mới thành công!");
     }
   };
 
   const onDelete = async (id) => {
+    if (id === 1) {
+      alert(" Không thể xoá bậc thành viên này!");
+      return;
+    }
     if (!window.confirm("Bạn có chắc chắn muốn xóa bậc thành viên này?")) return;
+
     const success = await handleDelete(id);
     if (success) {
-      await fetchData(); // refresh dữ liệu
+      await fetchData();
       alert("Xóa thành công!");
     }
   };
@@ -102,12 +110,22 @@ const MemberLevelingList = () => {
       <AdminListTable
         columns={[
           { field: "name", label: "Tên bậc thành viên" },
-          { field: "limit", label: "Hạn mức (point)" }, // đã là số nguyên từ API
+          { field: "limit", label: "Hạn mức (point)" },
         ]}
         data={filteredItems}
         actions={[
-          { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.id) },
+          {
+            icon: <FaEdit />,
+            label: "Sửa",
+            onClick: handleEdit,
+            disabled: (row) => row.id === 1, // Disable nút sửa cho id = 1
+          },
+          {
+            icon: <FaTrash />,
+            label: "Xóa",
+            onClick: (row) => onDelete(row.id),
+            disabled: (row) => row.id === 1, // Disable nút xoá cho id = 1
+          },
         ]}
       />
 

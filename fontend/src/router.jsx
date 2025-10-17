@@ -10,7 +10,7 @@ import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 import OrderManagement from "@page_admin/OrderManagement";
 import DiscountList from "@page_admin/product/DiscountManagement";
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
-import EmployeeAccountList from "@page_admin/account/EmployeeAccountList";
+import AccountList from "@page_admin/account/AccountList";
 import AccountTypeList from "@page_admin/account/AccountType";
 import MemberLevelList from "@page_admin/customer/MemberLevelList";
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
@@ -72,8 +72,8 @@ const renderAdminRouter = () => {
       component: <EmployeeManagement />,
     },
     {
-      path: ROUTERS.ADMIN.EMPLOYEEACOUNT,
-      component: <EmployeeAccountList />,
+      path: ROUTERS.ADMIN.ACOUNT,
+      component: <AccountList />,
     },
     {
       path: ROUTERS.ADMIN.POSITION,

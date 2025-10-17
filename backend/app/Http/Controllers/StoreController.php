@@ -35,7 +35,7 @@ class StoreController extends Controller
             'email' => 'nullable|string|email|max:100',
             'google_map' => 'nullable|string|max:500',
         ]);
-
+       
         $store = StoreModel::create($validated);
 
         return response()->json([

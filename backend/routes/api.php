@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\PromotionController;
@@ -9,13 +10,18 @@ use App\Http\Controllers\AccountLevelController;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\PositionController;
-
+use App\Http\Controllers\AccountController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
 */
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
 
 // Get current user information (requires auth)
 Route::get('/user', function (Request $request) {
@@ -34,6 +40,9 @@ Route::prefix('admin')->group(function () {
     // ------------------ Promotion ------------------
     Route::resource('promotions', PromotionController::class);
 
+    // ------------------ Account ------------------
+    Route::apiResource('accounts', AccountController::class);
+
     // ------------------ Account Level -----------------
     Route::apiResource('account-leveling', AccountLevelController::class);
 
@@ -46,4 +55,5 @@ Route::prefix('admin')->group(function () {
     // ------------------ Position ------------------
     Route::resource('positions', PositionController::class);
 
+    
 });

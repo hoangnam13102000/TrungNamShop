@@ -67,6 +67,10 @@ class AccountLevelController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        if ($id == 1) {
+        return response()->json(['message' => 'Không thể sửa Level này'], 403);
+        }
+
         $accountLevel = AccountLevel::find($id);
          if (!$accountLevel) {
             return response()->json(['message' => 'AccountLevel not found'], 404);
@@ -89,6 +93,10 @@ class AccountLevelController extends Controller
      */
     public function destroy(string $id)
     {
+        if ($id == 1) {
+        return response()->json(['message' => 'Không thể xoá Level này'], 403);
+        }
+
         $accountLevel = AccountLevel::find($id);
 
         if (!$accountLevel) {

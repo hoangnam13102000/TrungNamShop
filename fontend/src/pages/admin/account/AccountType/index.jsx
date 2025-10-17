@@ -11,6 +11,8 @@ import {
 } from "../../../../api/account/accountType/request";
 
 const AccountTypeList = () => {
+  const protectedNames = ['Admin', 'Nhân viên', 'Khách hàng'];
+
   const {
     filteredItems,
     search,
@@ -38,29 +40,52 @@ const AccountTypeList = () => {
     },
     hooks: {
       beforeSave: async (data, editingItem) => {
+        if (!editingItem && protectedNames.includes(data.account_type_name)) {
+          alert("Không thể tạo trùng loại tài khoản hệ thống.");
+          return false;
+        }
+
         if (!editingItem) {
           return window.confirm(
             `Bạn có chắc chắn muốn thêm loại tài khoản "${data.account_type_name}" không?`
           );
         }
+
         return true;
       },
     },
   });
 
   const onSave = async (formData) => {
-    const success = await handleSave(formData);
-    if (success) {
-      await fetchData(); // refresh data
-      handleCloseModal(); // close modal
+    try {
+      const success = await handleSave(formData);
+      if (success) {
+        await fetchData(); // refresh data
+        handleCloseModal(); // close modal
+      }
+    } catch (err) {
+      if (err.response?.status === 403) {
+        alert("Không thể chỉnh sửa loại tài khoản hệ thống.");
+      } else {
+        alert("Lỗi xảy ra khi lưu loại tài khoản.");
+      }
     }
   };
 
-  const onDelete = async (id) => {
+  const onDelete = async (id, name) => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa loại tài khoản này?")) return;
-    const success = await handleDelete(id);
-    if (success) {
+
+    if (protectedNames.includes(name)) {
+      alert("Không thể xóa loại tài khoản hệ thống.");
+      return;
+    }
+
+    try {
+      const success = await handleDelete(id);
+      if (!success) return;
       await fetchData(); // refresh data
+    } catch (err) {
+      alert("Lỗi xảy ra khi xóa loại tài khoản.");
     }
   };
 
@@ -94,8 +119,22 @@ const AccountTypeList = () => {
         columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
         data={filteredItems}
         actions={[
-          { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.id) },
+          {
+            icon: <FaEdit />,
+            label: "Sửa",
+            onClick: (row) => {
+              if (protectedNames.includes(row.account_type_name)) {
+                alert("Không thể sửa loại tài khoản hệ thống.");
+                return;
+              }
+              handleEdit(row);
+            },
+          },
+          {
+            icon: <FaTrash />,
+            label: "Xóa",
+            onClick: (row) => onDelete(row.id, row.account_type_name),
+          },
         ]}
       />
 

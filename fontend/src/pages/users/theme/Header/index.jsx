@@ -1,6 +1,6 @@
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Dropdown from "../../../../components/DropDown";
+import Dropdown from "../../../../components/Dropdown";
 import useGetStores from "../../../../api/stores/queries";
 import {
   FaFacebookSquare,
@@ -76,6 +76,9 @@ const Header = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [dropdownKey, setDropdownKey] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem("token")
+  );
 
   const { data: stores, isLoading } = useGetStores();
   const location = useLocation();
@@ -87,6 +90,17 @@ const Header = () => {
     setDropdownKey((prev) => prev + 1);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLoggedIn(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const dropdownOptions = CATEGORIES.map((cat) => ({
     label: cat.name,
     value: cat.id,
@@ -94,6 +108,13 @@ const Header = () => {
   }));
 
   const mainStore = stores?.[0];
+
+  // Đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("storage"));
+    navigate("/");
+  };
 
   return (
     <>
@@ -146,13 +167,25 @@ const Header = () => {
                     <SocialIcon key={i} {...social} />
                   ))}
                 </div>
-                <Link
-                  to="/dang-nhap"
-                  className="hidden lg:flex items-center space-x-2 bg-white text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium text-xs transition whitespace-nowrap"
-                >
-                  <FaUser size={12} />
-                  <span>Đăng nhập</span>
-                </Link>
+
+                {/* Login / Logout */}
+                {!isLoggedIn ? (
+                  <Link
+                    to="/dang-nhap"
+                    className="hidden lg:flex items-center space-x-2 bg-white text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium text-xs transition whitespace-nowrap"
+                  >
+                    <FaUser size={12} />
+                    <span>Đăng nhập</span>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={handleLogout}
+                    className="hidden lg:flex items-center space-x-2 bg-white text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium text-xs transition whitespace-nowrap"
+                  >
+                    <FaUser size={12} />
+                    <span>Đăng xuất</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -262,14 +295,28 @@ const Header = () => {
                       <span className="text-sm font-medium">{cat.name}</span>
                     </Link>
                   ))}
+
                   <div className="pt-2 border-t">
-                    <Link
-                      to="/dang-nhap"
-                      className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm transition mx-3"
-                    >
-                      <FaUser size={14} />
-                      <span>Đăng nhập</span>
-                    </Link>
+                    {!isLoggedIn ? (
+                      <Link
+                        to="/dang-nhap"
+                        className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm transition mx-3"
+                      >
+                        <FaUser size={14} />
+                        <span>Đăng nhập</span>
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setShowMenu(false);
+                        }}
+                        className="flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium text-sm transition mx-3 w-full"
+                      >
+                        <FaUser size={14} />
+                        <span>Đăng xuất</span>
+                      </button>
+                    )}
                   </div>
                 </nav>
               </div>

@@ -1,39 +1,64 @@
-// src/Login.jsx
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
-import { validateGeneral } from "../../../utils/validate"; // import validateGeneral
+import { validateGeneral } from "../../../utils/validate";
+import { loginAPI } from "../../../api/auth/request";
 
 export default function Login() {
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // rules validate
+  
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
     password: { required: true, minLength: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
   };
 
+  // Khi người dùng nhập input
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  const handleSubmit = (e) => {
+  //  Xử lý đăng nhập
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const validationErrors = validateGeneral(formData, rules);
-    if (Object.keys(validationErrors).length === 0) {
-      console.log("Login form submitted:", formData);
-      // xử lý đăng nhập
-    } else {
+    if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await loginAPI(formData);
+
+      // Nếu Laravel trả về token
+      if (res?.token) {
+        localStorage.setItem("token", res.token);
+        alert("Đăng nhập thành công!");
+        window.location.href = "/";
+      } else {
+        alert("Đăng nhập thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        "Tên đăng nhập hoặc mật khẩu không đúng!";
+      setErrors({ api: msg });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,6 +66,13 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
         <h2 className="text-2xl font-semibold text-center mb-6">Đăng nhập</h2>
+
+        {errors.api && (
+          <div className="bg-red-100 text-red-600 text-sm p-2 rounded mb-3">
+            {errors.api}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
@@ -88,9 +120,12 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-red-500 text-white py-2 rounded-xl shadow-md hover:bg-red-600 transition"
+            disabled={loading}
+            className={`w-full bg-red-500 text-white py-2 rounded-xl shadow-md hover:bg-red-600 transition ${
+              loading ? "opacity-70 cursor-not-allowed" : ""
+            }`}
           >
-            ĐĂNG NHẬP
+            {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
           </button>
         </form>
 
@@ -109,7 +144,10 @@ export default function Login() {
         </div>
 
         <div className="mt-6 flex items-center justify-center">
-          <button className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+          <button
+            type="button"
+            className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+          >
             <FcGoogle className="mr-2" size={24} />
             Tiếp tục với Google
           </button>

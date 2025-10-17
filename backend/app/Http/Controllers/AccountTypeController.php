@@ -67,10 +67,19 @@ class AccountTypeController extends Controller
      */
     public function update(Request $request, string $id)
     {
+
+
         $accountType = AccountType::find($id);
 
         if (!$accountType) {
             return response()->json(['message' => 'AccountType not found'], 404);
+        }
+        
+        $protectedNames = ['Admin', 'Nhân viên', 'Khách hàng'];
+        if (in_array($accountType->account_type_name, $protectedNames)) {
+            return response()->json([
+                'message' => 'Không thể chỉnh sửa loại tài khoản hệ thống (Admin, Nhân viên, Khách hàng).'
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -90,7 +99,18 @@ class AccountTypeController extends Controller
      */
     public function destroy(string $id)
     {
+
         $accountType = AccountType::find($id);
+        if (!$accountType) {
+        return response()->json(['message' => 'AccountType not found'], 404);
+        }
+
+        $protectedNames = ['Admin', 'Nhân viên', 'Khách hàng'];
+        if (in_array($accountType->account_type_name, $protectedNames)) {
+            return response()->json([
+                'message' => 'Không thể xóa loại tài khoản hệ thống (Admin, Nhân viên, Khách hàng).'
+            ], 403);
+        }
 
         if (!$accountType) {
             return response()->json(['message' => 'AccountType not found'], 404);
