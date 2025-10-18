@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { validateGeneral } from "../../../utils/validate";
 import { loginAPI } from "../../../api/auth/request";
 
 export default function Login() {
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -14,13 +15,11 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
     password: { required: true, minLength: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
   };
 
-  // Khi người dùng nhập input
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -30,7 +29,6 @@ export default function Login() {
     }
   };
 
-  //  Xử lý đăng nhập
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -44,18 +42,23 @@ export default function Login() {
     try {
       const res = await loginAPI(formData);
 
-      // Nếu Laravel trả về token
-      if (res?.token) {
+      if (res?.token && res?.user) {
+        // Lưu token + username + avatar vào localStorage
         localStorage.setItem("token", res.token);
+        localStorage.setItem("username", res.user.username);
+        localStorage.setItem("avatar", res.user.avatar || "/default-avatar.png");
+
+        // Gửi sự kiện storage để Header lắng nghe
+        window.dispatchEvent(new Event("storage"));
+
         alert("Đăng nhập thành công!");
-        window.location.href = "/";
+        navigate("/"); // quay về trang chủ
       } else {
         alert("Đăng nhập thất bại. Vui lòng thử lại.");
       }
     } catch (error) {
       const msg =
-        error.response?.data?.message ||
-        "Tên đăng nhập hoặc mật khẩu không đúng!";
+        error.response?.data?.message || "Tên đăng nhập hoặc mật khẩu không đúng!";
       setErrors({ api: msg });
     } finally {
       setLoading(false);
