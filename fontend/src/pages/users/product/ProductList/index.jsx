@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../../../../components/ProductCard";
-import Dropdown from "../../../../components/DropDown"; 
+import Dropdown from "../../../../components/dropdown/DropDown"; 
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
 

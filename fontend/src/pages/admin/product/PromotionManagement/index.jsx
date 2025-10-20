@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
   getPromotionsAPI,

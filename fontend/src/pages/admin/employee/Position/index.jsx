@@ -1,7 +1,8 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog"; 
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
   getPositionsAPI,
@@ -10,7 +11,15 @@ import {
   deletePositionAPI,
 } from "../../../../api/employee/position/request";
 
-const PositionManagement= () => {
+const PositionManagement = () => {
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "confirm",
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
   const {
     filteredItems,
     search,
@@ -37,34 +46,70 @@ const PositionManagement= () => {
       name: { required: true, message: "Tên chức vụ là bắt buộc" },
       base_salary: { required: true, message: "Lương cơ bản là bắt buộc" },
     },
-    hooks: {
-      beforeSave: async (data, editingItem) => {
-        if (!editingItem) {
-          return window.confirm(
-            `Bạn có chắc chắn muốn thêm chức vụ "${data.name}" với lương cơ bản "${data.base_salary}" không?`
-          );
-        }
-        return true;
-      },
-    },
   });
-  
-  // Save
+
+  // Create
   const onSave = async (formData) => {
-    const success = await handleSave(formData);
-    if (success) {
-      await fetchData();
-      handleCloseModal();
-    }
+    setDialog({
+      open: true,
+      mode: "confirm",
+      title: editingItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
+      message: editingItem
+        ? `Bạn có chắc chắn muốn cập nhật chức vụ "${formData.name}" không?`
+        : `Bạn có chắc chắn muốn thêm chức vụ "${formData.name}" với lương cơ bản ${formData.base_salary.toLocaleString()} VNĐ không?`,
+      onConfirm: async () => {
+        const success = await handleSave(formData);
+        if (success) {
+          await fetchData();
+          handleCloseModal();
+          setDialog({
+            open: true,
+            mode: "success",
+            title: "Thành công",
+            message: editingItem
+              ? "Đã cập nhật chức vụ thành công!"
+              : "Đã thêm chức vụ mới thành công!",
+            onConfirm: null,
+          });
+        } else {
+          setDialog({
+            open: true,
+            mode: "error",
+            title: "Lỗi",
+            message: "Không thể lưu dữ liệu. Vui lòng thử lại!",
+          });
+        }
+      },
+    });
   };
 
   // Delete
-  const onDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa chức vụ này?")) return;
-    const success = await handleDelete(id);
-    if (success) {
-      await fetchData();
-    }
+  const onDelete = (id, name) => {
+    setDialog({
+      open: true,
+      mode: "warning",
+      title: "Xác nhận xoá",
+      message: `Bạn có chắc chắn muốn xoá chức vụ "${name}" không?`,
+      onConfirm: async () => {
+        const success = await handleDelete(id);
+        if (success) {
+          await fetchData();
+          setDialog({
+            open: true,
+            mode: "success",
+            title: "Đã xoá",
+            message: `Chức vụ "${name}" đã được xoá thành công!`,
+          });
+        } else {
+          setDialog({
+            open: true,
+            mode: "error",
+            title: "Lỗi",
+            message: "Không thể xoá chức vụ. Vui lòng thử lại!",
+          });
+        }
+      },
+    });
   };
 
   if (loading)
@@ -97,17 +142,24 @@ const PositionManagement= () => {
       </div>
 
       {/* Table List */}
-      
       <AdminListTable
         columns={[
           { field: "name", label: "Tên chức vụ" },
-          { field: "base_salary", label: "Lương cơ bản (VNĐ)",
-            render: (value) => Number(value ?? 0).toLocaleString("vi-VN") + " VNĐ"},
+          {
+            field: "base_salary",
+            label: "Lương cơ bản (VNĐ)",
+            render: (value) =>
+              Number(value ?? 0).toLocaleString("vi-VN") + " VNĐ",
+          },
         ]}
         data={filteredItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: (row) => onDelete(row.id) },
+          {
+            icon: <FaTrash />,
+            label: "Xóa",
+            onClick: (row) => onDelete(row.id, row.name),
+          },
         ]}
       />
 
@@ -136,6 +188,16 @@ const PositionManagement= () => {
           errors={errors}
         />
       )}
+
+      {/*  DynamicDialog */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={dialog.onConfirm}
+        onClose={() => setDialog({ ...dialog, open: false })}
+      />
     </div>
   );
 };

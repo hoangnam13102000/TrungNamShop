@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('name'); 
             $table->text('description')->nullable(); 
-            $table->decimal('discount_percent', 5, 2)->nullable(); // % giảm giá
-            $table->decimal('discount_amount', 10, 2)->nullable(); // số tiền giảm cố định
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['active', 'inactive'])->default('active'); // trạng thái

@@ -1,3 +1,5 @@
+import DisplayValue from "../common/DisplayValueNull";
+
 /**
  * Shared table component for admin management pages
  * @param {object[]} columns - [{ field, label, render? }]
@@ -5,7 +7,6 @@
  * @param {object[]} actions - [{ icon, label?, onClick, color? }]
  * @param {string[]} imageFields - list of image field names
  */
-
 export default function AdminListTable({
   columns = [],
   data = [],
@@ -13,13 +14,18 @@ export default function AdminListTable({
   imageFields = [],
 }) {
   const iconColorMap = {
-    FaEye: "bg-blue-500 hover:bg-blue-600 text-white", // View
-    FaEdit: "bg-yellow-500 hover:bg-yellow-600 text-white", // Edit
-    FaSync: "bg-purple-500 hover:bg-purple-600 text-white", // Update
-    FaTrash: "bg-red-600 hover:bg-red-700 text-white", // Delete
-    FaSave: "bg-green-600 hover:bg-green-700 text-white", // Save
-    FaCheck: "bg-emerald-500 hover:bg-emerald-600 text-white", // Approve
-    FaPlus: "bg-indigo-500 hover:bg-indigo-600 text-white", // Add
+    FaEye: "bg-blue-500 hover:bg-blue-600 text-white",
+    FaEdit: "bg-yellow-500 hover:bg-yellow-600 text-white",
+    FaSync: "bg-purple-500 hover:bg-purple-600 text-white",
+    FaTrash: "bg-red-600 hover:bg-red-700 text-white",
+    FaSave: "bg-green-600 hover:bg-green-700 text-white",
+    FaCheck: "bg-emerald-500 hover:bg-emerald-600 text-white",
+    FaPlus: "bg-indigo-500 hover:bg-indigo-600 text-white",
+  };
+
+  // Lấy giá trị nested từ object
+  const getValue = (obj, path) => {
+    return path.split('.').reduce((acc, key) => acc?.[key], obj);
   };
 
   return (
@@ -49,37 +55,35 @@ export default function AdminListTable({
                 <td className="p-3 text-center">{index + 1}</td>
 
                 {columns.map((col, idx) => {
-                  const value = row[col.field];
+                  const value = getValue(row, col.field);
+
+                  // Custom render nếu có
                   if (col.render) return <td key={idx}>{col.render(value, row)}</td>;
 
-                  return (
-                    <td key={idx} className="p-3 text-left">
-                      {imageFields.includes(col.field) ? (
+                  // Nếu là ảnh
+                  if (imageFields.includes(col.field)) {
+                    return (
+                      <td key={idx} className="p-3 text-left">
                         <div
                           className="w-12 h-12 rounded bg-gray-200 bg-center bg-cover border"
                           style={{
                             backgroundImage: `url(${
-                              value ||
-                              "https://via.placeholder.com/100x100?text=No+Image"
+                              value || "https://via.placeholder.com/100x100?text=No+Image"
                             })`,
                           }}
                         ></div>
-                      ) : (
-                        <span
-                          className={`${
-                            typeof value === "string" && value.length > 50
-                              ? "truncate block max-w-xs"
-                              : ""
-                          }`}
-                        >
-                          {value}
-                        </span>
-                      )}
+                      </td>
+                    );
+                  }
+
+                  // Mặc định: hiển thị giá trị với DisplayValue
+                  return (
+                    <td key={idx} className="p-3 text-left">
+                      <DisplayValue value={value} />
                     </td>
                   );
                 })}
 
-                {/* Action Buttons */}
                 {actions.length > 0 && (
                   <td className="p-3 flex justify-center gap-2">
                     {actions.map((action, i) => {
@@ -107,7 +111,7 @@ export default function AdminListTable({
           ) : (
             <tr>
               <td
-                colSpan={columns.length + 2}
+                colSpan={columns.length + (actions.length > 0 ? 2 : 1)}
                 className="text-center py-4 text-gray-500 italic"
               >
                 Không có dữ liệu.

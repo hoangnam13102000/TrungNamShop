@@ -1,117 +1,138 @@
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import { useEffect, useState } from "react";
 import useAdminCrud from "../../../../utils/useAdminCrud";
+import { FaTrash, FaEdit } from "react-icons/fa";
+import AdminListTable from "../../../../components/common/AdminListTable";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import {
+  getCustomersAPI,
+  deleteCustomerAPI,
+} from "../../../../api/customer/request";
 
-const initialEmployees = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    email: "vana@example.com",
-    phone: "0912345678",
-    position: "Quản lý",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    email: "thib@example.com",
-    phone: "0987654321",
-    position: "Nhân viên bán hàng",
-    status: "inactive",
-  },
-];
+export default function CustomerManagement() {
+  const [initialCustomers, setInitialCustomers] = useState([]);
 
-const statusLabels = {
-  active: "Đang làm việc",
-  inactive: "Nghỉ việc",
-};
-
-export default function EmployeeManagement() {
   const {
-    filteredItems,
-    showForm,
+    filteredItems: customers,
     editingItem,
+    showForm,
     search,
     setSearch,
-    handleAdd,
     handleEdit,
-    handleDelete,
-    handleSave,
     handleCloseModal,
-  } = useAdminCrud(initialEmployees);
+    setItems,
+  } = useAdminCrud(initialCustomers);
+
+  // Fetch customers
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await getCustomersAPI();
+
+        // Lọc bỏ khách hàng nếu cần
+        const filtered = res.filter(
+          (customer) =>
+            customer?.account?.account_type?.account_type_name !== "Khách hàng"
+        );
+
+        setInitialCustomers(filtered);
+        setItems(filtered);
+      } catch (error) {
+        console.error("Fetch customers failed:", error);
+      }
+    };
+    fetchCustomers();
+  }, [setItems]);
+
+  // Delete customer
+  const handleDeleteWithAPI = async (item) => {
+    if (!confirm(`Bạn có chắc muốn xóa ${item.full_name}?`)) return;
+    try {
+      await deleteCustomerAPI(item.id);
+      setItems(customers.filter((c) => c.id !== item.id));
+    } catch (error) {
+      console.error("Delete customer failed:", error);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý nhân viên</h1>
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-        >
-          <FaPlus /> Thêm nhân viên
-        </button>
 
+      {/* Thanh tìm kiếm */}
+      <div className="flex justify-end mb-4">
         <input
           type="text"
-          placeholder="Tìm kiếm nhân viên..."
+          placeholder="Tìm kiếm người dùng..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:ring-2 focus:ring-red-500"
         />
       </div>
 
-      {/* Table */}
+      {/* Bảng dữ liệu */}
       <AdminListTable
         columns={[
-          { field: "name", label: "Họ và tên" },
+          { field: "account.username", label: "Username" },
+          { field: "full_name", label: "Họ tên" },
+          { field: "phone_number", label: "SĐT" },
           { field: "email", label: "Email" },
-          { field: "phone", label: "Số điện thoại" },
-          { field: "position", label: "Chức vụ" },
+          { field: "address", label: "Địa chỉ" },
           {
-            field: "status",
-            label: "Trạng thái",
-            render: (value) => (
-              <span
-                className={`px-2 py-1 text-xs rounded ${
-                  value === "active"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                {statusLabels[value] || value}
-              </span>
-            ),
+            field: "gender",
+            label: "Giới tính",
+            render: (value) => {
+              if (value === "male") return "Nam";
+              if (value === "female") return "Nữ";
+              return "Không xác định";
+            },
+          },
+          {
+            field: "account.account_type",
+            label: "Loại tài khoản",
+            render: (type) => type || "Không có thông tin",
           },
         ]}
-        data={filteredItems}
+        data={customers}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+          { icon: <FaTrash />, label: "Xoá", onClick: handleDeleteWithAPI },
         ]}
       />
 
-      {/* Form Add & Edit */}
-      {showForm && (
+      {/* Form chỉnh sửa */}
+      {showForm && editingItem && (
         <DynamicForm
-          title={editingItem ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}
+          mode="edit"
+          title={`Chỉnh sửa người dùng - ${editingItem.full_name}`}
           fields={[
-            { name: "name", label: "Họ và tên", type: "text" },
-            { name: "email", label: "Email", type: "email" },
-            { name: "phone", label: "Số điện thoại", type: "text" },
-            { name: "position", label: "Chức vụ", type: "text" },
             {
-              name: "status",
-              label: "Trạng thái",
+              name: "username",
+              label: "Username",
+              type: "text",
+              disabled: true, // ❌ Không cho sửa username
+              displayValue: editingItem.account?.username || "Không có",
+            },
+            { name: "full_name", label: "Họ tên", type: "text", required: true },
+            { name: "phone_number", label: "SĐT", type: "text", required: true },
+            { name: "email", label: "Email", type: "email", required: true },
+            { name: "address", label: "Địa chỉ", type: "text" },
+            {
+              name: "gender",
+              label: "Giới tính",
               type: "select",
               options: [
-                { label: "Đang làm việc", value: "active" },
-                { label: "Nghỉ việc", value: "inactive" },
+                { label: "Nam", value: "male" },
+                { label: "Nữ", value: "female" },
+                { label: "Không xác định", value: null },
               ],
+              value: editingItem.gender || null,
+              required: true,
             },
           ]}
-          initialData={editingItem}
-          onSave={handleSave}
+          initialData={{
+            ...editingItem,
+            username: editingItem.account?.username || "",
+          }}
           onClose={handleCloseModal}
         />
       )}

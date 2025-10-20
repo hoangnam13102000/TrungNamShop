@@ -7,30 +7,35 @@ const api = axios.create({
   baseURL,
   timeout,
   headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    Accept: "application/json", // giữ, JSON hoặc FormData Axios sẽ tự set Content-Type
   },
 });
 
-//  Interceptor for request (add token if any)
+// Request interceptor: add token if exists
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Nếu gửi FormData, không override Content-Type
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Interceptor for response (general error handling)
+// Response interceptor: handle general errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error("Axios error:", error);
 
-    // If you get 401, log out or redirect.
+    // Logout on 401
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";

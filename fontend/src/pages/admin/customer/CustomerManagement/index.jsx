@@ -1,127 +1,203 @@
+import { useEffect, useState } from "react";
 import useAdminCrud from "../../../../utils/useAdminCrud";
-import { FaTrash, FaEdit, FaPlus } from "react-icons/fa";
+import { FaTrash, FaEdit } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
-
-const initialCustomers = [
-    {
-        id: 1,
-        name: "Nguyễn Văn A",
-        phone: "0918123456",
-        email: "vana@example.com",
-        address: "Quận 1, TP.HCM",
-        status: "active",
-    },
-    {
-        id: 2,
-        name: "Trần Thị B",
-        phone: "0987654321",
-        email: "thib@example.com",
-        address: "Quận 5, TP.HCM",
-        status: "inactive",
-    },
-];
-
-const statusLabels = {
-    active: "Đang hoạt động",
-    inactive: "Ngừng hoạt động",
-};
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import {
+  getCustomersAPI,
+  deleteCustomerAPI,
+  updateCustomerAPI,
+} from "../../../../api/customer/request";
 
 export default function CustomerManagement() {
-    const {
-        filteredItems: customers,
-        editingItem,
-        showForm,
-        search,
-        setSearch,
-        handleAdd,
-        handleEdit,
-        handleDelete,
-        handleSave,
-        handleCloseModal,
-    } = useAdminCrud(initialCustomers);
+  const [initialCustomers, setInitialCustomers] = useState([]);
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "alert", // alert | confirm | success | error
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
 
-    return (
-        <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-            <h1 className="text-2xl font-semibold mb-6"> Quản lý khách hàng</h1>
+  const {
+    filteredItems: customers,
+    editingItem,
+    showForm,
+    search,
+    setSearch,
+    handleEdit,
+    handleCloseModal,
+    setItems,
+  } = useAdminCrud(initialCustomers);
 
-            {/* Tool Bar */}
-            <div className="flex flex-col-reverse sm:flex-row justify-between items-center mb-4 gap-3">
-                <button
-                    onClick={handleAdd}
-                    className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition w-full sm:w-auto"
-                >
-                    <FaPlus /> Thêm khách hàng
-                </button>
+  // --- Tải danh sách khách hàng ---
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await getCustomersAPI();
+        const customersWithUsername = res.map((c) => ({
+          ...c,
+          username: c?.account?.username || "Không có username",
+        }));
+        setInitialCustomers(customersWithUsername);
+        setItems(customersWithUsername);
+      } catch (error) {
+        console.error("Fetch customers failed:", error);
+        showDialog("error", "Lỗi", "Không thể tải danh sách khách hàng.");
+      }
+    };
+    fetchCustomers();
+  }, [setItems]);
 
-                <input
-                    type="text"
-                    placeholder="Tìm kiếm khách hàng..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:ring-2 focus:ring-red-500"
-                />
-            </div>
+  // --- Hàm mở dialog ---
+  const showDialog = (mode, title, message, onConfirm = null) => {
+    setDialog({ open: true, mode, title, message, onConfirm });
+  };
 
-            {/* Customer Table */}
-            <AdminListTable
-                columns={[
-                    { field: "name", label: "Họ tên" },
-                    { field: "phone", label: "SĐT" },
-                    { field: "email", label: "Email" },
-                    { field: "address", label: "Địa chỉ" },
-                    {
-                        field: "status",
-                        label: "Trạng thái",
-                        render: (value) => (
-                            <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${value === "active"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-gray-200 text-gray-700"
-                                    }`}
-                            >
-                                {statusLabels[value]}
-                            </span>
-                        ),
-                    },
-                ]}
-                data={customers}
-                actions={[
-                    { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-                    { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-                ]}
-            />
+  // --- Đóng dialog ---
+  const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
 
-            {/* Form Add & Edit */}
-            {showForm && (
-                <DynamicForm
-                    mode={editingItem ? "edit" : "add"}
-                    title={
-                        editingItem
-                            ? ` Chỉnh sửa khách hàng - ${editingItem.name}`
-                            : " Thêm khách hàng mới"
-                    }
-                    fields={[
-                        { name: "name", label: "Họ tên", type: "text", required: true },
-                        { name: "phone", label: "SĐT", type: "text", required: true },
-                        { name: "email", label: "Email", type: "email", required: true },
-                        { name: "address", label: "Địa chỉ", type: "text" },
-                        {
-                            name: "status",
-                            label: "Trạng thái",
-                            type: "select",
-                            options: Object.keys(statusLabels).map((key) => ({
-                                label: statusLabels[key],
-                                value: key,
-                            })),
-                            required: true,
-                        },
-                    ]}
-                    initialData={editingItem}
-                    onSave={handleSave}
-                    onClose={handleCloseModal}
-                />
-            )}
-        </div>
+  // --- Xoá khách hàng ---
+  const handleDeleteWithAPI = (item) => {
+    showDialog(
+      "confirm",
+      "Xác nhận xoá",
+      `Bạn có chắc muốn xoá khách hàng "${item.full_name}" không?`,
+      async () => {
+        try {
+          await deleteCustomerAPI(item.id);
+          setItems((prev) => prev.filter((c) => c.id !== item.id));
+          showDialog("success", "Thành công", "Xoá khách hàng thành công!");
+        } catch (error) {
+          console.error("Delete customer failed:", error);
+          showDialog("error", "Lỗi", "Xoá khách hàng thất bại. Vui lòng thử lại.");
+        }
+      }
     );
+  };
+
+  // --- Sửa khách hàng ---
+  const handleEditWithUsername = (item) => {
+    const itemWithUsername = {
+      ...item,
+      username: item?.username || item?.account?.username || "",
+    };
+    handleEdit(itemWithUsername);
+  };
+
+  // --- Lưu khách hàng ---
+  const handleSaveCustomer = (updatedData) => {
+    showDialog(
+      "confirm",
+      "Xác nhận lưu",
+      "Bạn có chắc chắn muốn lưu thông tin thay đổi này?",
+      async () => {
+        try {
+          await updateCustomerAPI(updatedData.id, {
+            full_name: updatedData.full_name,
+            phone_number: updatedData.phone_number,
+            email: updatedData.email,
+            address: updatedData.address,
+            gender: updatedData.gender,
+          });
+
+          setItems((prev) =>
+            prev.map((c) =>
+              c.id === updatedData.id ? { ...c, ...updatedData } : c
+            )
+          );
+
+          handleCloseModal();
+          showDialog("success", "Thành công", "Cập nhật khách hàng thành công!");
+        } catch (error) {
+          console.error("Save customer failed:", error);
+          showDialog("error", "Lỗi", "Cập nhật thất bại. Vui lòng thử lại.");
+        }
+      }
+    );
+  };
+
+  return (
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl font-semibold mb-6">Quản lý khách hàng</h1>
+
+      {/* --- Thanh tìm kiếm --- */}
+      <div className="flex justify-end mb-4">
+        <input
+          type="text"
+          placeholder="Tìm kiếm khách hàng..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:ring-2 focus:ring-red-500"
+        />
+      </div>
+
+      {/* --- Bảng danh sách khách hàng --- */}
+      <AdminListTable
+        columns={[
+          { field: "username", label: "Username" },
+          { field: "full_name", label: "Họ tên" },
+          { field: "phone_number", label: "SĐT" },
+          { field: "email", label: "Email" },
+          { field: "address", label: "Địa chỉ" },
+          {
+            field: "gender",
+            label: "Giới tính",
+            render: (value) =>
+              value === "male"
+                ? "Nam"
+                : value === "female"
+                ? "Nữ"
+                : "Không xác định",
+          },
+        ]}
+        data={customers}
+        actions={[
+          { icon: <FaEdit />, label: "Sửa", onClick: handleEditWithUsername },
+          { icon: <FaTrash />, label: "Xoá", onClick: handleDeleteWithAPI },
+        ]}
+      />
+
+      {/* --- Form chỉnh sửa khách hàng --- */}
+      {showForm && editingItem && (
+        <DynamicForm
+          mode="edit"
+          title={`Chỉnh sửa khách hàng - ${editingItem.full_name}`}
+          fields={[
+            { name: "username", label: "Username", type: "text", disabled: true },
+            { name: "full_name", label: "Họ tên", type: "text", required: true },
+            { name: "phone_number", label: "SĐT", type: "text", required: true },
+            { name: "email", label: "Email", type: "email", required: true },
+            { name: "address", label: "Địa chỉ", type: "text" },
+            {
+              name: "gender",
+              label: "Giới tính",
+              type: "select",
+              options: [
+                { label: "Nam", value: "male" },
+                { label: "Nữ", value: "female" },
+                { label: "Không xác định", value: null },
+              ],
+              value: editingItem.gender || null,
+              required: true,
+            },
+          ]}
+          initialData={editingItem}
+          onSave={handleSaveCustomer}
+          onClose={handleCloseModal}
+        />
+      )}
+
+      {/* --- Dynamic Dialog --- */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={closeDialog}
+        onConfirm={dialog.onConfirm}
+      />
+    </div>
+  );
 }

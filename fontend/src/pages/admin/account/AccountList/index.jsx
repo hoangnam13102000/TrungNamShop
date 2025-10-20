@@ -1,7 +1,8 @@
 import { memo, useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog"
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
   getAccountAPI,
@@ -13,11 +14,26 @@ import { getAccountTypeAPI } from "../../../../api/account/accountType/request";
 import { getAccountLevelingAPI } from "../../../../api/account/memberLeveling/request";
 
 const AccountList = () => {
-  // State to hold account type and member level options
+  // Dropdown options
   const [accountTypes, setAccountTypes] = useState([]);
   const [accountLevels, setAccountLevels] = useState([]);
 
- // Fetch account type and member level options for the dropdowns
+  // DynamicDialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState("confirm");
+  const [dialogTitle, setDialogTitle] = useState("");
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogAction, setDialogAction] = useState(null);
+
+  const showDialog = (mode, title, message, action = null) => {
+    setDialogMode(mode);
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setDialogAction(() => action);
+    setDialogOpen(true);
+  };
+
+  // Fetch dropdown options
   useEffect(() => {
     const fetchOptions = async () => {
       try {
@@ -25,7 +41,6 @@ const AccountList = () => {
           getAccountTypeAPI(),
           getAccountLevelingAPI(),
         ]);
-        // Map API data to {value, label} format for select fields
         setAccountTypes(
           types.map((t) => ({ value: t.id, label: t.account_type_name }))
         );
@@ -40,7 +55,7 @@ const AccountList = () => {
     fetchOptions();
   }, []);
 
-   // Custom hook for CRUD operations
+  // Custom hook CRUD
   const {
     filteredItems,
     search,
@@ -65,7 +80,6 @@ const AccountList = () => {
     },
     rules: {
       username: { required: true, message: "Tên tài khoản là bắt buộc" },
-      password: { required: true, message: "Mật khẩu là bắt buộc" },
       account_type_id: {
         required: true,
         message: "Loại tài khoản là bắt buộc",
@@ -75,40 +89,55 @@ const AccountList = () => {
         message: "Cấp độ thành viên là bắt buộc",
       },
     },
-    hooks: {
-      beforeSave: async (data, editingItem) => {
-        if (!editingItem) {
-          return window.confirm(
-            `Bạn có chắc muốn thêm tài khoản "${data.username}" không?`
-          );
-        }
-        return true;
-      },
-    },
   });
 
-  // Save form data
-  const onSave = async (formData) => {
-    const success = await handleSave(formData);
-    if (success) {
-      await fetchData();
-      handleCloseModal();
-    }
+  // Save Account → Xác nhận trước khi lưu
+  const onSave = (formData) => {
+    showDialog(
+      "confirm",
+      editingItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
+      editingItem
+        ? `Bạn có chắc chắn muốn cập nhật tài khoản "${formData.username}" không?`
+        : `Bạn có chắc chắn muốn thêm tài khoản "${formData.username}" không?`,
+      async () => {
+        if (editingItem) {
+          formData.password = undefined;
+          formData.reward_points = undefined;
+        }
+        const success = await handleSave(formData);
+        if (success) {
+          await fetchData();
+          handleCloseModal();
+          showDialog(
+            "success",
+            "Thành công",
+            editingItem
+              ? "Tài khoản đã được cập nhật thành công!"
+              : "Tài khoản đã được thêm thành công!"
+          );
+        }
+      }
+    );
   };
 
-  // Delete an account
-  const onDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa tài khoản này không?")) return;
-    const success = await handleDelete(id);
-    if (success) {
-      await fetchData();
-    }
+  // Delete Account → Xác nhận trước khi xoá
+  const onDelete = (id, username) => {
+    showDialog(
+      "confirm",
+      "Xác nhận xoá",
+      `Bạn có chắc chắn muốn xóa tài khoản "${username}" không?`,
+      async () => {
+        const success = await handleDelete(id);
+        if (success) {
+          await fetchData();
+          showDialog("success", "Đã xóa", "Tài khoản đã được xóa thành công!");
+        }
+      }
+    );
   };
 
-   // Loading State
   if (loading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  // Error state
   if (error)
     return (
       <div className="p-6 text-center text-red-500">
@@ -120,7 +149,7 @@ const AccountList = () => {
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý tài khoản</h1>
 
-       {/* Header: Add button and search input */}
+      {/* Header: thêm + tìm kiếm */}
       <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
         <button
           onClick={handleAdd}
@@ -138,38 +167,34 @@ const AccountList = () => {
         />
       </div>
 
-     
+      {/* List table */}
       <AdminListTable
         columns={[
           { field: "username", label: "Tên tài khoản" },
           {
             field: "account_type_id",
             label: "Loại tài khoản",
-            render: (val) => {
-              const type = accountTypes.find((t) => t.value === val);
-              return type ? type.label : "—";
-            },
+            render: (val) =>
+              accountTypes.find((t) => t.value === val)?.label || "—",
           },
           {
             field: "account_level_id",
             label: "Cấp độ thành viên",
-            render: (val) => {
-              const level = accountLevels.find((l) => l.value === val);
-              return level ? level.label : "—";
-            },
+            render: (val) =>
+              accountLevels.find((l) => l.value === val)?.label || "—",
           },
           {
             field: "status",
             label: "Trạng thái",
-            render: (value) => (
+            render: (val) => (
               <span
                 className={`px-2 py-1 rounded-full text-sm ${
-                  value === 1
+                  val === 1
                     ? "bg-green-100 text-green-700"
                     : "bg-gray-200 text-gray-600"
                 }`}
               >
-                {value === 1 ? "Hoạt động" : "Ngừng hoạt động"}
+                {val === 1 ? "Hoạt động" : "Ngừng hoạt động"}
               </span>
             ),
           },
@@ -180,11 +205,12 @@ const AccountList = () => {
           {
             icon: <FaTrash />,
             label: "Xóa",
-            onClick: (row) => onDelete(row.id),
+            onClick: (row) => onDelete(row.id, row.username),
           },
         ]}
       />
 
+      {/* Form Edit/Add */}
       {showForm && (
         <DynamicForm
           title={editingItem ? "Chỉnh sửa tài khoản" : "Thêm tài khoản"}
@@ -195,7 +221,6 @@ const AccountList = () => {
               type: "text",
               required: true,
             },
-            // Chỉ hiển thị password khi thêm mới
             ...(!editingItem
               ? [
                   {
@@ -237,6 +262,19 @@ const AccountList = () => {
           errors={errors}
         />
       )}
+
+      {/* DynamicDialog */}
+      <DynamicDialog
+        open={dialogOpen}
+        mode={dialogMode}
+        title={dialogTitle}
+        message={dialogMessage}
+        onClose={() => setDialogOpen(false)}
+        onConfirm={async () => {
+          setDialogOpen(false);
+          if (dialogAction) await dialogAction();
+        }}
+      />
     </div>
   );
 };

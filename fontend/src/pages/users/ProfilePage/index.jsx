@@ -1,40 +1,109 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiEdit2, FiShoppingCart } from "react-icons/fi";
-import DynamicForm from "../../../components/DynamicForm";
+import DynamicForm from "../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
+import {
+  getCustomersAPI,
+  updateCustomerAPI,
+} from "../../../api/customer/request";
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dialog, setDialog] = useState({ open: false }); 
 
   const [profileData, setProfileData] = useState({
-    fullName: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    phone: "0912345678",
-    address: "123 Đường ABC, Phường XYZ, Quận 1, TP.HCM",
-    birthday: "1990-01-01",
-    gender: "male",
-    avatar: "", // URL hoặc base64 của ảnh
+    full_name: "",
+    email: "",
+    phone_number: "",
+    address: "",
+    birthday: "",
+    gender: "",
+    avatar: "",
   });
 
+  //Fetch API 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getCustomersAPI();
+        setProfileData(data);
+      } catch (error) {
+        console.error("Lỗi khi tải thông tin khách hàng:", error);
+        setDialog({
+          open: true,
+          mode: "error",
+          title: "Lỗi tải dữ liệu",
+          message: "Không thể tải thông tin khách hàng. Vui lòng thử lại sau.",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const fields = [
-    { name: "fullName", label: "Họ và tên", type: "text", required: true },
-    { name: "email", label: "Email", type: "email", required: true },
-    { name: "phone", label: "Số điện thoại", type: "text", required: true },
+    { name: "full_name", label: "Họ và tên", type: "text", required: true },
+    { name: "email", label: "Email", type: "email" },
+    { name: "phone_number", label: "Số điện thoại", type: "text" },
     { name: "birthday", label: "Ngày sinh", type: "date" },
-    { name: "gender", label: "Giới tính", type: "select", options: ["male","female","other"] },
+    {
+      name: "gender",
+      label: "Giới tính",
+      type: "select",
+      options: [
+        { label: "Nam", value: "male" },
+        { label: "Nữ", value: "female" },
+        { label: "Khác", value: "other" },
+      ],
+    },
     { name: "address", label: "Địa chỉ", type: "textarea" },
     { name: "avatar", label: "Ảnh đại diện", type: "file" },
   ];
 
-  const handleSave = (data) => {
-    setProfileData(data);
-    setIsEditing(false);
+  // Save
+  const handleSave = async (data) => {
+    // Show Dialog
+    setDialog({
+      open: true,
+      mode: "confirm",
+      title: "Xác nhận cập nhật",
+      message: `Bạn có chắc chắn muốn cập nhật thông tin của "${data.full_name}" không?`,
+      onConfirm: async () => {
+        try {
+          const updated = await updateCustomerAPI(data);
+          setProfileData(updated);
+          setIsEditing(false);
+          setDialog({
+            open: true,
+            mode: "success",
+            title: "Cập nhật thành công",
+            message: "Thông tin cá nhân của bạn đã được cập nhật!",
+          });
+        } catch (error) {
+          console.error("Lỗi khi cập nhật:", error);
+          setDialog({
+            open: true,
+            mode: "error",
+            title: "Cập nhật thất bại",
+            message: "Không thể cập nhật thông tin, vui lòng thử lại.",
+          });
+        }
+      },
+      onClose: () => setDialog({ open: false }),
+    });
   };
+
+  if (loading) {
+    return <div className="p-6 text-center text-gray-500">Đang tải...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header profile */}
+        {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 flex flex-col sm:flex-row items-center gap-6">
           <div className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center text-white text-4xl md:text-5xl font-bold bg-gradient-to-br from-red-400 to-red-600 overflow-hidden">
             {profileData.avatar ? (
@@ -44,14 +113,18 @@ export default function Profile() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              profileData.fullName.charAt(0).toUpperCase()
+              profileData.full_name?.charAt(0)?.toUpperCase() || "?"
             )}
           </div>
 
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{profileData.fullName}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              {profileData.full_name}
+            </h1>
             <p className="text-gray-600 mt-1">{profileData.email}</p>
-            <p className="text-gray-500 text-sm mt-1">{profileData.phone}</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {profileData.phone_number}
+            </p>
           </div>
 
           <div className="flex gap-3 mt-4 sm:mt-0">
@@ -72,7 +145,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Edit */}
+        {/* Edit form */}
         {isEditing && (
           <DynamicForm
             title="Cập nhật thông tin"
@@ -83,19 +156,23 @@ export default function Profile() {
           />
         )}
 
-        {/* Show profile */}
+        {/* Show profile info */}
         {!isEditing && (
           <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 space-y-4">
-            {fields.filter(f => f.name !== "avatar").map(f => (
-              <div key={f.name}>
-                <p className="text-gray-500">{f.label}</p>
-                <p className="text-gray-800 font-medium">{profileData[f.name]}</p>
-              </div>
-            ))}
+            {fields
+              .filter((f) => f.name !== "avatar")
+              .map((f) => (
+                <div key={f.name}>
+                  <p className="text-gray-500">{f.label}</p>
+                  <p className="text-gray-800 font-medium">
+                    {profileData[f.name] || "—"}
+                  </p>
+                </div>
+              ))}
           </div>
         )}
 
-        {/* Orders history */}
+        {/* Order history modal */}
         {showHistory && (
           <div
             className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
@@ -129,6 +206,9 @@ export default function Profile() {
             </div>
           </div>
         )}
+
+        {/*  DynamicDialog */}
+        <DynamicDialog {...dialog} />
       </div>
     </div>
   );

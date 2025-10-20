@@ -1,5 +1,5 @@
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import useAdminCrud from "../../../../utils/useAdminCrud";
 

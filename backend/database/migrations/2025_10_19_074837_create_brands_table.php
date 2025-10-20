@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('stores', function (Blueprint $table) {
-            // thêm cột email (có thể để nullable)
-            $table->string('email', 100)->nullable()->after('phone');
+        Schema::create('brands', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 255);
+            $table->string('image')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
@@ -22,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('stores', function (Blueprint $table) {
-            $table->dropColumn('email');
-        });
+        Schema::dropIfExists('brands');
     }
 };

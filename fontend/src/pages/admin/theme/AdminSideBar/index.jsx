@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import DropdownSidebarItem from "../../../../components/DropdownSidebarItem";
+import DropdownSidebarItem from "../../../../components/dropdown/DropdownSidebarItem";
 import LogoutButton from "../../../../components/LogoutButton";
 import {
   FaBars,

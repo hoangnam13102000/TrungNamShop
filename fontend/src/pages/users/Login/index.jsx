@@ -3,14 +3,18 @@ import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
 import { validateGeneral } from "../../../utils/validate";
 import { loginAPI } from "../../../api/auth/request";
+import AuthWrapper from "../../../components/formAndDialog/AuthWapper";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
+  const accountTypes = [
+    { id: 1, name: "Admin" },
+    { id: 2, name: "Nhân viên" },
+    { id: 3, name: "Khách hàng" },
+  ];
+
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,15 +27,11 @@ export default function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, showAlert) => {
     e.preventDefault();
-
     const validationErrors = validateGeneral(formData, rules);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -43,70 +43,77 @@ export default function Login() {
       const res = await loginAPI(formData);
 
       if (res?.token && res?.user) {
-        // Lưu token + username + avatar vào localStorage
         localStorage.setItem("token", res.token);
         localStorage.setItem("username", res.user.username);
         localStorage.setItem("avatar", res.user.avatar || "/default-avatar.png");
 
-        // Gửi sự kiện storage để Header lắng nghe
+        const typeObj = accountTypes.find((t) => t.id === res.user.account_type_id);
+        const roleName = typeObj ? typeObj.name.toLowerCase() : "";
+
         window.dispatchEvent(new Event("storage"));
 
-        alert("Đăng nhập thành công!");
-        navigate("/"); // quay về trang chủ
+        showAlert("success", "Đăng nhập thành công!", () => {
+          if (roleName !== "khách hàng") navigate("/quan-tri");
+          else navigate("/");
+        });
       } else {
-        alert("Đăng nhập thất bại. Vui lòng thử lại.");
+        showAlert("error", "Đăng nhập thất bại. Vui lòng thử lại!");
       }
     } catch (error) {
-      const msg =
-        error.response?.data?.message || "Tên đăng nhập hoặc mật khẩu không đúng!";
-      setErrors({ api: msg });
+      const msg = error.response?.data?.message || "Không thể kết nối đến máy chủ!";
+      showAlert("error", msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-semibold text-center mb-6">Đăng nhập</h2>
-
-        {errors.api && (
-          <div className="bg-red-100 text-red-600 text-sm p-2 rounded mb-3">
-            {errors.api}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthWrapper
+      title="Đăng nhập"
+      navigateTo={
+        <>
+          <p>
+            <Link to="/quen-mat-khau" className="text-red-500 hover:underline">
+              Quên mật khẩu?
+            </Link>
+          </p>
+          <p className="mt-1">
+            Chưa có tài khoản?{" "}
+            <Link to="/dang-ky" className="text-red-500 hover:underline">
+              Tạo tài khoản
+            </Link>
+          </p>
+        </>
+      }
+    >
+      {({ showAlert }) => (
+        <form onSubmit={(e) => handleSubmit(e, showAlert)} className="space-y-4">
           <div>
             <input
               type="text"
               name="username"
-              placeholder="Nhập tên đăng nhập"
+              placeholder="Tên đăng nhập"
               value={formData.username}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
                 errors.username ? "border-red-500" : ""
               }`}
             />
-            {errors.username && (
-              <p className="text-red-500 text-sm mt-1">{errors.username}</p>
-            )}
+            {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
           </div>
 
           <div>
             <input
               type={showPassword ? "text" : "password"}
               name="password"
-              placeholder="Nhập mật khẩu"
+              placeholder="Mật khẩu"
               value={formData.password}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
                 errors.password ? "border-red-500" : ""
               }`}
             />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-            )}
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             <div className="flex items-center mt-2">
               <input
                 type="checkbox"
@@ -130,32 +137,15 @@ export default function Login() {
           >
             {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
           </button>
+
+          <div className="mt-6 flex items-center justify-center">
+            <button type="button" className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+              <FcGoogle className="mr-2" size={24} />
+              Tiếp tục với Google
+            </button>
+          </div>
         </form>
-
-        <div className="mt-4 text-center text-sm">
-          <p>
-            <Link to="/quen-mat-khau" className="text-red-500 hover:underline">
-              Quên mật khẩu?
-            </Link>
-          </p>
-          <p className="mt-1">
-            Chưa có tài khoản?{" "}
-            <Link to="/dang-ky" className="text-red-500 hover:underline">
-              Tạo tài khoản
-            </Link>
-          </p>
-        </div>
-
-        <div className="mt-6 flex items-center justify-center">
-          <button
-            type="button"
-            className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition"
-          >
-            <FcGoogle className="mr-2" size={24} />
-            Tiếp tục với Google
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </AuthWrapper>
   );
 }

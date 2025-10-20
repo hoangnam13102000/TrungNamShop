@@ -1,7 +1,8 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
   getAccountLevelingAPI,
@@ -11,6 +12,19 @@ import {
 } from "../../../../api/account/memberLeveling/request";
 
 const MemberLevelingList = () => {
+  // --- Dialog State ---
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "confirm", // confirm | success | error | alert
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const openDialog = (options) => setDialog({ open: true, ...options });
+  const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
+
+  // --- CRUD logic ---
   const {
     filteredItems,
     search,
@@ -45,44 +59,87 @@ const MemberLevelingList = () => {
     },
     hooks: {
       beforeSave: async (data, editingItem) => {
+        // Không cho sửa cấp đặc biệt
         if (editingItem?.id === 1) {
-          alert(" Không thể sửa bậc thành viên này!");
+          openDialog({
+            mode: "alert",
+            title: "Cảnh báo",
+            message: "Không thể sửa bậc thành viên này!",
+          });
           return false;
         }
+
         if (data.limit != null) data.limit = Math.floor(Number(data.limit));
-        if (!editingItem) {
-          return window.confirm(`Bạn có chắc chắn muốn thêm bậc thành viên "${data.name}" không?`);
-        }
-        return true;
+
+        // Hiển thị hộp xác nhận
+        return new Promise((resolve) => {
+          openDialog({
+            mode: "confirm",
+            title: "Xác nhận",
+            message: `Bạn có chắc chắn muốn ${
+              editingItem ? "cập nhật" : "thêm"
+            } bậc thành viên "${data.name}" không?`,
+            onConfirm: () => resolve(true),
+          });
+        });
       },
     },
   });
 
+  // --- Xử lý lưu ---
   const onSave = async (formData) => {
     const success = await handleSave(formData);
     if (success) {
       await fetchData();
       handleCloseModal();
-      alert(editingItem ? "Cập nhật thành công!" : "Thêm mới thành công!");
+      openDialog({
+        mode: "success",
+        title: "Thành công",
+        message: editingItem
+          ? "Cập nhật thành công!"
+          : "Thêm mới thành công!",
+      });
     }
   };
 
+  // --- Xử lý xoá ---
   const onDelete = async (id) => {
     if (id === 1) {
-      alert(" Không thể xoá bậc thành viên này!");
+      openDialog({
+        mode: "alert",
+        title: "Cảnh báo",
+        message: "Không thể xoá bậc thành viên này!",
+      });
       return;
     }
-    if (!window.confirm("Bạn có chắc chắn muốn xóa bậc thành viên này?")) return;
 
-    const success = await handleDelete(id);
-    if (success) {
-      await fetchData();
-      alert("Xóa thành công!");
-    }
+    openDialog({
+      mode: "confirm",
+      title: "Xác nhận xoá",
+      message: "Bạn có chắc chắn muốn xóa bậc thành viên này?",
+      onConfirm: async () => {
+        const success = await handleDelete(id);
+        if (success) {
+          await fetchData();
+          openDialog({
+            mode: "success",
+            title: "Thành công",
+            message: "Xóa thành công!",
+          });
+        }
+      },
+    });
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (error) return <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>;
+  // --- UI loading / error ---
+  if (loading)
+    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
+  if (error)
+    return (
+      <div className="p-6 text-center text-red-500">
+        Không thể tải dữ liệu.
+      </div>
+    );
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -118,13 +175,13 @@ const MemberLevelingList = () => {
             icon: <FaEdit />,
             label: "Sửa",
             onClick: handleEdit,
-            disabled: (row) => row.id === 1, // Disable nút sửa cho id = 1
+            disabled: (row) => row.id === 1,
           },
           {
             icon: <FaTrash />,
             label: "Xóa",
             onClick: (row) => onDelete(row.id),
-            disabled: (row) => row.id === 1, // Disable nút xoá cho id = 1
+            disabled: (row) => row.id === 1,
           },
         ]}
       />
@@ -134,8 +191,20 @@ const MemberLevelingList = () => {
         <DynamicForm
           title={editingItem ? "Sửa bậc thành viên" : "Thêm bậc thành viên"}
           fields={[
-            { name: "name", label: "Tên bậc thành viên", type: "text", required: true },
-            { name: "limit", label: "Hạn mức (point)", type: "number", required: true, step: 1, min: 0 },
+            {
+              name: "name",
+              label: "Tên bậc thành viên",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "limit",
+              label: "Hạn mức (point)",
+              type: "number",
+              required: true,
+              step: 1,
+              min: 0,
+            },
           ]}
           initialData={editingItem}
           onSave={onSave}
@@ -143,6 +212,16 @@ const MemberLevelingList = () => {
           errors={errors}
         />
       )}
+
+      {/* Dialog */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={dialog.onConfirm}
+        onClose={closeDialog}
+      />
     </div>
   );
 };

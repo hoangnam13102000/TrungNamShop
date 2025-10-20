@@ -11,6 +11,8 @@ use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\RewardController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\BrandController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -49,11 +51,15 @@ Route::prefix('admin')->group(function () {
     // ------------------ Account Type ------------------
     Route::apiResource('account-types', AccountTypeController::class);
 
+    // ------------------ Customer ------------------
+    Route::apiResource('customers', CustomerController::class);
+
     // ------------------ Reward ------------------
     Route::resource('rewards', RewardController::class);
 
     // ------------------ Position ------------------
     Route::resource('positions', PositionController::class);
 
-    
+    // ------------------ Brand ------------------
+    Route::apiResource('brands', BrandController::class);
 });

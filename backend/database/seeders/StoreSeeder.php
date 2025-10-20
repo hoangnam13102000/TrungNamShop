@@ -19,7 +19,7 @@ class StoreSeeder extends Seeder
             'name'=> 'Không có',
             'address'=> 'Không có',
             'email'=>'Không có',
-            'phobe'=>'Không có',
+            'phone'=>'Không có',
             'google_map'=>null,
         ]);
         

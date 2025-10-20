@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('rewards', function (Blueprint $table) {
-            $table->id('reward_id');
-             $table->decimal('reward_money', 15, 2);
+            $table->id('id');
+            $table->string('reward_name', 255);
+            $table->decimal('reward_money', 15, 2);
             $table->timestamps();
             $table->softDeletes();
         });

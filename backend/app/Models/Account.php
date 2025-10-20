@@ -41,4 +41,11 @@ class Account extends Authenticatable
     {
         return $this->belongsTo(AccountLevel::class, 'account_level_id');
     }
+    /**
+     * Relation to the customer
+     */
+    public function customer() {
+        return $this->hasOne(Customer::class);
+    }
+
 }

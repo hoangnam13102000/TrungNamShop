@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/dropdown/AuthDropdown";
-import Dropdown from "../../../../components/Dropdown";
+import Dropdown from "../../../../components/dropdown/DropDown";
 import useGetStores from "../../../../api/stores/queries";
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 import defaultAvatar from "../../../../assets/users/images/user/user.png";

@@ -1,7 +1,8 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/DynamicForm";
+import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud";
 import {
   getAccountTypeAPI,
@@ -11,8 +12,10 @@ import {
 } from "../../../../api/account/accountType/request";
 
 const AccountTypeList = () => {
-  const protectedNames = ['Admin', 'Nhân viên', 'Khách hàng'];
+  const protectedNames = ["Admin", "Nhân viên", "Khách hàng"];
+  const [dialog, setDialog] = useState({ open: false });
 
+  // CRUD logic
   const {
     filteredItems,
     search,
@@ -36,67 +39,124 @@ const AccountTypeList = () => {
       delete: deleteAccountTypeAPI,
     },
     rules: {
-      account_type_name: { required: true, message: "Tên loại tài khoản là bắt buộc" },
-    },
-    hooks: {
-      beforeSave: async (data, editingItem) => {
-        if (!editingItem && protectedNames.includes(data.account_type_name)) {
-          alert("Không thể tạo trùng loại tài khoản hệ thống.");
-          return false;
-        }
-
-        if (!editingItem) {
-          return window.confirm(
-            `Bạn có chắc chắn muốn thêm loại tài khoản "${data.account_type_name}" không?`
-          );
-        }
-
-        return true;
+      account_type_name: {
+        required: true,
+        message: "Tên loại tài khoản là bắt buộc",
       },
     },
   });
 
+  const showDialog = (options) => setDialog({ open: true, ...options });
+  const closeDialog = () => setDialog({ open: false });
+
+  // --- Save ---
   const onSave = async (formData) => {
-    try {
-      const success = await handleSave(formData);
-      if (success) {
-        await fetchData(); // refresh data
-        handleCloseModal(); // close modal
-      }
-    } catch (err) {
-      if (err.response?.status === 403) {
-        alert("Không thể chỉnh sửa loại tài khoản hệ thống.");
-      } else {
-        alert("Lỗi xảy ra khi lưu loại tài khoản.");
-      }
+    const isEditing = Boolean(editingItem);
+
+    // Chặn loại hệ thống
+    if (!isEditing && protectedNames.includes(formData.account_type_name)) {
+      return showDialog({
+        mode: "warning",
+        title: "Không hợp lệ",
+        message: "Không thể tạo trùng loại tài khoản hệ thống.",
+        onClose: closeDialog,
+      });
     }
+
+    // Hộp xác nhận
+    showDialog({
+      mode: "confirm",
+      title: isEditing
+        ? "Xác nhận cập nhật loại tài khoản"
+        : "Xác nhận thêm loại tài khoản",
+      message: isEditing
+        ? `Bạn có chắc chắn muốn cập nhật loại "${formData.account_type_name}" không?`
+        : `Bạn có chắc chắn muốn thêm loại "${formData.account_type_name}" không?`,
+      onConfirm: async () => {
+        const success = await handleSave(formData);
+        closeDialog();
+
+        if (success) {
+          await fetchData();
+          handleCloseModal();
+
+          showDialog({
+            mode: "success",
+            title: "Thành công",
+            message: isEditing
+              ? "Cập nhật loại tài khoản thành công!"
+              : "Thêm loại tài khoản mới thành công!",
+            onClose: closeDialog,
+          });
+        } else {
+          showDialog({
+            mode: "error",
+            title: "Lỗi",
+            message: "Không thể lưu loại tài khoản.",
+            onClose: closeDialog,
+          });
+        }
+      },
+      onClose: closeDialog,
+    });
   };
 
-  const onDelete = async (id, name) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa loại tài khoản này?")) return;
-
+  // --- Delete ---
+  const onDelete = (id, name) => {
     if (protectedNames.includes(name)) {
-      alert("Không thể xóa loại tài khoản hệ thống.");
-      return;
+      return showDialog({
+        mode: "warning",
+        title: "Không thể xóa",
+        message: "Không thể xóa loại tài khoản hệ thống.",
+        onClose: closeDialog,
+      });
     }
 
-    try {
-      const success = await handleDelete(id);
-      if (!success) return;
-      await fetchData(); // refresh data
-    } catch (err) {
-      alert("Lỗi xảy ra khi xóa loại tài khoản.");
-    }
+    showDialog({
+      mode: "confirm",
+      title: "Xác nhận xóa loại tài khoản",
+      message: `Bạn có chắc chắn muốn xóa loại "${name}" không?`,
+      onConfirm: async () => {
+        const success = await handleDelete(id);
+        closeDialog();
+
+        if (success) {
+          await fetchData();
+          showDialog({
+            mode: "success",
+            title: "Thành công",
+            message: "Xóa loại tài khoản thành công!",
+            onClose: closeDialog,
+          });
+        } else {
+          showDialog({
+            mode: "error",
+            title: "Thất bại",
+            message: "Không thể xóa loại tài khoản này.",
+            onClose: closeDialog,
+          });
+        }
+      },
+      onClose: closeDialog,
+    });
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (error) return <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>;
+  // --- Loading / Error ---
+  if (loading)
+    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
+  if (error)
+    return (
+      <div className="p-6 text-center text-red-500">
+        Không thể tải dữ liệu loại tài khoản.
+      </div>
+    );
 
+  // --- Main UI ---
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý loại tài khoản</h1>
 
-      {/* Header */}
+      {/* Toolbar */}
       <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
         <button
           onClick={handleAdd}
@@ -124,7 +184,12 @@ const AccountTypeList = () => {
             label: "Sửa",
             onClick: (row) => {
               if (protectedNames.includes(row.account_type_name)) {
-                alert("Không thể sửa loại tài khoản hệ thống.");
+                showDialog({
+                  mode: "warning",
+                  title: "Không thể sửa",
+                  message: "Không thể sửa loại tài khoản hệ thống.",
+                  onClose: closeDialog,
+                });
                 return;
               }
               handleEdit(row);
@@ -138,7 +203,7 @@ const AccountTypeList = () => {
         ]}
       />
 
-      {/* Add/Edit Form */}
+      {/* Form */}
       {showForm && (
         <DynamicForm
           title={editingItem ? "Sửa loại tài khoản" : "Thêm loại tài khoản"}
@@ -156,6 +221,9 @@ const AccountTypeList = () => {
           errors={errors}
         />
       )}
+
+      {/* Dialog */}
+      <DynamicDialog {...dialog} />
     </div>
   );
 };
