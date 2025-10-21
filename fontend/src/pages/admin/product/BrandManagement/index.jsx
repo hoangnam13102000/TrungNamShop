@@ -1,101 +1,118 @@
-import { useEffect, useState } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import useAdminCrud from "../../../../utils/useAdminCrud";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import useAdminCrud from "../../../../utils/useAdminCrud1"; // hook cũ nhưng đã tích hợp FormData tự động
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-import {
-  getBrandsAPI,
-  createBrandAPI,
-  updateBrandAPI,
-  deleteBrandAPI,
-} from "../../../../api/brand/request";
 
-export default function BrandManagement() {
-  const [initialBrands, setInitialBrands] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+import { useBrands, useCreateBrand, useUpdateBrand, useDeleteBrand } from "../../../../api/brand";
 
-  const {
-    filteredItems: brands,
-    search,
-    setSearch,
-    showForm,
-    editingItem,
-    handleEdit,
-    handleAdd,
-    handleCloseModal,
-    setItems,
-  } = useAdminCrud(initialBrands);
+export default memo(function AdminBrandPage() {
+  /** ==========================
+   *  1. FETCH DATA
+   * ========================== */
+  const { data: brands = [], isLoading } = useBrands();
 
-  // Fetch brand list from API
-  const fetchBrands = async () => {
-    try {
-      setIsLoading(true);
-      const res = await getBrandsAPI();
-      const data = Array.isArray(res.data) ? res.data : res;
-      setInitialBrands(data);
-      setItems(data);
-    } catch (error) {
-      console.error("Failed to fetch brands:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  /** ==========================
+   *  2. CRUD HOOK
+   * ========================== */
+  const crud = useAdminCrud(
+    {
+      createMutation: useCreateBrand(),
+      updateMutation: useUpdateBrand(),
+      deleteMutation: useDeleteBrand(),
+    },
+    "brands"
+  );
 
-  useEffect(() => {
-    fetchBrands();
+  /** ==========================
+   *  3. DIALOG STATE
+   * ========================== */
+  const [search, setSearch] = useState("");
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "alert",
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
+    setDialog({ open: true, mode, title, message, onConfirm });
   }, []);
 
-  // Save brand (create or update)
-  const handleSave = async (data) => {
-    try {
-      let formDataToSend = data instanceof FormData ? data : new FormData();
-      if (!(data instanceof FormData)) {
-        Object.entries(data).forEach(([key, value]) =>
-          formDataToSend.append(key, value)
-        );
-      }
+  const closeDialog = useCallback(() => setDialog((prev) => ({ ...prev, open: false })), []);
 
-      if (editingItem) {
-        const updated = await updateBrandAPI(editingItem.id, formDataToSend);
-        setItems((prev) =>
-          prev.map((b) => (b.id === editingItem.id ? updated : b))
-        );
-      } else {
-        const created = await createBrandAPI(formDataToSend);
-        setItems((prev) => [...prev, created]);
-      }
+  /** ==========================
+   *  4. FILTER DATA
+   * ========================== */
+  const filteredItems = useMemo(() => 
+    brands.filter((b) =>
+      b.name?.toLowerCase().includes(search.toLowerCase())
+    ), 
+    [brands, search]
+  );
 
-      await fetchBrands(); // Refresh list after saving
-      handleCloseModal();
-    } catch (error) {
-      console.error("Failed to save brand:", error);
-    }
+  /** ==========================
+   *  5. HANDLE SAVE
+   * ========================== */
+  const handleSave = async (formData) => {
+    if (!formData || typeof formData !== "object") return;
+
+    showDialog(
+      "confirm",
+      "Xác nhận lưu",
+      "Bạn có chắc muốn lưu thương hiệu này?",
+      async () => {
+        closeDialog();
+        try {
+          await crud.handleSave(formData); // hook cũ đã tự detect FormData
+          showDialog("success", "Thành công", "Lưu thương hiệu thành công!");
+        } catch (err) {
+          console.error("Save error:", err);
+          showDialog("error", "Lỗi", "Lưu thương hiệu thất bại!");
+        }
+      }
+    );
   };
 
-  // Delete brand item
-  const handleDeleteWithAPI = async (brand) => {
-    try {
-      await deleteBrandAPI(brand.id);
-      setItems((prev) => prev.filter((b) => b.id !== brand.id));
-      setInitialBrands((prev) => prev.filter((b) => b.id !== brand.id));
-    } catch (error) {
-      console.error("Failed to delete brand:", error);
-    }
+  /** ==========================
+   *  6. HANDLE DELETE
+   * ========================== */
+  const handleDelete = (item) => {
+    const name = item?.name ?? "Thương hiệu không tên";
+    showDialog(
+      "confirm",
+      "Xác nhận xoá",
+      `Bạn có chắc chắn muốn xoá "${name}" không?`,
+      async () => {
+        closeDialog();
+        try {
+          await crud.handleDelete(item.id);
+          showDialog("success", "Thành công", "Đã xoá thương hiệu thành công!");
+        } catch (err) {
+          console.error("Delete error:", err);
+          showDialog("error", "Lỗi", "Không thể xoá thương hiệu!");
+        }
+      }
+    );
   };
 
+  /** ==========================
+   *  7. RENDER
+   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý thương hiệu</h1>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
+      <div className="flex justify-between items-center mb-6">
         <button
-          onClick={handleAdd}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 flex items-center gap-2"
+          onClick={crud.handleAdd}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
         >
-          <FaPlus />
-          <span>Thêm thương hiệu</span>
+          <FaPlus /> Thêm thương hiệu
         </button>
 
         <input
@@ -103,16 +120,15 @@ export default function BrandManagement() {
           placeholder="Tìm kiếm thương hiệu..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="border rounded-lg px-3 py-2 w-72"
         />
       </div>
 
-      {/* Brand table */}
+      {/* Table */}
       {isLoading ? (
-        <p className="text-gray-500 italic">Đang tải dữ liệu...</p>
+        <p>Đang tải dữ liệu...</p>
       ) : (
         <AdminListTable
-          key={brands.length}
           columns={[
             { field: "name", label: "Tên thương hiệu" },
             {
@@ -120,40 +136,45 @@ export default function BrandManagement() {
               label: "Hình ảnh",
               render: (value) => (
                 <img
-                  src={value}
+                  src={value || placeholder}
                   alt="brand"
                   className="w-16 h-16 object-contain rounded"
-                  onError={(e) => (e.target.src = {placeholder})}
+                  onError={(e) => (e.target.src = placeholder)}
                 />
               ),
             },
           ]}
-          data={brands}
+          data={filteredItems}
           actions={[
-            { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-            { icon: <FaTrash />, label: "Xóa", onClick: handleDeleteWithAPI },
+            { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+            { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
           ]}
         />
       )}
 
-      {/* Form modal for Add / Edit */}
-      {showForm && (
+      {/* Form */}
+      {crud.openForm && (
         <DynamicForm
-          title={editingItem ? "Sửa thương hiệu" : "Thêm thương hiệu"}
+          title={crud.mode === "edit" ? "Sửa thương hiệu" : "Thêm thương hiệu"}
           fields={[
             { name: "name", label: "Tên thương hiệu", type: "text", required: true },
-            {
-              name: "image",
-              label: "Hình ảnh đại diện",
-              type: "file",
-              required: !editingItem,
-            },
+            { name: "image", label: "Hình ảnh đại diện", type: "file", required: crud.mode === "create" },
           ]}
-          initialData={editingItem}
-          onSave={handleSave}
-          onClose={handleCloseModal}
+          initialData={crud.selectedItem}
+          onSave={handleSave} // chỉ cần truyền formData, hook tự xử lý FormData
+          onClose={crud.handleCloseForm}
         />
       )}
+
+      {/* Dialog */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={closeDialog}
+        onConfirm={dialog.onConfirm}
+      />
     </div>
   );
-}
+});

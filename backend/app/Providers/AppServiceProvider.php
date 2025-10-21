@@ -2,12 +2,23 @@
 
 namespace App\Providers;
 
+//-----------Account and Customer---------------------
+
 use Illuminate\Support\ServiceProvider;
 use App\Models\Account;
 use App\Observers\AccountObserver;
 
 use App\Models\Customer;
 use App\Observers\CustomerObserver;
+
+
+//-----------Product and Brand---------------------
+
+use App\Models\Product;
+use App\Observers\ProductObserver;
+
+use App\Models\Brand;
+use App\Observers\BrandObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -23,7 +34,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        //-----------Account and Customer---------------------
+
          Account::observe(AccountObserver::class);
          Customer::observe(CustomerObserver::class);
+
+        //-----------Product and Brand---------------------
+        Product::observe(ProductObserver::class);
+        Brand::observe(BrandObserver::class);
     }
 }

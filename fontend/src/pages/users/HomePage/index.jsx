@@ -1,6 +1,6 @@
 import { memo, useRef } from "react";
 import { Link } from "react-router-dom";
-import ProductCard from "../../../components/ProductCard";
+import ProductCard from "../../../components/product/ProductCard";
 import backgroundImage from "@banner/background-4.jpg";
 
 const PRODUCTS = [

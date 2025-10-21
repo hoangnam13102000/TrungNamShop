@@ -7,7 +7,7 @@ import {
   FaRegStar,
 } from "react-icons/fa";
 import BreadCrumb from "../../theme/BreadCrumb";
-import Carousel from "../../../../components/Carousel";
+import Carousel from "../../../../components/product/Carousel";
 
 // Import ảnh mẫu (ví dụ OPPO Reno6)
 import oppo6_1 from "@products/oppo_reno6_z_5g_black.jpg";

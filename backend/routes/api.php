@@ -13,6 +13,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ProductController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -62,4 +63,7 @@ Route::prefix('admin')->group(function () {
 
     // ------------------ Brand ------------------
     Route::apiResource('brands', BrandController::class);
+
+     // ------------------ Product ------------------
+     Route::resource('products', ProductController::class);
 });

@@ -1,120 +1,201 @@
-import { memo } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import useAdminCrud from "../../../../utils/useAdminCrud";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import useAdminCrud from "../../../../utils/useAdminCrud1"; // bản không có dialog
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from "../../../../api/product/products";
+import { useBrands } from "../../../../api/brand";
 
-const AdminProductPage = () => {
-  const categories = ["iPhone", "Samsung", "Oppo", "Xiaomi", "Vivo"];
+export default memo(function AdminProductPage() {
+  /** ==========================
+   *  1. FETCH DATA
+   *  ========================== */
+  const { data: products = [], isLoading } = useProducts();
+  const { data: brands = [] } = useBrands();
 
-  const {
-    filteredItems,
-    search,
-    setSearch,
-    showForm,
-    editingItem,
-    handleAdd,
-    handleEdit,
-    handleDelete,
-    handleSave,
-    handleCloseModal,
-  } = useAdminCrud([
+  /** ==========================
+   *  2. CRUD MUTATIONS
+   *  ========================== */
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+  const deleteMutation = useDeleteProduct();
+
+  const crud = useAdminCrud(
     {
-      id: 1,
-      name: "OPPO Reno6 Z 5G",
-      brand: "Oppo",
-      description: "Bộ sản phẩm gồm: Hộp, Cây lấy sim, Sạc",
-      status: "Đang bán",
-      image: "",
+      create: createMutation.mutateAsync,
+      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
+      delete: async (id) => deleteMutation.mutateAsync({ id }),
     },
-  ]);
+    "products"
+  );
 
+  const [search, setSearch] = useState("");
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "alert", // "alert" | "confirm" | "success" | "error"
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  /** ==========================
+   *  3. DIALOG HELPERS
+   *  ========================== */
+  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
+    setDialog({ open: true, mode, title, message, onConfirm });
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setDialog((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  /** ==========================
+   *  4. FILTER & MAP DATA
+   *  ========================== */
+  const filteredItems = useMemo(() => {
+    return products.filter((p) =>
+      p.name?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [products, search]);
+
+  const mappedItems = useMemo(() => {
+    return filteredItems.map((p) => ({
+      ...p,
+      brand_name: brands.find((b) => b.id === p.brand_id)?.name || "Không rõ",
+      status_label: p.status === 1 ? "Đang bán" : "Ngừng bán",
+    }));
+  }, [filteredItems, brands]);
+
+  /** ==========================
+   *  5. HANDLERS
+   *  ========================== */
+  const handleSave = async (formData, plainData) => {
+    showDialog(
+      "confirm",
+      "Xác nhận lưu",
+      "Bạn có chắc muốn lưu sản phẩm này?",
+      async () => {
+        try {
+          await crud.handleSave(formData, plainData);
+          showDialog("success", "Thành công", "Lưu sản phẩm thành công!");
+        } catch (err) {
+          console.error("Save error:", err);
+          showDialog("error", "Lỗi", "Lưu sản phẩm thất bại!");
+        }
+      }
+    );
+  };
+
+  const handleDelete = (item) => {
+    const name = item?.name ?? "Sản phẩm không tên";
+    showDialog(
+      "confirm",
+      "Xác nhận xoá",
+      `Bạn có chắc chắn muốn xoá "${name}" không?`,
+      async () => {
+        try {
+          await crud.handleDelete(item.id);
+          showDialog("success", "Thành công", "Đã xoá sản phẩm thành công!");
+        } catch (err) {
+          console.error("Delete error:", err);
+          showDialog("error", "Lỗi", "Không thể xoá sản phẩm!");
+        }
+      }
+    );
+  };
+
+  /** ==========================
+   *  6. UI
+   *  ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6"> Quản lý sản phẩm</h1>
-      <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
-        {/* Add */}
+      <h1 className="text-2xl font-semibold mb-6">Quản lý sản phẩm</h1>
+
+      {/* BUTTON + SEARCH */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition w-full sm:w-auto"
+          onClick={crud.handleAdd}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
         >
           <FaPlus /> Thêm sản phẩm
         </button>
 
-        {/* Search Bar */}
         <input
           type="text"
           placeholder="Tìm kiếm sản phẩm..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
 
-      {/* Product Table */}
-      <AdminListTable
-        columns={[
-          { field: "image", label: "Ảnh" },
-          { field: "name", label: "Tên sản phẩm" },
-          { field: "brand", label: "Thương hiệu" },
-          { field: "description", label: "Mô tả" },
-          { field: "status", label: "Trạng thái" },
-        ]}
-        data={filteredItems}
-        imageFields={["image"]}
-        actions={[
-          { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
-        ]}
-      />
+      {/* TABLE */}
+      {isLoading ? (
+        <p>Đang tải dữ liệu...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <AdminListTable
+            columns={[
+              { field: "name", label: "Tên sản phẩm" },
+              { field: "brand_name", label: "Thương hiệu" },
+              { field: "description", label: "Mô tả" },
+              { field: "status_label", label: "Trạng thái" },
+            ]}
+            data={mappedItems}
+            actions={[
+              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+            ]}
+          />
+        </div>
+      )}
 
-      {/* Modal Form */}
-      {showForm && (
+      {/* FORM */}
+      {crud.openForm && (
         <DynamicForm
-          title={editingItem ? " Sửa sản phẩm" : "Thêm sản phẩm"}
+          title={crud.mode === "edit" ? "Sửa sản phẩm" : "Thêm sản phẩm"}
           fields={[
+            { name: "name", label: "Tên sản phẩm", type: "text", required: true },
             {
-              name: "name",
-              label: "Tên sản phẩm",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "brand",
+              name: "brand_id",
               label: "Thương hiệu",
               type: "select",
-              options: categories.map((c) => ({ label: c, value: c })),
+              options: brands.map((b) => ({ label: b.name, value: b.id })),
               required: true,
             },
-            {
-              name: "description",
-              label: "Mô tả",
-              type: "textarea",
-              required: true,
-            },
+            { name: "description", label: "Mô tả", type: "textarea" },
             {
               name: "status",
               label: "Trạng thái",
               type: "select",
               options: [
-                { label: "Đang bán", value: "Đang bán" },
-                { label: "Ngừng bán", value: "Ngừng bán" },
+                { label: "Đang bán", value: 1 },
+                { label: "Ngừng bán", value: 0 },
               ],
-              required: true,
-            },
-            {
-              name: "image",
-              label: "Ảnh sản phẩm",
-              type: "file",
             },
           ]}
-          initialData={editingItem}
+          initialData={crud.selectedItem}
           onSave={handleSave}
-          onClose={handleCloseModal}
+          onClose={crud.handleCloseForm}
+          className="w-full max-w-lg mx-auto"
         />
       )}
+
+      {/* DIALOG */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={closeDialog}
+        onConfirm={dialog.onConfirm}
+      />
     </div>
   );
-};
-
-export default memo(AdminProductPage);
+});

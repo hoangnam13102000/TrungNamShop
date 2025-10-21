@@ -1,159 +1,151 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useState, useCallback, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
-import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog"
-import useAdminCrud from "../../../../utils/useAdminCrud";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import useAdminCrud from "../../../../utils/useAdminCrud1";
 import {
-  getAccountAPI,
-  createAccountAPI,
-  updateAccountAPI,
-  deleteAccountAPI,
-} from "../../../../api/account/accountManagement/request";
-import { getAccountTypeAPI } from "../../../../api/account/accountType/request";
-import { getAccountLevelingAPI } from "../../../../api/account/memberLeveling/request";
+  useAccounts,
+  useCreateAccount,
+  useUpdateAccount,
+  useDeleteAccount,
+} from "../../../../api/account/accountManagement";
+import {
+  useAccountTypes,
+} from "../../../../api/account/accountType";
+import {
+  useMemberLevelings,
+} from "../../../../api/account/memberLeveling";
 
 const AccountList = () => {
-  // Dropdown options
-  const [accountTypes, setAccountTypes] = useState([]);
-  const [accountLevels, setAccountLevels] = useState([]);
+  // ==========================
+  // 1. FETCH DATA + OPTIONS
+  // ==========================
+  const { data: accounts = [], isLoading: loadingAccounts, refetch: fetchAccounts } = useAccounts();
+  const createMutation = useCreateAccount();
+  const updateMutation = useUpdateAccount();
+  const deleteMutation = useDeleteAccount();
 
-  // DynamicDialog state
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState("confirm");
-  const [dialogTitle, setDialogTitle] = useState("");
-  const [dialogMessage, setDialogMessage] = useState("");
-  const [dialogAction, setDialogAction] = useState(null);
+  const { data: accountTypes = [] } = useAccountTypes();
+  const { data: accountLevels = [] } = useMemberLevelings();
 
-  const showDialog = (mode, title, message, action = null) => {
-    setDialogMode(mode);
-    setDialogTitle(title);
-    setDialogMessage(message);
-    setDialogAction(() => action);
-    setDialogOpen(true);
-  };
+  const accountTypeOptions = useMemo(
+    () => accountTypes.map(t => ({ value: t.id, label: t.account_type_name })),
+    [accountTypes]
+  );
 
-  // Fetch dropdown options
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [types, levels] = await Promise.all([
-          getAccountTypeAPI(),
-          getAccountLevelingAPI(),
-        ]);
-        setAccountTypes(
-          types.map((t) => ({ value: t.id, label: t.account_type_name }))
-        );
-        setAccountLevels(levels.map((l) => ({ value: l.id, label: l.name })));
-      } catch (err) {
-        console.error(
-          "Không thể tải loại tài khoản hoặc cấp độ thành viên:",
-          err
-        );
-      }
-    };
-    fetchOptions();
-  }, []);
+  const accountLevelOptions = useMemo(
+    () => accountLevels.map(l => ({ value: l.id, label: l.name })),
+    [accountLevels]
+  );
 
-  // Custom hook CRUD
-  const {
-    filteredItems,
-    search,
-    setSearch,
-    showForm,
-    editingItem,
-    handleAdd,
-    handleEdit,
-    handleDelete,
-    handleSave,
-    handleCloseModal,
-    loading,
-    error,
-    errors,
-    fetchData,
-  } = useAdminCrud([], {
-    api: {
-      fetch: getAccountAPI,
-      create: createAccountAPI,
-      update: updateAccountAPI,
-      delete: deleteAccountAPI,
+  // ==========================
+  // 2. CRUD HOOK
+  // ==========================
+  const crud = useAdminCrud(
+    {
+      create: createMutation.mutateAsync,
+      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
+      delete: async (id) => deleteMutation.mutateAsync(id),
     },
-    rules: {
-      username: { required: true, message: "Tên tài khoản là bắt buộc" },
-      account_type_id: {
-        required: true,
-        message: "Loại tài khoản là bắt buộc",
-      },
-      account_level_id: {
-        required: true,
-        message: "Cấp độ thành viên là bắt buộc",
-      },
-    },
+    "accounts"
+  );
+
+  const [search, setSearch] = useState("");
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "alert",
+    title: "",
+    message: "",
+    onConfirm: null,
   });
 
-  // Save Account → Xác nhận trước khi lưu
-  const onSave = (formData) => {
+  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
+    setDialog({ open: true, mode, title, message, onConfirm });
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setDialog(prev => ({ ...prev, open: false }));
+  }, []);
+
+  // ==========================
+  // 3. FILTER DATA
+  // ==========================
+  const filteredItems = useMemo(() => {
+    return accounts.filter(acc =>
+      (acc.username || "").toLowerCase().includes(search.toLowerCase().trim())
+    );
+  }, [accounts, search]);
+
+  // ==========================
+  // 4. HANDLERS
+  // ==========================
+  const handleSave = async (formData) => {
+    // Prepare payload: convert select object to id
+    const payload = {
+      ...formData,
+      account_type_id: formData.account_type_id?.value || formData.account_type_id,
+      account_level_id: formData.account_level_id?.value || formData.account_level_id,
+    };
+
     showDialog(
       "confirm",
-      editingItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
-      editingItem
+      crud.selectedItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
+      crud.selectedItem
         ? `Bạn có chắc chắn muốn cập nhật tài khoản "${formData.username}" không?`
         : `Bạn có chắc chắn muốn thêm tài khoản "${formData.username}" không?`,
       async () => {
-        if (editingItem) {
-          formData.password = undefined;
-          formData.reward_points = undefined;
-        }
-        const success = await handleSave(formData);
-        if (success) {
-          await fetchData();
-          handleCloseModal();
+        try {
+          await crud.handleSave(payload);
+          await fetchAccounts();
+          crud.handleCloseForm();
           showDialog(
             "success",
             "Thành công",
-            editingItem
+            crud.selectedItem
               ? "Tài khoản đã được cập nhật thành công!"
               : "Tài khoản đã được thêm thành công!"
           );
+        } catch (err) {
+          console.error(err);
+          showDialog("error", "Lỗi", "Không thể lưu tài khoản!");
         }
       }
     );
   };
 
-  // Delete Account → Xác nhận trước khi xoá
-  const onDelete = (id, username) => {
+  const handleDelete = (item) => {
     showDialog(
       "confirm",
       "Xác nhận xoá",
-      `Bạn có chắc chắn muốn xóa tài khoản "${username}" không?`,
+      `Bạn có chắc chắn muốn xóa tài khoản "${item.username}" không?`,
       async () => {
-        const success = await handleDelete(id);
-        if (success) {
-          await fetchData();
-          showDialog("success", "Đã xóa", "Tài khoản đã được xóa thành công!");
+        try {
+          await crud.handleDelete(item.id);
+          await fetchAccounts();
+          showDialog("success", "Thành công", "Tài khoản đã được xóa thành công!");
+        } catch (err) {
+          console.error(err);
+          showDialog("error", "Lỗi", "Không thể xóa tài khoản!");
         }
       }
     );
   };
 
-  if (loading)
+  // ==========================
+  // 5. UI
+  // ==========================
+  if (loadingAccounts)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (error)
-    return (
-      <div className="p-6 text-center text-red-500">
-        Không thể tải dữ liệu tài khoản.
-      </div>
-    );
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý tài khoản</h1>
 
-      {/* Header: thêm + tìm kiếm */}
-      <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition w-full sm:w-auto"
+          onClick={crud.handleAdd}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
         >
           <FaPlus /> Thêm tài khoản
         </button>
@@ -163,37 +155,28 @@ const AccountList = () => {
           placeholder="Tìm kiếm tài khoản..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
 
-      {/* List table */}
       <AdminListTable
         columns={[
           { field: "username", label: "Tên tài khoản" },
           {
-            field: "account_type_id",
+            field: "account_type",
             label: "Loại tài khoản",
-            render: (val) =>
-              accountTypes.find((t) => t.value === val)?.label || "—",
+            render: (_, row) => row.account_type?.account_type_name || "—",
           },
           {
-            field: "account_level_id",
+            field: "account_level",
             label: "Cấp độ thành viên",
-            render: (val) =>
-              accountLevels.find((l) => l.value === val)?.label || "—",
+            render: (_, row) => row.account_level?.name || "—",
           },
           {
             field: "status",
             label: "Trạng thái",
             render: (val) => (
-              <span
-                className={`px-2 py-1 rounded-full text-sm ${
-                  val === 1
-                    ? "bg-green-100 text-green-700"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
+              <span className={`px-2 py-1 rounded-full text-sm ${val === 1 ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>
                 {val === 1 ? "Hoạt động" : "Ngừng hoạt động"}
               </span>
             ),
@@ -201,78 +184,36 @@ const AccountList = () => {
         ]}
         data={filteredItems}
         actions={[
-          { icon: <FaEdit />, label: "Sửa", onClick: handleEdit },
-          {
-            icon: <FaTrash />,
-            label: "Xóa",
-            onClick: (row) => onDelete(row.id, row.username),
-          },
+          { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+          { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
         ]}
       />
 
-      {/* Form Edit/Add */}
-      {showForm && (
+      {crud.openForm && (
         <DynamicForm
-          title={editingItem ? "Chỉnh sửa tài khoản" : "Thêm tài khoản"}
+          title={crud.mode === "edit" ? `Chỉnh sửa: ${crud.selectedItem?.username}` : "Thêm tài khoản"}
           fields={[
-            {
-              name: "username",
-              label: "Tên tài khoản",
-              type: "text",
-              required: true,
-            },
-            ...(!editingItem
-              ? [
-                  {
-                    name: "password",
-                    label: "Mật khẩu",
-                    type: "password",
-                    required: true,
-                  },
-                ]
-              : []),
-            {
-              name: "account_type_id",
-              label: "Loại tài khoản",
-              type: "select",
-              options: accountTypes,
-              required: true,
-            },
-            {
-              name: "account_level_id",
-              label: "Cấp độ thành viên",
-              type: "select",
-              options: accountLevels,
-              required: true,
-            },
-            {
-              name: "status",
-              label: "Trạng thái",
-              type: "select",
-              options: [
-                { value: 1, label: "Hoạt động" },
-                { value: 0, label: "Ngừng hoạt động" },
-              ],
-              required: true,
-            },
+            { name: "username", label: "Tên tài khoản", type: "text", required: true, disabled: !!crud.selectedItem },
+            ...(!crud.selectedItem ? [{ name: "password", label: "Mật khẩu", type: "password", required: true }] : []),
+            { name: "account_type_id", label: "Loại tài khoản", type: "select", options: accountTypeOptions, required: true, value: crud.selectedItem?.account_type?.id },
+            { name: "account_level_id", label: "Cấp độ thành viên", type: "select", options: accountLevelOptions, required: true, value: crud.selectedItem?.account_level?.id },
+            { name: "status", label: "Trạng thái", type: "select", options: [{ value: 1, label: "Hoạt động" }, { value: 0, label: "Ngừng hoạt động" }], required: true },
           ]}
-          initialData={editingItem}
-          onSave={onSave}
-          onClose={handleCloseModal}
-          errors={errors}
+          initialData={crud.selectedItem}
+          onSave={handleSave}
+          onClose={crud.handleCloseForm}
         />
       )}
 
-      {/* DynamicDialog */}
       <DynamicDialog
-        open={dialogOpen}
-        mode={dialogMode}
-        title={dialogTitle}
-        message={dialogMessage}
-        onClose={() => setDialogOpen(false)}
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={closeDialog}
         onConfirm={async () => {
-          setDialogOpen(false);
-          if (dialogAction) await dialogAction();
+          setDialog(prev => ({ ...prev, open: false }));
+          if (dialog.onConfirm) await dialog.onConfirm();
         }}
       />
     </div>

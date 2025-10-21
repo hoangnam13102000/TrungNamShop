@@ -1,155 +1,129 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo, useCallback } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud";
+import useAdminCrud from "../../../../utils/useAdminCrud1";
 import {
-  getAccountLevelingAPI,
-  createAccountLevelingAPI,
-  updateAccountLevelingAPI,
-  deleteAccountLevelingAPI,
-} from "../../../../api/account/memberLeveling/request";
+  useMemberLevelings,
+  useCreateMemberLeveling,
+  useUpdateMemberLeveling,
+  useDeleteMemberLeveling,
+} from "../../../../api/account/memberLeveling/";
 
 const MemberLevelingList = () => {
-  // --- Dialog State ---
+  /** ==========================
+   * 1. FETCH DATA
+   * ========================== */
+  const { data: levels = [], isLoading } = useMemberLevelings();
+  const createMutation = useCreateMemberLeveling();
+  const updateMutation = useUpdateMemberLeveling();
+  const deleteMutation = useDeleteMemberLeveling();
+
+  const crud = useAdminCrud(
+    {
+      create: createMutation.mutateAsync,
+      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
+      delete: async (id) => deleteMutation.mutateAsync(id),
+    },
+    "member-levelings"
+  );
+
+  const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState({
     open: false,
-    mode: "confirm", // confirm | success | error | alert
+    mode: "alert",
     title: "",
     message: "",
     onConfirm: null,
   });
 
-  const openDialog = (options) => setDialog({ open: true, ...options });
-  const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
+  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
+    setDialog({ open: true, mode, title, message, onConfirm });
+  }, []);
 
-  // --- CRUD logic ---
-  const {
-    filteredItems,
-    search,
-    setSearch,
-    showForm,
-    editingItem,
-    handleAdd,
-    handleEdit,
-    handleDelete,
-    handleSave,
-    handleCloseModal,
-    loading,
-    error,
-    errors,
-    fetchData,
-  } = useAdminCrud([], {
-    api: {
-      fetch: async () => {
-        const data = await getAccountLevelingAPI();
-        return data.map((item) => ({
-          ...item,
-          limit: item.limit != null ? Math.floor(Number(item.limit)) : null,
-        }));
-      },
-      create: createAccountLevelingAPI,
-      update: updateAccountLevelingAPI,
-      delete: deleteAccountLevelingAPI,
-    },
-    rules: {
-      name: { required: true, message: "Tên bậc thành viên là bắt buộc" },
-      limit: { type: "number", min: 0, message: "Hạn mức phải là số >= 0" },
-    },
-    hooks: {
-      beforeSave: async (data, editingItem) => {
-        // Không cho sửa cấp đặc biệt
-        if (editingItem?.id === 1) {
-          openDialog({
-            mode: "alert",
-            title: "Cảnh báo",
-            message: "Không thể sửa bậc thành viên này!",
-          });
-          return false;
-        }
+  const closeDialog = useCallback(() => {
+    setDialog((prev) => ({ ...prev, open: false }));
+  }, []);
 
-        if (data.limit != null) data.limit = Math.floor(Number(data.limit));
+  /** ==========================
+   * 2. FILTER DATA & FORMAT
+   * ========================== */
+  const filteredItems = useMemo(() => {
+    return levels
+      .filter((l) =>
+        (l.name || "").toLowerCase().includes(search.toLowerCase().trim())
+      )
+      .map((l) => ({
+        ...l,
+        limit: l.limit != null ? Math.floor(Number(l.limit)) : null, // ép limit thành số nguyên
+      }));
+  }, [levels, search]);
 
-        // Hiển thị hộp xác nhận
-        return new Promise((resolve) => {
-          openDialog({
-            mode: "confirm",
-            title: "Xác nhận",
-            message: `Bạn có chắc chắn muốn ${
-              editingItem ? "cập nhật" : "thêm"
-            } bậc thành viên "${data.name}" không?`,
-            onConfirm: () => resolve(true),
-          });
-        });
-      },
-    },
-  });
-
-  // --- Xử lý lưu ---
-  const onSave = async (formData) => {
-    const success = await handleSave(formData);
-    if (success) {
-      await fetchData();
-      handleCloseModal();
-      openDialog({
-        mode: "success",
-        title: "Thành công",
-        message: editingItem
-          ? "Cập nhật thành công!"
-          : "Thêm mới thành công!",
-      });
-    }
-  };
-
-  // --- Xử lý xoá ---
-  const onDelete = async (id) => {
-    if (id === 1) {
-      openDialog({
-        mode: "alert",
-        title: "Cảnh báo",
-        message: "Không thể xoá bậc thành viên này!",
-      });
+  /** ==========================
+   * 3. HANDLERS
+   * ========================== */
+  const handleSave = async (formData) => {
+    if (crud.selectedItem?.id === 1) {
+      showDialog("alert", "Cảnh báo", "Không thể sửa bậc đặc biệt!");
       return;
     }
 
-    openDialog({
-      mode: "confirm",
-      title: "Xác nhận xoá",
-      message: "Bạn có chắc chắn muốn xóa bậc thành viên này?",
-      onConfirm: async () => {
-        const success = await handleDelete(id);
-        if (success) {
-          await fetchData();
-          openDialog({
-            mode: "success",
-            title: "Thành công",
-            message: "Xóa thành công!",
-          });
+    // Ép limit thành số nguyên trước save
+    if (formData.limit != null) {
+      formData.limit = Math.floor(Number(formData.limit));
+    }
+
+    showDialog(
+      "confirm",
+      "Xác nhận",
+      `Bạn có chắc muốn ${crud.mode === "edit" ? "cập nhật" : "thêm"} bậc thành viên "${formData.name}"?`,
+      async () => {
+        try {
+          await crud.handleSave(formData);
+          showDialog("success", "Thành công", "Đã lưu bậc thành viên!");
+        } catch (err) {
+          console.error("Save error:", err);
+          showDialog("error", "Lỗi", "Không thể lưu bậc thành viên!");
         }
-      },
-    });
+      }
+    );
   };
 
-  // --- UI loading / error ---
-  if (loading)
-    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (error)
-    return (
-      <div className="p-6 text-center text-red-500">
-        Không thể tải dữ liệu.
-      </div>
-    );
+  const handleDelete = (item) => {
+    if (item.id === 1) {
+      showDialog("alert", "Cảnh báo", "Không thể xóa bậc đặc biệt!");
+      return;
+    }
 
+    showDialog(
+      "confirm",
+      "Xác nhận xóa",
+      `Bạn có chắc muốn xóa bậc thành viên "${item.name}"?`,
+      async () => {
+        try {
+          await crud.handleDelete(item.id);
+          showDialog("success", "Thành công", "Đã xóa bậc thành viên!");
+        } catch (err) {
+          console.error("Delete error:", err);
+          showDialog("error", "Lỗi", "Không thể xóa bậc thành viên!");
+        }
+      }
+    );
+  };
+
+  /** ==========================
+   * 4. UI
+   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý bậc thành viên</h1>
 
-      {/* Header */}
-      <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-3 mb-6">
+      {/* BUTTON + SEARCH */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition w-full sm:w-auto"
+          onClick={crud.handleAdd}
+          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
         >
           <FaPlus /> Thêm bậc thành viên
         </button>
@@ -159,61 +133,45 @@ const MemberLevelingList = () => {
           placeholder="Tìm kiếm bậc thành viên..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
 
-      {/* Table */}
-      <AdminListTable
-        columns={[
-          { field: "name", label: "Tên bậc thành viên" },
-          { field: "limit", label: "Hạn mức (point)" },
-        ]}
-        data={filteredItems}
-        actions={[
-          {
-            icon: <FaEdit />,
-            label: "Sửa",
-            onClick: handleEdit,
-            disabled: (row) => row.id === 1,
-          },
-          {
-            icon: <FaTrash />,
-            label: "Xóa",
-            onClick: (row) => onDelete(row.id),
-            disabled: (row) => row.id === 1,
-          },
-        ]}
-      />
-
-      {/* Form Add/Edit */}
-      {showForm && (
-        <DynamicForm
-          title={editingItem ? "Sửa bậc thành viên" : "Thêm bậc thành viên"}
-          fields={[
-            {
-              name: "name",
-              label: "Tên bậc thành viên",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "limit",
-              label: "Hạn mức (point)",
-              type: "number",
-              required: true,
-              step: 1,
-              min: 0,
-            },
+      {/* TABLE */}
+      {isLoading ? (
+        <p>Đang tải dữ liệu...</p>
+      ) : (
+        <AdminListTable
+          columns={[
+            { field: "name", label: "Tên bậc thành viên" },
+            { field: "limit", label: "Hạn mức (point)" },
           ]}
-          initialData={editingItem}
-          onSave={onSave}
-          onClose={handleCloseModal}
-          errors={errors}
+          data={filteredItems}
+          actions={[
+            { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit, disabled: (row) => row.id === 1 },
+            { icon: <FaTrash />, label: "Xóa", onClick: handleDelete, disabled: (row) => row.id === 1 },
+          ]}
         />
       )}
 
-      {/* Dialog */}
+      {/* FORM ADD / EDIT */}
+      {crud.openForm && (
+        <DynamicForm
+          title={crud.mode === "edit" ? `Sửa bậc thành viên - ${crud.selectedItem?.name}` : "Thêm bậc thành viên"}
+          fields={[
+            { name: "name", label: "Tên bậc thành viên", type: "text", required: true },
+            { name: "limit", label: "Hạn mức (point)", type: "number", required: true, step: 1, min: 0 },
+          ]}
+          initialData={{
+            ...crud.selectedItem,
+            limit: crud.selectedItem?.limit != null ? Math.floor(crud.selectedItem.limit) : null,
+          }}
+          onSave={handleSave}
+          onClose={crud.handleCloseForm}
+        />
+      )}
+
+      {/* DIALOG */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}

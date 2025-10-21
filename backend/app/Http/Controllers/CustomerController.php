@@ -94,13 +94,13 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
-    {
-        $customer = Customer::find($id);
-        if (!$customer) {
-            return response()->json(['message' => 'Customer not found'], 404);
-        }
-        $customer->delete();
-        return response()->json(['message' => 'Customer deleted successfully']);
-    }
+    // public function destroy(string $id)
+    // {
+    //     $customer = Customer::find($id);
+    //     if (!$customer) {
+    //         return response()->json(['message' => 'Customer not found'], 404);
+    //     }
+    //     $customer->delete();
+    //     return response()->json(['message' => 'Customer deleted successfully']);
+    // }
 }

@@ -2,7 +2,7 @@ import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/dropdown/DropDown";
-import useGetStores from "../../../../api/stores/queries";
+import { useStores } from "../../../../api/stores";
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 import defaultAvatar from "../../../../assets/users/images/user/user.png";
 import {
@@ -37,8 +37,11 @@ const CATEGORIES = [
 
 /* ================= Sub Components ================= */
 const ContactLink = ({ href, icon: Icon, value, hideOnMobile = false }) => {
-  const isInternal = href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("tel:");
-  const className = `flex items-center space-x-1.5 sm:space-x-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition text-xs whitespace-nowrap ${hideOnMobile ? "hidden lg:flex" : ""}`;
+  const isInternal =
+    href && !href.startsWith("http") && !href.startsWith("mailto:") && !href.startsWith("tel:");
+  const className = `flex items-center space-x-1.5 sm:space-x-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition text-xs whitespace-nowrap ${
+    hideOnMobile ? "hidden lg:flex" : ""
+  }`;
 
   return isInternal ? (
     <Link to={href} className={className}>
@@ -79,8 +82,8 @@ const Header = () => {
   const [username, setUsername] = useState(localStorage.getItem("username") || "User");
   const [avatar, setAvatar] = useState(localStorage.getItem("avatar") || defaultAvatar);
 
-  const { data: stores, isLoading } = useGetStores();
-  const mainStore = stores?.[0];
+  const { data: stores = [], isLoading } = useStores();
+  const mainStore = stores[0];
 
   useEffect(() => setSelectedCategory(null), [location.pathname]);
 
@@ -120,8 +123,17 @@ const Header = () => {
                   <span className="text-xs opacity-80">Đang tải thông tin cửa hàng...</span>
                 ) : mainStore ? (
                   <>
-                    <ContactLink href={`tel:${mainStore.phone || ""}`} icon={FaPhoneAlt} value={mainStore.phone || "Chưa có SĐT"} />
-                    <ContactLink href="/lien-he" icon={FaEnvelope} value={mainStore.email || "Chưa có email"} hideOnMobile />
+                    <ContactLink
+                      href={`tel:${mainStore.phone || ""}`}
+                      icon={FaPhoneAlt}
+                      value={mainStore.phone || "Chưa có SĐT"}
+                    />
+                    <ContactLink
+                      href="/lien-he"
+                      icon={FaEnvelope}
+                      value={mainStore.email || "Chưa có email"}
+                      hideOnMobile
+                    />
                     <ContactLink
                       href={mainStore.google_map || "#"}
                       icon={FaMapMarkerAlt}

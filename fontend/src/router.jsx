@@ -17,8 +17,7 @@ import CustomerManagement from "@page_admin/customer/CustomerManagement";
 import StoreManagement from "@page_admin/store/StoreManagement";
 import WarehouseManagement from "@page_admin/store/WarehouseManagement";
 import Reward from "./pages/admin/employee/Reward";
-import PositionManagement from  "./pages/admin/employee/Position";
-
+import PositionManagement from "./pages/admin/employee/Position";
 
 // HOMEPAGE PATH
 import Homepage from "@page_user/HomePage";
@@ -36,7 +35,6 @@ import Payment from "@page_user/Payment";
 
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
 
-
 const renderAdminRouter = () => {
   const adminRouter = [
     {
@@ -51,11 +49,11 @@ const renderAdminRouter = () => {
       path: ROUTERS.ADMIN.BRANDMANAGEMENT,
       component: <BrandManagement />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.PROMOTION,
       component: <PromotionList />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.DISCOUNT,
       component: <DiscountList />,
     },
@@ -63,11 +61,11 @@ const renderAdminRouter = () => {
       path: ROUTERS.ADMIN.ORDERMANAGEMENT,
       component: <OrderManagement />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.ACCOUNTTYPE,
       component: <AccountTypeList />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.EMPLOYEEMANAGMENT,
       component: <EmployeeManagement />,
     },
@@ -91,7 +89,7 @@ const renderAdminRouter = () => {
       path: ROUTERS.ADMIN.MEMBERLEVEL,
       component: <MemberLevelList />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.STOREMANAGEMENT,
       component: <StoreManagement />,
     },
