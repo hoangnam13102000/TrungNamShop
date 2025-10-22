@@ -14,9 +14,9 @@ export default function DynamicForm({
 }) {
   const safeData = initialData || {};
 
-  /** =========================
-   *  State: Form & Preview
-   * ========================= */
+  /** ============================================================
+   *  🧩 1. STATE KHỞI TẠO: DỮ LIỆU FORM
+   * ============================================================ */
   const [formData, setFormData] = useState(() => {
     const result = {};
     fields.forEach((f) => {
@@ -25,25 +25,42 @@ export default function DynamicForm({
     return result;
   });
 
+  /** ============================================================
+   *  🖼️ 2. STATE KHỞI TẠO: ẢNH PREVIEW
+   *  - Khi edit, nếu có sẵn image_path thì hiển thị đúng ảnh cũ.
+   *  - Nếu chọn ảnh mới, hiển thị preview tạm bằng URL.createObjectURL()
+   * ============================================================ */
   const [preview, setPreview] = useState(() => {
     const result = {};
     fields.forEach((f) => {
       if (f.type === "file") {
-        result[f.name] =
-          safeData[f.name] instanceof File
-            ? URL.createObjectURL(safeData[f.name])
-            : safeData[f.name] || placeholder;
+        let imageValue =
+          safeData[f.name] || // nếu field trùng tên
+          safeData.image_path || // fallback cho edit
+          "";
+
+        // Nếu là string và chưa có domain thì thêm /storage/
+        if (imageValue && typeof imageValue === "string") {
+          if (!imageValue.startsWith("http")) {
+            imageValue = `${window.location.origin}/storage/${imageValue}`;
+          }
+        }
+
+        result[f.name] = imageValue || placeholder;
       }
     });
     return result;
   });
 
+  /** ============================================================
+   *  ⚠️ 3. STATE: VALIDATION + TRẠNG THÁI GỬI FORM
+   * ============================================================ */
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  /** =========================
-   *  Dialog State
-   * ========================= */
+  /** ============================================================
+   *  💬 4. DIALOG CONFIRM
+   * ============================================================ */
   const [dialog, setDialog] = useState({
     open: false,
     mode: "confirm",
@@ -56,27 +73,28 @@ export default function DynamicForm({
     setDialog({ open: true, mode, title, message, onConfirm });
   };
 
-  const closeDialog = () => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  };
+  const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
 
-  /** =========================
-   *  Handlers
-   * ========================= */
+  /** ============================================================
+   *  📝 5. HANDLE CHANGE INPUT
+   * ============================================================ */
   const handleChange = (name, value) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /** ============================================================
+   *  📁 6. HANDLE FILE UPLOAD + PREVIEW
+   * ============================================================ */
   const handleFileChange = (name, file) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: file }));
     setPreview((prev) => ({ ...prev, [name]: URL.createObjectURL(file) }));
   };
 
-  /** =========================
-   *  Validation
-   * ========================= */
+  /** ============================================================
+   *  ✅ 7. VALIDATION CƠ BẢN
+   * ============================================================ */
   const validate = () => {
     if (mode === "view") return true;
 
@@ -92,9 +110,9 @@ export default function DynamicForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  /** =========================
-   *  Submit Logic
-   * ========================= */
+  /** ============================================================
+   *  🚀 8. HANDLE SUBMIT FORM
+   * ============================================================ */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting || mode === "view") return;
@@ -119,9 +137,9 @@ export default function DynamicForm({
     await onSave(formData);
   };
 
-  /** =========================
-   *  Render UI
-   * ========================= */
+  /** ============================================================
+   *  🎨 9. RENDER GIAO DIỆN FORM
+   * ============================================================ */
   return (
     <AnimatePresence>
       <motion.div
@@ -158,6 +176,7 @@ export default function DynamicForm({
                     {field.required && <span className="text-red-500">*</span>}
                   </label>
 
+                  {/* --- FILE UPLOAD FIELD --- */}
                   {field.type === "file" ? (
                     <div className="flex flex-col items-center gap-2 w-full">
                       <div
@@ -182,9 +201,10 @@ export default function DynamicForm({
                         className="hidden"
                         disabled={mode === "view"}
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 truncate max-w-[90%] text-center">
                         {formData[field.name]?.name ||
                           safeData[field.name] ||
+                          safeData.image_path ||
                           "Chưa chọn ảnh"}
                       </p>
                     </div>
@@ -195,6 +215,13 @@ export default function DynamicForm({
                       placeholder={`Chọn ${field.label}`}
                       onSelect={(opt) => handleChange(field.name, opt.value)}
                       disabled={mode === "view"}
+                    />
+                  ) : field.type === "checkbox" ? (
+                    <input
+                      type="checkbox"
+                      checked={!!value}
+                      onChange={(e) => handleChange(field.name, e.target.checked)}
+                      disabled={field.disabled || mode === "view"}
                     />
                   ) : (
                     <input
@@ -217,6 +244,7 @@ export default function DynamicForm({
               );
             })}
 
+            {/* --- BUTTONS --- */}
             <div className="flex justify-end gap-2 pt-2 mt-4">
               <button
                 type="button"
@@ -246,6 +274,7 @@ export default function DynamicForm({
             </div>
           </form>
 
+          {/* --- CONFIRM DIALOG --- */}
           <DynamicDialog
             open={dialog.open}
             mode={dialog.mode}

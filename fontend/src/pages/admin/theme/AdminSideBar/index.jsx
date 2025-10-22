@@ -37,7 +37,9 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
       icon: <FaMobileAlt />,
       dropdown: [
         { label: "Quản lý sản phẩm", path: "/quan-tri/quan-ly-san-pham" },
+        { label: "Quản lý hình sản phẩm", path: "/quan-tri/quan-ly-hinh-san-pham" },
         { label: "Quản lý thương hiệu", path: "/quan-tri/quan-ly-thuong-hieu" },
+        { label: "Quản lý màu sắc", path: "/quan-tri/quan-ly-mau-sac" },
         { label: "Quản lý khuyến mãi", path: "/quan-tri/quan-ly-khuyen-mai" },
         { label: "Quản lý giảm giá", path: "/quan-tri/quan-ly-giam-gia" },
       ],

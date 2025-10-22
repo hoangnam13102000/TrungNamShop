@@ -4,6 +4,8 @@ export const ROUTERS = {
         LOGIN:`${ADMIN_PATH}/dang-nhap`,
         DASHBOARD:`${ADMIN_PATH}/`,
         PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
+        COLOR:`${ADMIN_PATH}/quan-ly-mau-sac`,
+        PRODUCTIMAGE:`${ADMIN_PATH}/quan-ly-hinh-san-pham`,
         BRANDMANAGEMENT:`${ADMIN_PATH}/quan-ly-thuong-hieu`,
         PROMOTION:`${ADMIN_PATH}/quan-ly-khuyen-mai`,
         DISCOUNT:`${ADMIN_PATH}/quan-ly-giam-gia`,

@@ -14,6 +14,8 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ColorController;
+use App\Http\Controllers\ProductImageController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -64,6 +66,12 @@ Route::prefix('admin')->group(function () {
     // ------------------ Brand ------------------
     Route::apiResource('brands', BrandController::class);
 
-     // ------------------ Product ------------------
-     Route::resource('products', ProductController::class);
+    // ------------------ Product ------------------
+    Route::resource('products', ProductController::class);
+
+    // ------------------ Color ------------------
+    Route::resource('colors', ColorController::class);
+
+    // ------------------ ProductImages ------------------
+    Route::apiResource('product-images', ProductImageController::class);
 });

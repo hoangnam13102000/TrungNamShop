@@ -2,24 +2,35 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import ScrollToTop from "./routers/navigation";
 
 // ADMIN PATH
+
+import { ROUTERS, ADMIN_PATH } from "./routers/router";
 import DashBoard from "@page_admin/DashBoard";
-import ProductManagement from "@page_admin/product/ProductManagement";
-import BrandManagement from "@page_admin/product/BrandManagement";
-import PromotionList from "./pages/admin/product/PromotionManagement";
-import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
-import OrderManagement from "@page_admin/OrderManagement";
-import DiscountList from "@page_admin/product/DiscountManagement";
-import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
+
+//----------------------ACCOUNT-------------------------------------
+
 import AccountList from "@page_admin/account/AccountList";
 import AccountTypeList from "@page_admin/account/AccountType";
 import MemberLevelList from "@page_admin/customer/MemberLevelList";
+import Reward from "./pages/admin/employee/Reward";
+//----------------------PRODUCT-------------------------------------
+
+import ProductManagement from "@page_admin/product/ProductManagement";
+import Color from "./pages/admin/product/Color";
+import BrandManagement from "@page_admin/product/BrandManagement";
+import PromotionList from "./pages/admin/product/PromotionManagement";
+import OrderManagement from "@page_admin/OrderManagement";
+import DiscountList from "@page_admin/product/DiscountManagement";
+
+//----------------------USERS-------------------------------------
+import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
 import StoreManagement from "@page_admin/store/StoreManagement";
 import WarehouseManagement from "@page_admin/store/WarehouseManagement";
-import Reward from "./pages/admin/employee/Reward";
 import PositionManagement from "./pages/admin/employee/Position";
 
+
 // HOMEPAGE PATH
+import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 import Homepage from "@page_user/HomePage";
 import ProfilePage from "@page_user/ProfilePage";
 import AboutPage from "@page_user/IntroPage";
@@ -32,8 +43,9 @@ import ForgotPassword from "@page_user/ForgotPassword";
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
+import ProductImage from "./pages/admin/product/ProductImage";
 
-import { ROUTERS, ADMIN_PATH } from "./routers/router";
+
 
 const renderAdminRouter = () => {
   const adminRouter = [
@@ -44,6 +56,14 @@ const renderAdminRouter = () => {
     {
       path: ROUTERS.ADMIN.PRODUCTMANAGEMENT,
       component: <ProductManagement />,
+    },
+     {
+      path: ROUTERS.ADMIN.COLOR,
+      component: <Color />,
+    },
+     {
+      path: ROUTERS.ADMIN.PRODUCTIMAGE,
+      component: <ProductImage />,
     },
     {
       path: ROUTERS.ADMIN.BRANDMANAGEMENT,
