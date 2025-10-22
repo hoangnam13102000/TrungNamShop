@@ -1,9 +1,10 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useStores,
   useCreateStore,
@@ -12,20 +13,10 @@ import {
 } from "../../../../api/stores";
 
 const StoreManagement = () => {
-  // --- Dialog state ---
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "confirm",
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-
-  const showDialog = (options) => setDialog({ open: true, ...options });
-  const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
-
-  // --- Fetch data & mutations ---
-  const { data: stores = [], isLoading } = useStores();
+  /** ==========================
+   * 1. FETCH DATA & CRUD
+   * ========================== */
+  const { data: stores = [], isLoading, refetch } = useStores();
   const createMutation = useCreateStore();
   const updateMutation = useUpdateStore();
   const deleteMutation = useDeleteStore();
@@ -39,85 +30,41 @@ const StoreManagement = () => {
     "stores"
   );
 
-  // --- Search/filter ---
-  const [search, setSearch] = useState("");
-  const filteredItems = stores.filter((s) =>
-    (s.name || "").toLowerCase().includes(search.toLowerCase().trim())
+  /** ==========================
+   * 2. HANDLER + DIALOG
+   * ========================== */
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.name || "Không tên"
   );
 
-  // --- Handlers ---
-  const handleSave = async (formData) => {
-    const isEditing = Boolean(crud.selectedItem);
-    showDialog({
-      mode: "confirm",
-      title: isEditing ? "Xác nhận cập nhật" : "Xác nhận thêm cửa hàng",
-      message: isEditing
-        ? `Bạn có chắc chắn muốn cập nhật cửa hàng "${formData.name}" không?`
-        : `Bạn có chắc chắn muốn thêm cửa hàng "${formData.name}" không?`,
-      onConfirm: async () => {
-        try {
-          await crud.handleSave(formData);
-          showDialog({
-            mode: "success",
-            title: "Thành công",
-            message: isEditing
-              ? "Cập nhật cửa hàng thành công!"
-              : "Thêm cửa hàng thành công!",
-            onClose: closeDialog,
-          });
-        } catch (err) {
-          console.error(err);
-          showDialog({
-            mode: "error",
-            title: "Lỗi",
-            message: "Không thể lưu cửa hàng.",
-            onClose: closeDialog,
-          });
-        }
-      },
-      onClose: closeDialog,
-    });
-  };
+  /** ==========================
+   * 3. SEARCH & FILTER
+   * ========================== */
+  const [search, setSearch] = useState("");
+  const filteredItems = useMemo(() => {
+    return stores.filter((s) =>
+      (s.name || "").toLowerCase().includes(search.toLowerCase().trim())
+    );
+  }, [stores, search]);
 
-  const handleDelete = (row) => {
-    showDialog({
-      mode: "confirm",
-      title: "Xác nhận xóa",
-      message: `Bạn có chắc chắn muốn xóa cửa hàng "${row.name}" không?`,
-      onConfirm: async () => {
-        try {
-          await crud.handleDelete(row.id);
-          showDialog({
-            mode: "success",
-            title: "Thành công",
-            message: "Xóa cửa hàng thành công!",
-            onClose: closeDialog,
-          });
-        } catch (err) {
-          console.error(err);
-          showDialog({
-            mode: "error",
-            title: "Lỗi",
-            message: "Không thể xóa cửa hàng.",
-            onClose: closeDialog,
-          });
-        }
-      },
-      onClose: closeDialog,
-    });
-  };
-
-  // --- Loading / error ---
+  /** ==========================
+   * 4. UI
+   * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (createMutation.isError || updateMutation.isError || deleteMutation.isError)
+  if (
+    createMutation.isError ||
+    updateMutation.isError ||
+    deleteMutation.isError
+  )
     return (
       <div className="p-6 text-center text-red-500">
         Có lỗi xảy ra khi tải dữ liệu cửa hàng.
       </div>
     );
 
-  // --- UI ---
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý cửa hàng</h1>
@@ -146,7 +93,6 @@ const StoreManagement = () => {
           { field: "address", label: "Địa chỉ" },
           { field: "email", label: "Email" },
           { field: "phone", label: "Số điện thoại" },
-          
         ]}
         data={filteredItems}
         actions={[
@@ -160,21 +106,38 @@ const StoreManagement = () => {
         <DynamicForm
           title={crud.mode === "edit" ? "Sửa cửa hàng" : "Thêm cửa hàng"}
           fields={[
-            { name: "name", label: "Tên cửa hàng", type: "text", required: true },
-            { name: "address", label: "Địa chỉ", type: "textarea", required: true },
+            {
+              name: "name",
+              label: "Tên cửa hàng",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "address",
+              label: "Địa chỉ",
+              type: "textarea",
+              required: true,
+            },
             { name: "email", label: "Email", type: "email" },
             { name: "phone", label: "Số điện thoại", type: "text" },
             { name: "google_map", label: "Link Google Map", type: "text" },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave}
+          onSave={handleSave} // handleSave đã xử lý dialog
           onClose={crud.handleCloseForm}
           errors={crud.errors}
         />
       )}
 
       {/* Dialog */}
-      <DynamicDialog {...dialog} />
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={dialog.onConfirm}
+        onClose={closeDialog}
+      />
     </div>
   );
 };

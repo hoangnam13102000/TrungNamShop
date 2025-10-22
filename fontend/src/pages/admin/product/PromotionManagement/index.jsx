@@ -1,9 +1,10 @@
-import { memo, useState, useMemo, useCallback } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1"; // hoặc useAdminCrud
+import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   usePromotions,
   useCreatePromotion,
@@ -15,11 +16,15 @@ export default memo(function PromotionManagement() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const { data: promotions = [], isLoading } = usePromotions();
+  const { data: promotions = [], isLoading, refetch } = usePromotions();
+
   const createMutation = useCreatePromotion();
   const updateMutation = useUpdatePromotion();
   const deleteMutation = useDeletePromotion();
 
+  /** ==========================
+   * 2. CRUD SETUP
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -29,26 +34,20 @@ export default memo(function PromotionManagement() {
     "promotions"
   );
 
-  const [search, setSearch] = useState("");
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "alert",
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  }, []);
-
-  const closeDialog = useCallback(() => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  }, []);
+  /** ==========================
+   * 3. HANDLER + DIALOG
+   * ========================== */
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.name || "Không tên"
+  );
 
   /** ==========================
-   * 2. FILTERED DATA
+   * 4. SEARCH & FILTER
    * ========================== */
+  const [search, setSearch] = useState("");
+
   const filteredItems = useMemo(() => {
     return promotions.filter((p) =>
       (p.name || "").toLowerCase().includes(search.toLowerCase().trim())
@@ -56,44 +55,7 @@ export default memo(function PromotionManagement() {
   }, [promotions, search]);
 
   /** ==========================
-   * 3. HANDLERS
-   * ========================== */
-  const handleSave = async (formData) => {
-    showDialog(
-      "confirm",
-      "Xác nhận lưu",
-      "Bạn có chắc muốn lưu khuyến mãi này?",
-      async () => {
-        try {
-          await crud.handleSave(formData);
-          showDialog("success", "Thành công", "Khuyến mãi đã được lưu!");
-        } catch (err) {
-          console.error("Save error:", err);
-          showDialog("error", "Lỗi", "Không thể lưu khuyến mãi!");
-        }
-      }
-    );
-  };
-
-  const handleDelete = (item) => {
-    showDialog(
-      "confirm",
-      "Xác nhận xóa",
-      `Bạn có chắc chắn muốn xóa "${item.name}" không?`,
-      async () => {
-        try {
-          await crud.handleDelete(item.id);
-          showDialog("success", "Thành công", "Đã xóa khuyến mãi!");
-        } catch (err) {
-          console.error("Delete error:", err);
-          showDialog("error", "Lỗi", "Không thể xóa khuyến mãi!");
-        }
-      }
-    );
-  };
-
-  /** ==========================
-   * 4. UI
+   * 5. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -153,7 +115,7 @@ export default memo(function PromotionManagement() {
             { name: "end_date", label: "Ngày kết thúc", type: "date", required: true },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave}
+          onSave={handleSave} // handleSave đã xử lý dialog
           onClose={crud.handleCloseForm}
           className="w-full max-w-lg mx-auto"
         />

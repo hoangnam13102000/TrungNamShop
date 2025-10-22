@@ -1,9 +1,10 @@
-import { memo, useState, useMemo, useCallback } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useAccountTypes,
   useCreateAccountType,
@@ -15,13 +16,9 @@ const AccountTypeList = () => {
   const protectedNames = ["Admin", "Nhân viên", "Khách hàng"];
 
   /** ==========================
-   * 1. FETCH DATA
+   * 1. FETCH DATA & CRUD
    * ========================== */
-  const { data: accountTypes = [], isLoading } = useAccountTypes();
-
-  /** ==========================
-   * 2. CRUD MUTATIONS
-   * ========================== */
+  const { data: accountTypes = [], isLoading, refetch } = useAccountTypes();
   const createMutation = useCreateAccountType();
   const updateMutation = useUpdateAccountType();
   const deleteMutation = useDeleteAccountType();
@@ -36,28 +33,19 @@ const AccountTypeList = () => {
   );
 
   /** ==========================
-   * 3. STATE
+   * 2. HANDLER + DIALOG
    * ========================== */
-  const [search, setSearch] = useState("");
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "alert", // "alert" | "confirm" | "success" | "error" | "warning"
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  }, []);
-
-  const closeDialog = useCallback(() => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  }, []);
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.account_type_name || "Không tên",
+    protectedNames // truyền mảng bảo vệ
+  );
 
   /** ==========================
-   * 4. FILTER & MAP DATA
+   * 3. SEARCH & FILTER
    * ========================== */
+  const [search, setSearch] = useState("");
   const filteredItems = useMemo(() => {
     return accountTypes.filter((a) =>
       (a.account_type_name || "")
@@ -67,65 +55,22 @@ const AccountTypeList = () => {
   }, [accountTypes, search]);
 
   /** ==========================
-   * 5. HANDLERS
+   * 4. UI
    * ========================== */
-  const handleSave = async (formData) => {
-    const isEditing = Boolean(crud.selectedItem);
-
-    // Chặn sửa loại hệ thống
-    if (isEditing && protectedNames.includes(crud.selectedItem.account_type_name)) {
-      showDialog("warning", "Không thể sửa", "Không thể sửa loại tài khoản hệ thống.");
-      return;
-    }
-
-    showDialog(
-      "confirm",
-      isEditing ? "Xác nhận cập nhật" : "Xác nhận thêm",
-      isEditing
-        ? `Bạn có chắc muốn cập nhật loại "${formData.account_type_name}"?`
-        : `Bạn có chắc muốn thêm loại "${formData.account_type_name}"?`,
-      async () => {
-        try {
-          await crud.handleSave(formData);
-          showDialog("success", "Thành công", "Đã lưu loại tài khoản thành công!");
-        } catch (err) {
-          console.error("Save error:", err);
-          showDialog("error", "Lỗi", "Không thể lưu loại tài khoản!");
-        }
-      }
+  if (isLoading)
+    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
+  if (createMutation.isError || updateMutation.isError || deleteMutation.isError)
+    return (
+      <div className="p-6 text-center text-red-500">
+        Có lỗi xảy ra khi tải dữ liệu loại tài khoản.
+      </div>
     );
-  };
 
-  const handleDelete = (item) => {
-    if (protectedNames.includes(item.account_type_name)) {
-      showDialog("warning", "Không thể xóa", "Không thể xóa loại tài khoản hệ thống.");
-      return;
-    }
-
-    showDialog(
-      "confirm",
-      "Xác nhận xóa",
-      `Bạn có chắc muốn xóa loại "${item.account_type_name}"?`,
-      async () => {
-        try {
-          await crud.handleDelete(item.id);
-          showDialog("success", "Thành công", "Đã xóa loại tài khoản!");
-        } catch (err) {
-          console.error("Delete error:", err);
-          showDialog("error", "Lỗi", "Không thể xóa loại tài khoản!");
-        }
-      }
-    );
-  };
-
-  /** ==========================
-   * 6. UI
-   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý loại tài khoản</h1>
 
-      {/* BUTTON + SEARCH */}
+      {/* Toolbar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
           onClick={crud.handleAdd}
@@ -143,38 +88,20 @@ const AccountTypeList = () => {
         />
       </div>
 
-      {/* TABLE */}
-      {isLoading ? (
-        <p>Đang tải dữ liệu...</p>
-      ) : (
-        <AdminListTable
-          columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
-          data={filteredItems}
-          actions={[
-            {
-              icon: <FaEdit />,
-              label: "Sửa",
-              onClick: crud.handleEdit,
-              disabled: (row) => protectedNames.includes(row.account_type_name),
-            },
-            {
-              icon: <FaTrash />,
-              label: "Xóa",
-              onClick: handleDelete,
-              disabled: (row) => protectedNames.includes(row.account_type_name),
-            },
-          ]}
-        />
-      )}
+      {/* Table */}
+      <AdminListTable
+        columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
+        data={filteredItems}
+        actions={[
+          { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit, disabled: (row) => protectedNames.includes(row.account_type_name) },
+          { icon: <FaTrash />, label: "Xóa", onClick: handleDelete, disabled: (row) => protectedNames.includes(row.account_type_name) },
+        ]}
+      />
 
-      {/* FORM ADD / EDIT */}
+      {/* Form Add / Edit */}
       {crud.openForm && (
         <DynamicForm
-          title={
-            crud.mode === "edit"
-              ? `Sửa loại tài khoản - ${crud.selectedItem?.account_type_name}`
-              : "Thêm loại tài khoản"
-          }
+          title={crud.mode === "edit" ? `Sửa loại tài khoản - ${crud.selectedItem?.account_type_name}` : "Thêm loại tài khoản"}
           fields={[
             { name: "account_type_name", label: "Tên loại tài khoản", type: "text", required: true },
           ]}
@@ -184,14 +111,14 @@ const AccountTypeList = () => {
         />
       )}
 
-      {/* DIALOG */}
+      {/* Dialog */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
         title={dialog.title}
         message={dialog.message}
         onConfirm={dialog.onConfirm}
-        onClose={closeDialog}
+        onClose={closeDialog} 
       />
     </div>
   );

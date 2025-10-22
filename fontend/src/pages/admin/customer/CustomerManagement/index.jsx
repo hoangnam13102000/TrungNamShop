@@ -1,9 +1,10 @@
-import { memo, useMemo, useState, useCallback } from "react";
+import { memo, useMemo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useCustomers,
   useCreateCustomer,
@@ -15,7 +16,7 @@ export default memo(function CustomerManagement() {
   /** ==========================
    *  1. FETCH DATA
    *  ========================== */
-  const { data: customers = [], isLoading } = useCustomers();
+  const { data: customers = [], isLoading, refetch } = useCustomers();
 
   /** ==========================
    *  2. CRUD MUTATIONS
@@ -33,35 +34,20 @@ export default memo(function CustomerManagement() {
     "customers"
   );
 
-  const [search, setSearch] = useState("");
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "alert", // "alert" | "confirm" | "success" | "error"
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-  const [viewItem, setViewItem] = useState(null);
-
   /** ==========================
-   *  3. DIALOG HELPERS
+   *  3. ADMIN HANDLER
    *  ========================== */
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  }, []);
+  const { dialog, closeDialog, handleSave } = useAdminHandler(crud, refetch);
 
-  const closeDialog = useCallback(() => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  }, []);
+  const [search, setSearch] = useState("");
+  const [viewItem, setViewItem] = useState(null);
 
   /** ==========================
    *  4. FILTER & MAP DATA
    *  ========================== */
   const filteredItems = useMemo(() => {
     return customers.filter((c) =>
-      (c.full_name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase().trim())
+      (c.full_name || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [customers, search]);
 
@@ -79,49 +65,7 @@ export default memo(function CustomerManagement() {
   }, [filteredItems]);
 
   /** ==========================
-   *  5. HANDLERS
-   *  ========================== */
-  const handleView = (item) => {
-    setViewItem(item);
-  };
-
-  const handleSave = async (formData, plainData) => {
-    showDialog(
-      "confirm",
-      "Xác nhận lưu",
-      "Bạn có chắc muốn lưu thay đổi cho khách hàng này?",
-      async () => {
-        try {
-          await crud.handleSave(formData, plainData);
-          showDialog("success", "Thành công", "Lưu thông tin thành công!");
-        } catch (err) {
-          console.error("Save error:", err);
-          showDialog("error", "Lỗi", "Không thể lưu thông tin khách hàng!");
-        }
-      }
-    );
-  };
-
-  // const handleDelete = (item) => {
-  //   const name = item?.full_name ?? "Khách hàng không tên";
-  //   showDialog(
-  //     "confirm",
-  //     "Xác nhận xoá",
-  //     `Bạn có chắc chắn muốn xoá "${name}" không?`,
-  //     async () => {
-  //       try {
-  //         await crud.handleDelete(item.id);
-  //         showDialog("success", "Thành công", "Đã xoá khách hàng thành công!");
-  //       } catch (err) {
-  //         console.error("Delete error:", err);
-  //         showDialog("error", "Lỗi", "Không thể xoá khách hàng!");
-  //       }
-  //     }
-  //   );
-  // };
-
-  /** ==========================
-   *  6. UI
+   *  5. UI
    *  ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -161,9 +105,9 @@ export default memo(function CustomerManagement() {
             ]}
             data={mappedItems}
             actions={[
-              { icon: <FaEye />, label: "Xem", onClick: handleView },
+              { icon: <FaEye />, label: "Xem", onClick: setViewItem },
               { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              // { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              // { icon: <FaTrash />, label: "Xoá", onClick: (item) => handleDelete(item, "full_name") },
             ]}
           />
         </div>
@@ -223,7 +167,9 @@ export default memo(function CustomerManagement() {
             },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave}
+          onSave={(formData) =>
+            handleSave(formData, { name: "full_name" })
+          }
           onClose={crud.handleCloseForm}
           className="w-full max-w-lg mx-auto"
         />

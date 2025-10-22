@@ -1,9 +1,10 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useWarehouses,
   useCreateWarehouse,
@@ -12,20 +13,10 @@ import {
 } from "../../../../api/warehouse";
 
 const WarehouseManagement = () => {
-  // --- Dialog state ---
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "confirm",
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-
-  const showDialog = (options) => setDialog({ open: true, ...options });
-  const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
-
-  // --- Fetch data & mutations ---
-  const { data: warehouses = [], isLoading } = useWarehouses();
+  /** ==========================
+   * 1. FETCH DATA & CRUD
+   * ========================== */
+  const { data: warehouses = [], isLoading, refetch } = useWarehouses();
   const createMutation = useCreateWarehouse();
   const updateMutation = useUpdateWarehouse();
   const deleteMutation = useDeleteWarehouse();
@@ -39,75 +30,28 @@ const WarehouseManagement = () => {
     "warehouses"
   );
 
-  // --- Search/filter ---
-  const [search, setSearch] = useState("");
-  const filteredItems = warehouses.filter((w) =>
-    (w.name || "").toLowerCase().includes(search.toLowerCase().trim())
+  /** ==========================
+   * 2. HANDLER + DIALOG
+   * ========================== */
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.name || "Không tên"
   );
 
-  // --- Handlers ---
-  const handleSave = async (formData) => {
-    const isEditing = Boolean(crud.selectedItem);
-    showDialog({
-      mode: "confirm",
-      title: isEditing ? "Xác nhận cập nhật" : "Xác nhận thêm kho",
-      message: isEditing
-        ? `Bạn có chắc chắn muốn cập nhật kho "${formData.name}" không?`
-        : `Bạn có chắc chắn muốn thêm kho "${formData.name}" không?`,
-      onConfirm: async () => {
-        try {
-          await crud.handleSave(formData);
-          showDialog({
-            mode: "success",
-            title: "Thành công",
-            message: isEditing
-              ? "Cập nhật kho thành công!"
-              : "Thêm kho mới thành công!",
-            onClose: closeDialog,
-          });
-        } catch (err) {
-          console.error(err);
-          showDialog({
-            mode: "error",
-            title: "Lỗi",
-            message: "Không thể lưu kho.",
-            onClose: closeDialog,
-          });
-        }
-      },
-      onClose: closeDialog,
-    });
-  };
+  /** ==========================
+   * 3. SEARCH & FILTER
+   * ========================== */
+  const [search, setSearch] = useState("");
+  const filteredItems = useMemo(() => {
+    return warehouses.filter((w) =>
+      (w.name || "").toLowerCase().includes(search.toLowerCase().trim())
+    );
+  }, [warehouses, search]);
 
-  const handleDelete = (row) => {
-    showDialog({
-      mode: "confirm",
-      title: "Xác nhận xóa",
-      message: `Bạn có chắc chắn muốn xóa kho "${row.name}" không?`,
-      onConfirm: async () => {
-        try {
-          await crud.handleDelete(row.id);
-          showDialog({
-            mode: "success",
-            title: "Thành công",
-            message: "Xóa kho thành công!",
-            onClose: closeDialog,
-          });
-        } catch (err) {
-          console.error(err);
-          showDialog({
-            mode: "error",
-            title: "Lỗi",
-            message: "Không thể xóa kho.",
-            onClose: closeDialog,
-          });
-        }
-      },
-      onClose: closeDialog,
-    });
-  };
-
-  // --- Loading / Error ---
+  /** ==========================
+   * 4. UI
+   * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
   if (createMutation.isError || updateMutation.isError || deleteMutation.isError)
@@ -117,7 +61,6 @@ const WarehouseManagement = () => {
       </div>
     );
 
-  // --- UI ---
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý kho hàng</h1>
@@ -163,14 +106,21 @@ const WarehouseManagement = () => {
             { name: "note", label: "Ghi chú", type: "textarea" },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave}
+          onSave={handleSave} // handleSave đã xử lý dialog
           onClose={crud.handleCloseForm}
           errors={crud.errors}
         />
       )}
 
       {/* Dialog */}
-      <DynamicDialog {...dialog} />
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={dialog.onConfirm}
+        onClose={closeDialog} // ← fix để đóng dialog
+      />
     </div>
   );
 };

@@ -1,9 +1,10 @@
-import { memo, useState, useMemo, useCallback } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useMemberLevelings,
   useCreateMemberLeveling,
@@ -15,7 +16,7 @@ const MemberLevelingList = () => {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const { data: levels = [], isLoading } = useMemberLevelings();
+  const { data: levels = [], isLoading, refetch } = useMemberLevelings();
   const createMutation = useCreateMemberLeveling();
   const updateMutation = useUpdateMemberLeveling();
   const deleteMutation = useDeleteMemberLeveling();
@@ -29,25 +30,16 @@ const MemberLevelingList = () => {
     "member-levelings"
   );
 
+  /** ==========================
+   * 2. ADMIN HANDLER
+   * ========================== */
+  const { dialog, showDialog, closeDialog, handleSave, handleDelete } =
+    useAdminHandler(crud, refetch);
+
   const [search, setSearch] = useState("");
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "alert",
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
-
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  }, []);
-
-  const closeDialog = useCallback(() => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  }, []);
 
   /** ==========================
-   * 2. FILTER DATA & FORMAT
+   * 3. FILTER DATA & FORMAT
    * ========================== */
   const filteredItems = useMemo(() => {
     return levels
@@ -56,64 +48,42 @@ const MemberLevelingList = () => {
       )
       .map((l) => ({
         ...l,
-        limit: l.limit != null ? Math.floor(Number(l.limit)) : null, // ép limit thành số nguyên
+        limit: l.limit != null ? Math.floor(Number(l.limit)) : null,
       }));
   }, [levels, search]);
 
   /** ==========================
-   * 3. HANDLERS
+   * 4. CUSTOM HANDLERS (đặc biệt)
    * ========================== */
-  const handleSave = async (formData) => {
+  const onSave = async (formData) => {
+    // No Edit
     if (crud.selectedItem?.id === 1) {
       showDialog("alert", "Cảnh báo", "Không thể sửa bậc đặc biệt!");
       return;
     }
 
-    // Ép limit thành số nguyên trước save
+    // force limit to an integer
     if (formData.limit != null) {
       formData.limit = Math.floor(Number(formData.limit));
     }
 
-    showDialog(
-      "confirm",
-      "Xác nhận",
-      `Bạn có chắc muốn ${crud.mode === "edit" ? "cập nhật" : "thêm"} bậc thành viên "${formData.name}"?`,
-      async () => {
-        try {
-          await crud.handleSave(formData);
-          showDialog("success", "Thành công", "Đã lưu bậc thành viên!");
-        } catch (err) {
-          console.error("Save error:", err);
-          showDialog("error", "Lỗi", "Không thể lưu bậc thành viên!");
-        }
-      }
-    );
+    //Use hook handleSave for confirm + dialog
+    handleSave(formData, { name: "name" });
   };
 
-  const handleDelete = (item) => {
+  const onDelete = (item) => {
+    // No Delete
     if (item.id === 1) {
       showDialog("alert", "Cảnh báo", "Không thể xóa bậc đặc biệt!");
       return;
     }
 
-    showDialog(
-      "confirm",
-      "Xác nhận xóa",
-      `Bạn có chắc muốn xóa bậc thành viên "${item.name}"?`,
-      async () => {
-        try {
-          await crud.handleDelete(item.id);
-          showDialog("success", "Thành công", "Đã xóa bậc thành viên!");
-        } catch (err) {
-          console.error("Delete error:", err);
-          showDialog("error", "Lỗi", "Không thể xóa bậc thành viên!");
-        }
-      }
-    );
+    // use hook handleDelete
+    handleDelete(item, "name");
   };
 
   /** ==========================
-   * 4. UI
+   * 5. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -148,8 +118,18 @@ const MemberLevelingList = () => {
           ]}
           data={filteredItems}
           actions={[
-            { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit, disabled: (row) => row.id === 1 },
-            { icon: <FaTrash />, label: "Xóa", onClick: handleDelete, disabled: (row) => row.id === 1 },
+            {
+              icon: <FaEdit />,
+              label: "Sửa",
+              onClick: crud.handleEdit,
+              disabled: (row) => row.id === 1,
+            },
+            {
+              icon: <FaTrash />,
+              label: "Xóa",
+              onClick: onDelete,
+              disabled: (row) => row.id === 1,
+            },
           ]}
         />
       )}
@@ -157,16 +137,35 @@ const MemberLevelingList = () => {
       {/* FORM ADD / EDIT */}
       {crud.openForm && (
         <DynamicForm
-          title={crud.mode === "edit" ? `Sửa bậc thành viên - ${crud.selectedItem?.name}` : "Thêm bậc thành viên"}
+          title={
+            crud.mode === "edit"
+              ? `Sửa bậc thành viên - ${crud.selectedItem?.name}`
+              : "Thêm bậc thành viên"
+          }
           fields={[
-            { name: "name", label: "Tên bậc thành viên", type: "text", required: true },
-            { name: "limit", label: "Hạn mức (point)", type: "number", required: true, step: 1, min: 0 },
+            {
+              name: "name",
+              label: "Tên bậc thành viên",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "limit",
+              label: "Hạn mức (point)",
+              type: "number",
+              required: true,
+              step: 1,
+              min: 0,
+            },
           ]}
           initialData={{
             ...crud.selectedItem,
-            limit: crud.selectedItem?.limit != null ? Math.floor(crud.selectedItem.limit) : null,
+            limit:
+              crud.selectedItem?.limit != null
+                ? Math.floor(crud.selectedItem.limit)
+                : null,
           }}
-          onSave={handleSave}
+          onSave={onSave}
           onClose={crud.handleCloseForm}
         />
       )}

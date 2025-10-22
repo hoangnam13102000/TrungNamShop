@@ -10,33 +10,40 @@ export default function DynamicForm({
   initialData = {},
   onSave,
   onClose,
-  mode = "create", // "create" | "edit" | "view"
+  mode = "create", // create | edit | view
 }) {
-  const safeInitialData = initialData || {};
+  const safeData = initialData || {};
 
+  /** =========================
+   *  State: Form & Preview
+   * ========================= */
   const [formData, setFormData] = useState(() => {
-    const initial = {};
+    const result = {};
     fields.forEach((f) => {
-      initial[f.name] = safeInitialData[f.name] ?? "";
+      result[f.name] = safeData[f.name] ?? "";
     });
-    return initial;
+    return result;
   });
 
   const [preview, setPreview] = useState(() => {
-    const initialPreview = {};
+    const result = {};
     fields.forEach((f) => {
       if (f.type === "file") {
-        initialPreview[f.name] =
-          safeInitialData[f.name] instanceof File
-            ? URL.createObjectURL(safeInitialData[f.name])
-            : safeInitialData[f.name] || placeholder;
+        result[f.name] =
+          safeData[f.name] instanceof File
+            ? URL.createObjectURL(safeData[f.name])
+            : safeData[f.name] || placeholder;
       }
     });
-    return initialPreview;
+    return result;
   });
 
-  const [localErrors, setLocalErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+
+  /** =========================
+   *  Dialog State
+   * ========================= */
   const [dialog, setDialog] = useState({
     open: false,
     mode: "confirm",
@@ -45,11 +52,17 @@ export default function DynamicForm({
     onConfirm: null,
   });
 
-  const showDialog = (mode, title, message, onConfirm = null) => {
+  const openDialog = (mode, title, message, onConfirm = null) => {
     setDialog({ open: true, mode, title, message, onConfirm });
   };
-  const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
 
+  const closeDialog = () => {
+    setDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  /** =========================
+   *  Handlers
+   * ========================= */
   const handleChange = (name, value) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -61,71 +74,54 @@ export default function DynamicForm({
     setPreview((prev) => ({ ...prev, [name]: URL.createObjectURL(file) }));
   };
 
+  /** =========================
+   *  Validation
+   * ========================= */
   const validate = () => {
     if (mode === "view") return true;
-    const errors = {};
+
+    const newErrors = {};
     fields.forEach((f) => {
-      if (
-        f.required &&
-        (formData[f.name] === undefined ||
-          formData[f.name] === null ||
-          formData[f.name] === "")
-      ) {
-        errors[f.name] = `${f.label} không được để trống`;
+      const value = formData[f.name];
+      if (f.required && (value === "" || value === undefined || value === null)) {
+        newErrors[f.name] = `${f.label} không được để trống`;
       }
     });
-    setLocalErrors(errors);
-    return Object.keys(errors).length === 0;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const performSave = async () => {
-    setIsSubmitting(true);
-    try {
-      const hasFile = fields.some((f) => f.type === "file");
-      const dataToSend = hasFile ? new FormData() : {};
-
-      fields.forEach((f) => {
-        const value = formData[f.name];
-        if (f.type === "file") {
-          if (value instanceof File) dataToSend.append(f.name, value);
-        } else {
-          if (hasFile) dataToSend.append(f.name, value);
-          else dataToSend[f.name] = value;
-        }
-      });
-
-      const mergedData = { ...formData, id: safeInitialData.id };
-      await onSave(dataToSend, mergedData);
-      onClose();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  /** =========================
+   *  Submit Logic
+   * ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting || mode === "view") return;
+    if (submitting || mode === "view") return;
     if (!validate()) return;
 
-    // ⚠️ Kiểm tra nếu chọn "Ngừng hoạt động" (status = 0)
-    if (formData.status === 0 || formData.trangThai === 0) {
-      showDialog(
+    const shouldConfirmStop =
+      formData.status === 0 || formData.trangThai === 0;
+
+    if (shouldConfirmStop) {
+      openDialog(
         "confirm",
         "Xác nhận ngừng hoạt động",
         "Bạn có chắc muốn ngừng hoạt động tài khoản này không?",
         async () => {
           closeDialog();
-          await performSave();
+          await onSave(formData);
         }
       );
       return;
     }
 
-    await performSave();
+    await onSave(formData);
   };
 
+  /** =========================
+   *  Render UI
+   * ========================= */
   return (
     <AnimatePresence>
       <motion.div
@@ -151,76 +147,75 @@ export default function DynamicForm({
             onSubmit={handleSubmit}
             className="flex-1 overflow-y-auto space-y-4 pr-2"
           >
-            {fields.map((field) => (
-              <div key={field.name}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field.label}{" "}
-                  {field.required && <span className="text-red-500">*</span>}
-                </label>
+            {fields.map((field) => {
+              const value = formData[field.name] ?? "";
+              const error = errors[field.name];
 
-                {field.type === "file" ? (
-                  <div className="flex flex-col items-center gap-2 w-full">
-                    <div
-                      className={`w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover ${
-                        mode !== "view" ? "cursor-pointer" : "opacity-80"
-                      }`}
-                      style={{
-                        backgroundImage: `url(${
-                          preview[field.name] || placeholder
-                        })`,
-                      }}
-                      onClick={() => {
-                        if (mode !== "view")
-                          document
-                            .getElementById(field.name + "-file")
-                            .click();
-                      }}
-                    />
-                    <input
-                      id={field.name + "-file"}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleFileChange(field.name, e.target.files[0])
-                      }
-                      className="hidden"
+              return (
+                <div key={field.name}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.label}{" "}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </label>
+
+                  {field.type === "file" ? (
+                    <div className="flex flex-col items-center gap-2 w-full">
+                      <div
+                        className={`w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover ${
+                          mode !== "view" ? "cursor-pointer" : "opacity-80"
+                        }`}
+                        style={{
+                          backgroundImage: `url(${preview[field.name] || placeholder})`,
+                        }}
+                        onClick={() => {
+                          if (mode !== "view")
+                            document.getElementById(field.name + "-file").click();
+                        }}
+                      />
+                      <input
+                        id={field.name + "-file"}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          handleFileChange(field.name, e.target.files[0])
+                        }
+                        className="hidden"
+                        disabled={mode === "view"}
+                      />
+                      <p className="text-xs text-gray-500">
+                        {formData[field.name]?.name ||
+                          safeData[field.name] ||
+                          "Chưa chọn ảnh"}
+                      </p>
+                    </div>
+                  ) : field.type === "select" ? (
+                    <Dropdown
+                      value={value}
+                      options={field.options || []}
+                      placeholder={`Chọn ${field.label}`}
+                      onSelect={(opt) => handleChange(field.name, opt.value)}
                       disabled={mode === "view"}
                     />
-                    <p className="text-xs text-gray-500">
-                      {formData[field.name]?.name ||
-                        safeInitialData[field.name] ||
-                        "Chưa chọn ảnh"}
-                    </p>
-                  </div>
-                ) : field.type === "select" ? (
-                  <Dropdown
-                    value={formData[field.name]}
-                    options={field.options || []}
-                    placeholder={`Chọn ${field.label}`}
-                    onSelect={(opt) => handleChange(field.name, opt.value)}
-                    disabled={mode === "view"}
-                  />
-                ) : (
-                  <input
-                    type={field.type}
-                    value={formData[field.name] ?? ""}
-                    onChange={(e) => handleChange(field.name, e.target.value)}
-                    className={`w-full border rounded-lg px-3 py-2 ${
-                      mode === "view"
-                        ? "bg-gray-100 text-gray-600 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={field.disabled || mode === "view"}
-                  />
-                )}
+                  ) : (
+                    <input
+                      type={field.type}
+                      value={value}
+                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      className={`w-full border rounded-lg px-3 py-2 ${
+                        mode === "view"
+                          ? "bg-gray-100 text-gray-600 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={field.disabled || mode === "view"}
+                    />
+                  )}
 
-                {localErrors[field.name] && mode !== "view" && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {localErrors[field.name]}
-                  </p>
-                )}
-              </div>
-            ))}
+                  {error && mode !== "view" && (
+                    <p className="text-red-500 text-sm mt-1">{error}</p>
+                  )}
+                </div>
+              );
+            })}
 
             <div className="flex justify-end gap-2 pt-2 mt-4">
               <button
@@ -234,14 +229,14 @@ export default function DynamicForm({
               {mode !== "view" && (
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={submitting}
                   className={`px-4 py-2 rounded-lg text-white ${
-                    isSubmitting
+                    submitting
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-red-500 hover:bg-red-600"
                   }`}
                 >
-                  {isSubmitting
+                  {submitting
                     ? "Đang lưu..."
                     : mode === "edit"
                     ? "Cập nhật"
@@ -251,7 +246,6 @@ export default function DynamicForm({
             </div>
           </form>
 
-          {/* DynamicDialog xác nhận ngừng hoạt động */}
           <DynamicDialog
             open={dialog.open}
             mode={dialog.mode}

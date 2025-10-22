@@ -1,50 +1,34 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-/** =========================
- *  Helper: Kiểm tra File
- * ========================= */
 const isFile = (value) => value instanceof File || value instanceof Blob;
 
-/** =========================
- *  Helper: Convert FormData
- * ========================= */
 const toFormData = (data) => {
   const fd = new FormData();
   for (const key in data) {
-    if (data[key] !== undefined && data[key] !== null) {
-      if (typeof data[key] === "object" && !(data[key] instanceof File)) {
-        fd.append(key, JSON.stringify(data[key]));
+    const value = data[key];
+    if (value !== undefined && value !== null) {
+      if (typeof value === "object" && !isFile(value)) {
+        fd.append(key, JSON.stringify(value));
       } else {
-        fd.append(key, data[key]);
+        fd.append(key, value);
       }
     }
   }
-
-  // Log tất cả cặp key/value của FormData
-  console.log("=== FormData Contents ===");
-  for (const pair of fd.entries()) {
-    console.log(pair[0], ":", pair[1]);
-  }
-  console.log("=========================");
-
   return fd;
 };
 
-/** =========================
- *  useAdminCrud Hook
- * ========================= */
-export default function useAdminCrud(api, queryKey) {
+export default function useAdminCrud1(api, queryKey) {
   const queryClient = useQueryClient();
 
   const [openForm, setOpenForm] = useState(false);
-  const [mode, setMode] = useState("create"); // create | edit
+  const [mode, setMode] = useState("create");
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  /** =========================
-   *  ADD / EDIT / CLOSE FORM
-   * ========================= */
+  /** ==========================
+   *  FORM CONTROL
+   * ========================== */
   const handleAdd = () => {
     setMode("create");
     setSelectedItem(null);
@@ -62,80 +46,69 @@ export default function useAdminCrud(api, queryKey) {
     setSelectedItem(null);
   };
 
-  /** =========================
-   *  DELETE ITEM
-   * ========================= */
+  /** ==========================
+   *  DELETE
+   * ========================== */
   const handleDelete = async (id) => {
+    if (!id) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      console.log("==> Đang xoá item id:", id);
-
       if (api.deleteMutation) await api.deleteMutation.mutateAsync(id);
       else if (api.delete) await api.delete(id);
-      else throw new Error("Không tìm thấy hàm delete hoặc deleteMutation");
-
-      console.log("✅ Xoá thành công id:", id);
       await queryClient.invalidateQueries([queryKey]);
     } catch (err) {
-      console.error("❌ Delete error chi tiết:", err.response?.data || err.message);
-      if (err.response?.status === 422) {
-        console.error("💡 Backend trả về lỗi 422 (Unprocessable Content):", err.response.data);
-      }
-      throw err;
+      console.error("Delete error:", err);
+      throw err.response?.data || err;
     } finally {
       setLoading(false);
     }
   };
 
-  /** =========================
-   *  SAVE ITEM (CREATE / UPDATE)
-   * ========================= */
+  /** ==========================
+   *  SAVE (CREATE / UPDATE)
+   * ========================== */
   const handleSave = async (formData) => {
+    if (!formData || typeof formData !== "object") return;
+    setLoading(true);
+
     try {
-      setLoading(true);
+      let payload = { ...formData };
 
-      if (!formData || typeof formData !== "object") {
-        throw new Error("handleSave: formData is required and must be an object");
+      // Giữ file cũ khi edit mà người dùng không thay đổi ảnh
+      if (
+        mode === "edit" &&
+        selectedItem &&
+        selectedItem.image &&
+        payload.image &&
+        !isFile(payload.image)
+      ) {
+        // Nếu formData.image là chuỗi hoặc URL (chưa thay đổi)
+        delete payload.image; // backend sẽ giữ ảnh cũ
       }
 
-      const hasFile = Object.values(formData).some(isFile);
-      const payload = hasFile ? toFormData(formData) : formData;
+      // Tự chuyển sang FormData nếu có file
+      const hasFile = Object.values(payload).some(isFile);
+      const finalData = hasFile ? toFormData(payload) : payload;
 
-      console.log("==> Payload gửi đi:", payload);
-
-      if (mode === "edit") {
-        if (!selectedItem?.id) throw new Error("Không có item để cập nhật");
-        console.log("==> Đang cập nhật id:", selectedItem.id);
-
-        if (api.updateMutation) {
-          await api.updateMutation.mutateAsync({ id: selectedItem.id, data: payload });
-        } else if (api.update) {
-          await api.update(selectedItem.id, payload);
-        } else {
-          throw new Error("Không tìm thấy hàm update hoặc updateMutation");
-        }
-
-        console.log("✅ Cập nhật thành công id:", selectedItem.id);
+      // Gọi API
+      if (mode === "create") {
+        if (api.createMutation)
+          await api.createMutation.mutateAsync(finalData);
+        else if (api.create) await api.create(finalData);
       } else {
-        console.log("==> Đang tạo item mới");
-        if (api.createMutation) {
-          await api.createMutation.mutateAsync(payload);
-        } else if (api.create) {
-          await api.create(payload);
-        } else {
-          throw new Error("Không tìm thấy hàm create hoặc createMutation");
-        }
-        console.log("✅ Tạo mới thành công");
+        const id = selectedItem?.id;
+        if (!id) throw new Error("Thiếu ID để cập nhật");
+        if (api.updateMutation)
+          await api.updateMutation.mutateAsync({ id, data: finalData });
+        else if (api.update) await api.update(id, finalData);
       }
 
+      // Refresh lại danh sách
       await queryClient.invalidateQueries([queryKey]);
       handleCloseForm();
     } catch (err) {
-      console.error("❌ Save error chi tiết:", err.response?.data || err.message);
-      if (err.response?.status === 422) {
-        console.error("💡 Backend trả về lỗi 422 (Unprocessable Content):", err.response.data);
-      }
-      throw err;
+      console.error(" Save error:", err);
+      throw err.response?.data || err;
     } finally {
       setLoading(false);
     }

@@ -1,9 +1,10 @@
-import { memo, useMemo, useState, useCallback } from "react";
+import { memo, useMemo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1"; // bản không có dialog
+import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import {
   useProducts,
   useCreateProduct,
@@ -15,13 +16,13 @@ import { useBrands } from "../../../../api/brand";
 export default memo(function AdminProductPage() {
   /** ==========================
    *  1. FETCH DATA
-   *  ========================== */
-  const { data: products = [], isLoading } = useProducts();
+   * ========================== */
+  const { data: products = [], isLoading, refetch } = useProducts();
   const { data: brands = [] } = useBrands();
 
   /** ==========================
    *  2. CRUD MUTATIONS
-   *  ========================== */
+   * ========================== */
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
@@ -35,29 +36,21 @@ export default memo(function AdminProductPage() {
     "products"
   );
 
+  /** ==========================
+   *  3. HANDLER + DIALOG
+   * ========================== */
+  const { dialog, closeDialog, handleSave, handleDelete } =
+    useAdminHandler(crud, refetch, (item) => {
+      const name = item?.name || "Không tên";
+      const brand = brands.find((b) => b.id === item?.brand_id)?.name;
+      return brand ? `${name} (${brand})` : name;
+    });
+
+  /** ==========================
+   *  4. SEARCH & MAP DATA
+   * ========================== */
   const [search, setSearch] = useState("");
-  const [dialog, setDialog] = useState({
-    open: false,
-    mode: "alert", // "alert" | "confirm" | "success" | "error"
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
 
-  /** ==========================
-   *  3. DIALOG HELPERS
-   *  ========================== */
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  }, []);
-
-  const closeDialog = useCallback(() => {
-    setDialog((prev) => ({ ...prev, open: false }));
-  }, []);
-
-  /** ==========================
-   *  4. FILTER & MAP DATA
-   *  ========================== */
   const filteredItems = useMemo(() => {
     return products.filter((p) =>
       p.name?.toLowerCase().includes(search.toLowerCase())
@@ -73,46 +66,8 @@ export default memo(function AdminProductPage() {
   }, [filteredItems, brands]);
 
   /** ==========================
-   *  5. HANDLERS
-   *  ========================== */
-  const handleSave = async (formData, plainData) => {
-    showDialog(
-      "confirm",
-      "Xác nhận lưu",
-      "Bạn có chắc muốn lưu sản phẩm này?",
-      async () => {
-        try {
-          await crud.handleSave(formData, plainData);
-          showDialog("success", "Thành công", "Lưu sản phẩm thành công!");
-        } catch (err) {
-          console.error("Save error:", err);
-          showDialog("error", "Lỗi", "Lưu sản phẩm thất bại!");
-        }
-      }
-    );
-  };
-
-  const handleDelete = (item) => {
-    const name = item?.name ?? "Sản phẩm không tên";
-    showDialog(
-      "confirm",
-      "Xác nhận xoá",
-      `Bạn có chắc chắn muốn xoá "${name}" không?`,
-      async () => {
-        try {
-          await crud.handleDelete(item.id);
-          showDialog("success", "Thành công", "Đã xoá sản phẩm thành công!");
-        } catch (err) {
-          console.error("Delete error:", err);
-          showDialog("error", "Lỗi", "Không thể xoá sản phẩm!");
-        }
-      }
-    );
-  };
-
-  /** ==========================
-   *  6. UI
-   *  ========================== */
+   *  5. UI
+   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý sản phẩm</h1>
@@ -181,7 +136,7 @@ export default memo(function AdminProductPage() {
             },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave}
+          onSave={handleSave} // formData + plainData được hook xử lý
           onClose={crud.handleCloseForm}
           className="w-full max-w-lg mx-auto"
         />
