@@ -26,6 +26,9 @@ import RearCamera from "./pages/admin/product/RearCamera";
 import OperatingSystem from "./pages/admin/product/OperatingSystem";
 import MemoriesManagemnet from "./pages/admin/product/MemoriesManagemnet";
 import CommunicationConnectivity from "./pages/admin/product/CommunicationConnectivity";
+import BatteriesCharging from "./pages/admin/product/BatteriesCharging";
+import GeneralInfomation from "./pages/admin/product/GeneralInfomation";
+
 //----------------------USERS-------------------------------------
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
@@ -89,6 +92,14 @@ const renderAdminRouter = () => {
     {
       path: ROUTERS.ADMIN.MEMORIES,
       component: <MemoriesManagemnet />,
+    },
+    {
+      path: ROUTERS.ADMIN.BATTERIES,
+      component: <BatteriesCharging />,
+    },
+     {
+      path: ROUTERS.ADMIN.GENERALINFO,
+      component: <GeneralInfomation />,
     },
     {
       path: ROUTERS.ADMIN.CONNECTIONS,

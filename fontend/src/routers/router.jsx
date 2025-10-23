@@ -20,6 +20,8 @@ export const ROUTERS = {
         OPERATINGSYSTEM:`${ADMIN_PATH}/quan-ly-he-dieu-hanh`,
         MEMORIES:`${ADMIN_PATH}/quan-ly-bo-nho`,
         CONNECTIONS:`${ADMIN_PATH}/quan-ly-ket-noi`,
+        BATTERIES:`${ADMIN_PATH}/quan-ly-pin`,
+        GENERALINFO:`${ADMIN_PATH}/thong-tin-chung-san-pham`,
        
         //----------------Users---------------------------
         EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,

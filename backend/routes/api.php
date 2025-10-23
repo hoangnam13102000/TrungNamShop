@@ -23,6 +23,7 @@ use App\Http\Controllers\OperatingSystemController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\CommunicationConnectivityController;
 use App\Http\Controllers\BatteryChargingController;
+use App\Http\Controllers\GeneralInformationController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -100,6 +101,9 @@ Route::prefix('admin')->group(function () {
     // ------------------ CommunicationConnectivity ------------------
     Route::apiResource('communication-connectivities', CommunicationConnectivityController::class);
 
-     // ------------------ Batteries Charging ------------------
-     Route::apiResource('batteries-charging', BatteryChargingController::class);
+    // ------------------ Batteries Charging ------------------
+    Route::apiResource('batteries-charging', BatteryChargingController::class);
+
+    // ------------------ General Informations ------------------
+    Route::apiResource('general-informations', GeneralInformationController::class);
 });
