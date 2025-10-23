@@ -10,6 +10,12 @@ class AccountType extends Model
     use HasFactory,SoftDeletes;
     protected $guarded=[];
 
+    // Relation with Accounts model
+    public function accounts()
+    {
+        return $this->hasMany(Account::class, 'account_type_id');
+    }
+
     // List of IDs that cannot be deleted/edited
     protected static $protectedIds = [1, 2, 3];
 

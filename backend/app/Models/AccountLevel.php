@@ -11,6 +11,12 @@ class AccountLevel extends Model
     use HasFactory, SoftDeletes;
     protected $guarded = [];
 
+    // Relation with Accounts model
+    public function accounts()
+    {
+        return $this->hasMany(Account::class, 'account_level_id');
+    }
+
     protected static $protectedIds = [1];
     protected static function booted()
     {

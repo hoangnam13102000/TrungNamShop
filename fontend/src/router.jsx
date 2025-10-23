@@ -20,7 +20,12 @@ import BrandManagement from "@page_admin/product/BrandManagement";
 import PromotionList from "./pages/admin/product/PromotionManagement";
 import OrderManagement from "@page_admin/OrderManagement";
 import DiscountList from "@page_admin/product/DiscountManagement";
-
+import Screen  from "./pages/admin/product/Screen";
+import FrontCamera from "./pages/admin/product/FrontCamera";
+import RearCamera from "./pages/admin/product/RearCamera";
+import OperatingSystem from "./pages/admin/product/OperatingSystem";
+import MemoriesManagemnet from "./pages/admin/product/MemoriesManagemnet";
+import CommunicationConnectivity from "./pages/admin/product/CommunicationConnectivity";
 //----------------------USERS-------------------------------------
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
@@ -61,9 +66,33 @@ const renderAdminRouter = () => {
       path: ROUTERS.ADMIN.COLOR,
       component: <Color />,
     },
-     {
+    {
       path: ROUTERS.ADMIN.PRODUCTIMAGE,
       component: <ProductImage />,
+    },
+    {
+      path: ROUTERS.ADMIN.SCREEN,
+      component: <Screen />,
+    },
+    {
+      path: ROUTERS.ADMIN.FRONTCAMERA,
+      component: <FrontCamera />,
+    },
+    {
+      path: ROUTERS.ADMIN.REARCAMERA,
+      component: <RearCamera />,
+    },
+    {
+      path: ROUTERS.ADMIN.OPERATINGSYSTEM,
+      component: <OperatingSystem />,
+    },
+    {
+      path: ROUTERS.ADMIN.MEMORIES,
+      component: <MemoriesManagemnet />,
+    },
+    {
+      path: ROUTERS.ADMIN.CONNECTIONS,
+      component: <CommunicationConnectivity />,
     },
     {
       path: ROUTERS.ADMIN.BRANDMANAGEMENT,

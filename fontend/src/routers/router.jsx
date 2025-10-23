@@ -3,22 +3,35 @@ export const ROUTERS = {
     ADMIN:{
         LOGIN:`${ADMIN_PATH}/dang-nhap`,
         DASHBOARD:`${ADMIN_PATH}/`,
+        STOREMANAGEMENT:`${ADMIN_PATH}/quan-ly-cua-hang`,
+        WAREHOUSE:`${ADMIN_PATH}/quan-ly-kho`,
+
+        //--------------Products-----------------------
         PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
         COLOR:`${ADMIN_PATH}/quan-ly-mau-sac`,
         PRODUCTIMAGE:`${ADMIN_PATH}/quan-ly-hinh-san-pham`,
         BRANDMANAGEMENT:`${ADMIN_PATH}/quan-ly-thuong-hieu`,
         PROMOTION:`${ADMIN_PATH}/quan-ly-khuyen-mai`,
         DISCOUNT:`${ADMIN_PATH}/quan-ly-giam-gia`,
+        SCREEN:`${ADMIN_PATH}/quan-ly-man-hinh`,
         ORDERMANAGEMENT:`${ADMIN_PATH}/quan-ly-don-hang`,
-        ACCOUNTTYPE:`${ADMIN_PATH}/quan-ly-loai-tai-khoan`,
+        FRONTCAMERA:`${ADMIN_PATH}/quan-ly-camera-truoc`,
+        REARCAMERA:`${ADMIN_PATH}/quan-ly-camera-sau`,
+        OPERATINGSYSTEM:`${ADMIN_PATH}/quan-ly-he-dieu-hanh`,
+        MEMORIES:`${ADMIN_PATH}/quan-ly-bo-nho`,
+        CONNECTIONS:`${ADMIN_PATH}/quan-ly-ket-noi`,
+       
+        //----------------Users---------------------------
         EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,
-        REWARD:`${ADMIN_PATH}/quan-ly-thuong`,
         POSITION:`${ADMIN_PATH}/quan-ly-chuc-vu`,
-        ACOUNT:`${ADMIN_PATH}/quan-ly-tai-khoan`,
         CUSTOMERMANAGEMENTL:`${ADMIN_PATH}/quan-ly-khach-hang`,
         MEMBERLEVEL:`${ADMIN_PATH}/quan-ly-bac-thanh-vien`,
-        STOREMANAGEMENT:`${ADMIN_PATH}/quan-ly-cua-hang`,
-        WAREHOUSE:`${ADMIN_PATH}/quan-ly-kho`,
+        
+
+        //---------------Account------------------------
+        ACOUNT:`${ADMIN_PATH}/quan-ly-tai-khoan`,
+        ACCOUNTTYPE:`${ADMIN_PATH}/quan-ly-loai-tai-khoan`,
+        REWARD:`${ADMIN_PATH}/quan-ly-thuong`,
     },
 
     USER: {

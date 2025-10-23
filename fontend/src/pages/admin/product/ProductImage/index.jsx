@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
@@ -13,24 +13,10 @@ import {
   useUpdateProductImage,
   useDeleteProductImage,
 } from "../../../../api/product/productImage";
-
+import { getImageUrl } from "../../../../utils/getImageUrl";
 import { useColors } from "../../../../api/product/color";
 import { useProducts } from "../../../../api/product/products";
 
-/** ==========================
- * Helper: Tạo URL ảnh tự động dev/prod + fallback
- * ========================== */
-const getImageUrl = (value) => {
-  if (!value) return placeholder;
-
-  const BASE_URL =
-    import.meta.env.VITE_BASE_URL ||
-    (window.location.hostname === "localhost" ? "http://127.0.0.1:8000" : `${window.location.origin}`);
-
-  return value.startsWith("http")
-    ? value
-    : `${BASE_URL.replace(/\/$/, "")}/storage/${value.replace(/^\/+/, "")}`;
-};
 
 export default memo(function ProductImageManagement() {
   /** ==========================
@@ -79,7 +65,9 @@ export default memo(function ProductImageManagement() {
    * ========================== */
   const filteredItems = useMemo(() => {
     return images.filter((img) =>
-      (img.product?.name || "").toLowerCase().includes(search.toLowerCase().trim())
+      (img.product?.name || "")
+        .toLowerCase()
+        .includes(search.toLowerCase().trim())
     );
   }, [images, search]);
 
@@ -98,116 +86,130 @@ export default memo(function ProductImageManagement() {
    * 7. UI RENDER
    * ========================== */
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Quản lý ảnh sản phẩm</h1>
+    <>
+      <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+        <h1 className="text-2xl font-semibold mb-6 text-center">
+          Quản lý ảnh sản phẩm
+        </h1>
 
-      {/* BUTTON + SEARCH */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <button
-          onClick={crud.handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
-        >
-          <FaPlus /> Thêm ảnh
-        </button>
+        {/* BUTTON + SEARCH */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+          <button
+            onClick={crud.handleAdd}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
+          >
+            <FaPlus /> Thêm ảnh
+          </button>
 
-        <input
-          type="text"
-          placeholder="Tìm kiếm sản phẩm..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* TABLE */}
-      {isLoading ? (
-        <p>Đang tải dữ liệu...</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "product.name", label: "Sản phẩm" },
-              { field: "color.name", label: "Màu sắc" },
-              {
-                field: "image_path",
-                label: "Hình ảnh",
-                render: (value) => {
-                  const imgUrl = getImageUrl(value);
-                  console.log("Render image URL:", imgUrl);
-                  return (
-                    <img
-                      src={imgUrl}
-                      alt="product"
-                      className="w-16 h-16 object-contain rounded"
-                      onError={(e) => {
-                        if (e.target.src !== placeholder) e.target.src = placeholder;
-                      }}
-                    />
-                  );
-                },
-              },
-              {
-                field: "is_primary",
-                label: "Ảnh chính",
-                render: (v) => (v ? "Có" : "Không"),
-              },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border rounded-lg px-3 py-2 w-full sm:w-72"
           />
         </div>
-      )}
 
-      {/* FORM: EDIT / CREATE */}
-      {crud.openForm && (
-        <DynamicForm
-          title={
-            crud.mode === "edit"
-              ? `Chỉnh sửa ảnh - ${crud.selectedItem?.product?.name}`
-              : "Thêm ảnh sản phẩm"
-          }
-          fields={[
-            {
-              name: "product_id",
-              label: "Sản phẩm",
-              type: "select",
-              options: productOptions,
-              required: true,
-            },
-            {
-              name: "color_id",
-              label: "Màu sắc",
-              type: "select",
-              options: colorOptions,
-              required: false,
-            },
-            {
-              name: "image",
-              label: "Hình ảnh",
-              type: "file",
-              required: crud.mode === "create",
-            },
-            { name: "is_primary", label: "Ảnh chính", type: "checkbox" },
-          ]}
-          initialData={crud.selectedItem}
-          onSave={handleSave}
-          onClose={crud.handleCloseForm}
-          className="w-full max-w-lg mx-auto"
+        {/* TABLE */}
+        {isLoading ? (
+          <p className="text-center">Đang tải dữ liệu...</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "product.name", label: "Sản phẩm" },
+                { field: "color.name", label: "Màu sắc" },
+                {
+                  field: "image_path",
+                  label: "Hình ảnh",
+                  render: (value) => {
+                    const imgUrl = getImageUrl(value);
+                    return (
+                      <div className="flex justify-center">
+                        <img
+                          src={imgUrl}
+                          alt="product"
+                          className="w-16 h-16 object-contain rounded border"
+                          onError={(e) => {
+                            if (e.target.src !== placeholder)
+                              e.target.src = placeholder;
+                          }}
+                        />
+                      </div>
+                    );
+                  },
+                },
+                {
+                  field: "is_primary",
+                  label: "Ảnh chính",
+                  render: (v) => (
+                    <div className="flex justify-center">
+                      {v ? (
+                        <FaCheckCircle className="text-green-600 text-xl" />
+                      ) : (
+                        <FaTimesCircle className="text-red-400 text-xl" />
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+              data={filteredItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+        )}
+
+        {/* FORM: EDIT / CREATE */}
+        {crud.openForm && (
+          <DynamicForm
+            title={
+              crud.mode === "edit"
+                ? `Chỉnh sửa ảnh - ${crud.selectedItem?.product?.name}`
+                : "Thêm ảnh sản phẩm"
+            }
+            fields={[
+              {
+                name: "product_id",
+                label: "Sản phẩm",
+                type: "select",
+                options: productOptions,
+                required: true,
+              },
+              {
+                name: "color_id",
+                label: "Màu sắc",
+                type: "select",
+                options: colorOptions,
+                required: false,
+              },
+              {
+                name: "image",
+                label: "Hình ảnh",
+                type: "file",
+                required: crud.mode === "create",
+              },
+              { name: "is_primary", label: "Ảnh chính", type: "checkbox" },
+            ]}
+            initialData={crud.selectedItem}
+            onSave={handleSave}
+            onClose={crud.handleCloseForm}
+            className="w-full max-w-lg mx-auto"
+          />
+        )}
+
+        {/* DIALOG */}
+        <DynamicDialog
+          open={dialog.open}
+          mode={dialog.mode}
+          title={dialog.title}
+          message={dialog.message}
+          onClose={closeDialog}
+          onConfirm={dialog.onConfirm}
         />
-      )}
-
-      {/* DIALOG */}
-      <DynamicDialog
-        open={dialog.open}
-        mode={dialog.mode}
-        title={dialog.title}
-        message={dialog.message}
-        onClose={closeDialog}
-        onConfirm={dialog.onConfirm}
-      />
-    </div>
+      </div>
+    </>
   );
 });

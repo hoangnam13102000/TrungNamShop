@@ -23,23 +23,20 @@ export default function AdminListTable({
     FaPlus: "bg-indigo-500 hover:bg-indigo-600 text-white",
   };
 
-  // Lấy giá trị nested từ object
-  const getValue = (obj, path) => {
-    return path.split('.').reduce((acc, key) => acc?.[key], obj);
-  };
+  const getValue = (obj, path) => path.split('.').reduce((acc, key) => acc?.[key], obj);
 
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-      <table className="min-w-full border-collapse">
+      <table className="min-w-full border-collapse text-center">
         <thead className="bg-red-600 text-white text-sm">
           <tr>
-            <th className="p-3 text-center w-10">STT</th>
+            <th className="p-3 w-10">STT</th>
             {columns.map((col, idx) => (
-              <th key={idx} className="p-3 text-left whitespace-nowrap">
+              <th key={idx} className="p-3 whitespace-nowrap">
                 {col.label}
               </th>
             ))}
-            {actions.length > 0 && <th className="p-3 text-center">Hành động</th>}
+            {actions.length > 0 && <th className="p-3">Hành động</th>}
           </tr>
         </thead>
 
@@ -52,20 +49,20 @@ export default function AdminListTable({
                   index % 2 === 0 ? "bg-white" : "bg-gray-50"
                 }`}
               >
-                <td className="p-3 text-center">{index + 1}</td>
+                <td className="p-3">{index + 1}</td>
 
                 {columns.map((col, idx) => {
                   const value = getValue(row, col.field);
 
-                  // Custom render nếu có
-                  if (col.render) return <td key={idx}>{col.render(value, row)}</td>;
+                  // Custom render
+                  if (col.render) return <td key={idx} className="p-3">{col.render(value, row)}</td>;
 
                   // Nếu là ảnh
                   if (imageFields.includes(col.field)) {
                     return (
-                      <td key={idx} className="p-3 text-left">
+                      <td key={idx} className="p-3">
                         <div
-                          className="w-12 h-12 rounded bg-gray-200 bg-center bg-cover border"
+                          className="mx-auto w-12 h-12 rounded bg-gray-200 bg-center bg-cover border"
                           style={{
                             backgroundImage: `url(${
                               value || "https://via.placeholder.com/100x100?text=No+Image"
@@ -76,9 +73,9 @@ export default function AdminListTable({
                     );
                   }
 
-                  // Mặc định: hiển thị giá trị với DisplayValue
+                  // Mặc định
                   return (
-                    <td key={idx} className="p-3 text-left">
+                    <td key={idx} className="p-3">
                       <DisplayValue value={value} />
                     </td>
                   );

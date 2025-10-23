@@ -16,6 +16,13 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ColorController;
 use App\Http\Controllers\ProductImageController;
+use App\Http\Controllers\ScreenController;
+use App\Http\Controllers\FrontCameraController;
+use App\Http\Controllers\RearCameraController;
+use App\Http\Controllers\OperatingSystemController;
+use App\Http\Controllers\MemoryController;
+use App\Http\Controllers\CommunicationConnectivityController;
+use App\Http\Controllers\BatteryChargingController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -74,4 +81,25 @@ Route::prefix('admin')->group(function () {
 
     // ------------------ ProductImages ------------------
     Route::apiResource('product-images', ProductImageController::class);
+
+    // ------------------ ProductImages ------------------
+    Route::apiResource('screens', ScreenController::class);
+
+    // ------------------ FrontCamera ------------------
+    Route::apiResource('front-cameras', FrontCameraController::class);
+
+     // ------------------ RearCamera ------------------
+    Route::apiResource('rear-cameras', RearCameraController::class);
+    
+    // ------------------ OperatingSystems ------------------
+    Route::apiResource('operating-systems', OperatingSystemController::class);
+
+    // ------------------ Memories ------------------
+    Route::apiResource('memories', MemoryController::class);
+
+    // ------------------ CommunicationConnectivity ------------------
+    Route::apiResource('communication-connectivities', CommunicationConnectivityController::class);
+
+     // ------------------ Batteries Charging ------------------
+     Route::apiResource('batteries-charging', BatteryChargingController::class);
 });

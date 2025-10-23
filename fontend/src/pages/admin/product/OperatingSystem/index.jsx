@@ -1,66 +1,80 @@
-import { memo, useState, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
+import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
+
 import {
-  usePromotions,
-  useCreatePromotion,
-  useUpdatePromotion,
-  useDeletePromotion,
-} from "../../../../api/product/promotion/";
+  useOperatingSystems,
+  useCreateOperatingSystem,
+  useUpdateOperatingSystem,
+  useDeleteOperatingSystem,
+} from "../../../../api/product/operatingSystem";
 
-export default memo(function PromotionManagement() {
+export default memo(function AdminOperatingSystemPage() {
   /** ==========================
-   * 1. FETCH DATA
+   *  1. FETCH DATA
    * ========================== */
-  const { data: promotions = [], isLoading, refetch } = usePromotions();
-
-  const createMutation = useCreatePromotion();
-  const updateMutation = useUpdatePromotion();
-  const deleteMutation = useDeletePromotion();
+  const {
+    data: operatingSystems = [],
+    isLoading,
+    refetch,
+  } = useOperatingSystems();
 
   /** ==========================
-   * 2. CRUD SETUP
+   *  2. CRUD MUTATIONS
    * ========================== */
+  const createMutation = useCreateOperatingSystem();
+  const updateMutation = useUpdateOperatingSystem();
+  const deleteMutation = useDeleteOperatingSystem();
+
   const crud = useAdminCrud(
     {
-      create: createMutation.mutateAsync,
-      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
-      delete: async (id) => deleteMutation.mutateAsync(id),
+      create: async (data) => {
+        await createMutation.mutateAsync(data);
+        await refetch(); // refetch để table hiển thị luôn
+      },
+      update: async (id, data) => {
+        await updateMutation.mutateAsync({ id, data });
+        await refetch();
+      },
+      delete: async (id) => {
+        await deleteMutation.mutateAsync({ id });
+        await refetch();
+      },
     },
-    "promotions"
+    "operating-systems"
   );
 
   /** ==========================
-   * 3. HANDLER + DIALOG
+   *  3. HANDLER + DIALOG
    * ========================== */
-  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+  const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
     refetch,
-    (item) => item?.name || "Không tên"
+    (item) => item?.name || "Không rõ"
   );
 
   /** ==========================
-   * 4. SEARCH & FILTER
+   *  4. SEARCH & MAP DATA
    * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(() => {
-    return promotions.filter((p) =>
-      (p.name || "").toLowerCase().includes(search.toLowerCase().trim())
+    return operatingSystems.filter((os) =>
+      os.name?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [promotions, search]);
+  }, [operatingSystems, search]);
 
   /** ==========================
-   * 5. UI
+   *  5. UI
    * ========================== */
   return (
     <>
       <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-        <h1 className="text-2xl font-semibold mb-6">Quản lý khuyến mãi</h1>
+        <h1 className="text-2xl font-semibold mb-6">Quản lý Hệ điều hành</h1>
 
         {/* BUTTON + SEARCH */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -68,12 +82,12 @@ export default memo(function PromotionManagement() {
             onClick={crud.handleAdd}
             className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
           >
-            <FaPlus /> Thêm khuyến mãi
+            <FaPlus /> Thêm Hệ điều hành
           </button>
 
           <input
             type="text"
-            placeholder="Tìm kiếm khuyến mãi..."
+            placeholder="Tìm kiếm hệ điều hành..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border rounded-lg px-3 py-2 w-full sm:w-72"
@@ -87,51 +101,39 @@ export default memo(function PromotionManagement() {
           <div className="overflow-x-auto">
             <AdminListTable
               columns={[
-                { field: "name", label: "Tên khuyến mãi" },
-                { field: "start_date", label: "Ngày bắt đầu" },
-                { field: "end_date", label: "Ngày kết thúc" },
-                { field: "description", label: "Mô tả" },
+                { field: "name", label: "Hệ điều hành" },
+                { field: "processor", label: "Bộ xử lý" },
+                { field: "cpu_speed", label: "Tốc độ CPU" },
+                { field: "gpu", label: "GPU" },
               ]}
               data={filteredItems}
               actions={[
                 { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-                { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
               ]}
             />
           </div>
         )}
 
-        {/* FORM ADD / EDIT */}
+        {/* FORM */}
         {crud.openForm && (
           <DynamicForm
             title={
-              crud.mode === "edit"
-                ? `Sửa khuyến mãi - ${crud.selectedItem?.name}`
-                : "Thêm khuyến mãi"
+              crud.mode === "edit" ? "Sửa Hệ điều hành" : "Thêm Hệ điều hành"
             }
             fields={[
               {
                 name: "name",
-                label: "Tên khuyến mãi",
+                label: "Hệ điều hành",
                 type: "text",
                 required: true,
               },
-              { name: "description", label: "Mô tả", type: "textarea" },
-              {
-                name: "start_date",
-                label: "Ngày bắt đầu",
-                type: "date",
-                required: true,
-              },
-              {
-                name: "end_date",
-                label: "Ngày kết thúc",
-                type: "date",
-                required: true,
-              },
+              { name: "processor", label: "Bộ xử lý", type: "text" },
+              { name: "cpu_speed", label: "Tốc độ CPU", type: "text" },
+              { name: "gpu", label: "GPU", type: "text" },
             ]}
             initialData={crud.selectedItem}
-            onSave={handleSave} // handleSave đã xử lý dialog
+            onSave={handleSave}
             onClose={crud.handleCloseForm}
             className="w-full max-w-lg mx-auto"
           />
