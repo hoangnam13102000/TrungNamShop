@@ -17,9 +17,24 @@ import {
 import { useColors } from "../../../../api/product/color";
 import { useProducts } from "../../../../api/product/products";
 
+/** ==========================
+ * Helper: Tạo URL ảnh tự động dev/prod + fallback
+ * ========================== */
+const getImageUrl = (value) => {
+  if (!value) return placeholder;
+
+  const BASE_URL =
+    import.meta.env.VITE_BASE_URL ||
+    (window.location.hostname === "localhost" ? "http://127.0.0.1:8000" : `${window.location.origin}`);
+
+  return value.startsWith("http")
+    ? value
+    : `${BASE_URL.replace(/\/$/, "")}/storage/${value.replace(/^\/+/, "")}`;
+};
+
 export default memo(function ProductImageManagement() {
   /** ==========================
-   *  1. FETCH DATA
+   * 1. FETCH DATA
    * ========================== */
   const { data: images = [], isLoading, refetch } = useProductImages();
   const { data: colors = [] } = useColors();
@@ -29,7 +44,7 @@ export default memo(function ProductImageManagement() {
   const productOptions = products.map((p) => ({ label: p.name, value: p.id }));
 
   /** ==========================
-   *  2. CRUD MUTATIONS
+   * 2. CRUD MUTATIONS
    * ========================== */
   const createMutation = useCreateProductImage();
   const updateMutation = useUpdateProductImage();
@@ -45,7 +60,7 @@ export default memo(function ProductImageManagement() {
   );
 
   /** ==========================
-   *  3. ADMIN HANDLER
+   * 3. ADMIN HANDLER
    * ========================== */
   const {
     dialog,
@@ -55,27 +70,22 @@ export default memo(function ProductImageManagement() {
   } = useAdminHandler(crud, refetch);
 
   /** ==========================
-   *  4. STATE
+   * 4. STATE
    * ========================== */
   const [search, setSearch] = useState("");
- 
 
   /** ==========================
-   *  5. FILTER DATA
+   * 5. FILTER DATA
    * ========================== */
   const filteredItems = useMemo(() => {
     return images.filter((img) =>
-      (img.product?.name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase().trim())
+      (img.product?.name || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [images, search]);
 
   /** ==========================
-   *  6. ENV + HANDLERS
+   * 6. HANDLERS
    * ========================== */
-  const BASE_URL = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
-
   const handleSave = (formData) => {
     handleSaveAdmin(formData, { product_id: "product_id" });
   };
@@ -85,7 +95,7 @@ export default memo(function ProductImageManagement() {
   };
 
   /** ==========================
-   *  7. UI RENDER
+   * 7. UI RENDER
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -121,14 +131,20 @@ export default memo(function ProductImageManagement() {
               {
                 field: "image_path",
                 label: "Hình ảnh",
-                render: (value) => (
-                  <img
-                    src={value ? `${BASE_URL}/storage/${value}` : placeholder}
-                    alt="product"
-                    className="w-16 h-16 object-contain rounded"
-                    onError={(e) => (e.target.src = placeholder)}
-                  />
-                ),
+                render: (value) => {
+                  const imgUrl = getImageUrl(value);
+                  console.log("Render image URL:", imgUrl);
+                  return (
+                    <img
+                      src={imgUrl}
+                      alt="product"
+                      className="w-16 h-16 object-contain rounded"
+                      onError={(e) => {
+                        if (e.target.src !== placeholder) e.target.src = placeholder;
+                      }}
+                    />
+                  );
+                },
               },
               {
                 field: "is_primary",

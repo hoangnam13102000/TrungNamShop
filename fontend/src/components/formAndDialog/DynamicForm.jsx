@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Dropdown from "../../components/dropdown/DropDown";
 import DynamicDialog from "../../components/formAndDialog/DynamicDialog";
 import placeholder from "../../assets/admin/logoicon1.jpg";
+import { getImageUrl } from "../../utils/getImageUrl";
+import { validateGeneral } from "../../utils/validate"; 
 
 export default function DynamicForm({
   title,
@@ -15,7 +17,7 @@ export default function DynamicForm({
   const safeData = initialData || {};
 
   /** ============================================================
-   *  🧩 1. STATE KHỞI TẠO: DỮ LIỆU FORM
+   *                           1. STATE
    * ============================================================ */
   const [formData, setFormData] = useState(() => {
     const result = {};
@@ -25,42 +27,23 @@ export default function DynamicForm({
     return result;
   });
 
-  /** ============================================================
-   *  🖼️ 2. STATE KHỞI TẠO: ẢNH PREVIEW
-   *  - Khi edit, nếu có sẵn image_path thì hiển thị đúng ảnh cũ.
-   *  - Nếu chọn ảnh mới, hiển thị preview tạm bằng URL.createObjectURL()
-   * ============================================================ */
   const [preview, setPreview] = useState(() => {
     const result = {};
     fields.forEach((f) => {
       if (f.type === "file") {
         let imageValue =
-          safeData[f.name] || // nếu field trùng tên
-          safeData.image_path || // fallback cho edit
-          "";
-
-        // Nếu là string và chưa có domain thì thêm /storage/
+          safeData[f.name] || safeData.image_path || "";
         if (imageValue && typeof imageValue === "string") {
-          if (!imageValue.startsWith("http")) {
-            imageValue = `${window.location.origin}/storage/${imageValue}`;
-          }
+          imageValue = getImageUrl(imageValue);
         }
-
         result[f.name] = imageValue || placeholder;
       }
     });
     return result;
   });
 
-  /** ============================================================
-   *  ⚠️ 3. STATE: VALIDATION + TRẠNG THÁI GỬI FORM
-   * ============================================================ */
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-
-  /** ============================================================
-   *  💬 4. DIALOG CONFIRM
-   * ============================================================ */
   const [dialog, setDialog] = useState({
     open: false,
     mode: "confirm",
@@ -72,73 +55,62 @@ export default function DynamicForm({
   const openDialog = (mode, title, message, onConfirm = null) => {
     setDialog({ open: true, mode, title, message, onConfirm });
   };
-
   const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
 
   /** ============================================================
-   *  📝 5. HANDLE CHANGE INPUT
+   * HANDLE INPUT
    * ============================================================ */
   const handleChange = (name, value) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /** ============================================================
-   *  📁 6. HANDLE FILE UPLOAD + PREVIEW
-   * ============================================================ */
   const handleFileChange = (name, file) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: file }));
-    setPreview((prev) => ({ ...prev, [name]: URL.createObjectURL(file) }));
+    setPreview((prev) => ({
+      ...prev,
+      [name]: file ? URL.createObjectURL(file) : placeholder,
+    }));
   };
 
   /** ============================================================
-   *  ✅ 7. VALIDATION CƠ BẢN
+   *                VALIDATION (sử dụng validateGeneral)
    * ============================================================ */
   const validate = () => {
     if (mode === "view") return true;
 
-    const newErrors = {};
+    // Tạo rules tự động từ fields
+    const rules = {};
     fields.forEach((f) => {
-      const value = formData[f.name];
-      if (f.required && (value === "" || value === undefined || value === null)) {
-        newErrors[f.name] = `${f.label} không được để trống`;
-      }
+      rules[f.name] = {
+        required: f.required,
+        type: f.validationType, // ví dụ: "email", "phone"
+        minLength: f.minLength,
+        match: f.match,
+        message: f.message,
+      };
     });
 
+    const newErrors = validateGeneral(formData, rules);
     setErrors(newErrors);
+
     return Object.keys(newErrors).length === 0;
   };
 
   /** ============================================================
-   *  🚀 8. HANDLE SUBMIT FORM
+   *                         SUBMIT FORM
    * ============================================================ */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting || mode === "view") return;
     if (!validate()) return;
 
-    const shouldConfirmStop =
-      formData.status === 0 || formData.trangThai === 0;
-
-    if (shouldConfirmStop) {
-      openDialog(
-        "confirm",
-        "Xác nhận ngừng hoạt động",
-        "Bạn có chắc muốn ngừng hoạt động tài khoản này không?",
-        async () => {
-          closeDialog();
-          await onSave(formData);
-        }
-      );
-      return;
-    }
-
     await onSave(formData);
   };
 
   /** ============================================================
-   *  🎨 9. RENDER GIAO DIỆN FORM
+   *                               RENDER
    * ============================================================ */
   return (
     <AnimatePresence>
@@ -176,7 +148,7 @@ export default function DynamicForm({
                     {field.required && <span className="text-red-500">*</span>}
                   </label>
 
-                  {/* --- FILE UPLOAD FIELD --- */}
+                  {/* FILE UPLOAD */}
                   {field.type === "file" ? (
                     <div className="flex flex-col items-center gap-2 w-full">
                       <div
@@ -244,7 +216,7 @@ export default function DynamicForm({
               );
             })}
 
-            {/* --- BUTTONS --- */}
+            {/* BUTTONS */}
             <div className="flex justify-end gap-2 pt-2 mt-4">
               <button
                 type="button"
@@ -274,7 +246,7 @@ export default function DynamicForm({
             </div>
           </form>
 
-          {/* --- CONFIRM DIALOG --- */}
+          {/* CONFIRM DIALOG */}
           <DynamicDialog
             open={dialog.open}
             mode={dialog.mode}
