@@ -37,6 +37,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
       icon: <FaMobileAlt />,
       dropdown: [
         { label: "Quản lý sản phẩm", path: "/quan-tri/quan-ly-san-pham" },
+         { label: "Chi tiết sản phẩm", path: "/quan-tri/chi-tiet-san-pham" },
         { label: "Quản lý hình sản phẩm", path: "/quan-tri/quan-ly-hinh-san-pham" },
         { label: "Quản lý thương hiệu", path: "/quan-tri/quan-ly-thuong-hieu" },
         { label: "Quản lý màu sắc", path: "/quan-tri/quan-ly-mau-sac" },
@@ -48,6 +49,7 @@ const AdminSidebar = ({ sidebarOpen, setSidebarOpen, menuOpen, setMenuOpen, hand
         { label: "Camera sau", path: "/quan-tri/quan-ly-camera-sau" },
         { label: "Hệ điều hành", path: "/quan-tri/quan-ly-he-dieu-hanh" },
         { label: "Thông tin chung", path: "/quan-tri/thong-tin-chung-san-pham" },
+        { label: "Tiện ích khác", path: "/quan-tri/tien-ich-san-pham" },
         { label: "Quản lý khuyến mãi", path: "/quan-tri/quan-ly-khuyen-mai" },
         { label: "Quản lý giảm giá", path: "/quan-tri/quan-ly-giam-gia" },
       ],

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Http\Resources\ProductResource;
 class ProductController extends Controller
 {
     /**
@@ -12,7 +13,7 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::with('brand')->get();
-        return response()->json($products);
+        return ProductResource::collection($products);
     }
 
     /**
@@ -36,7 +37,10 @@ class ProductController extends Controller
         ]);
 
         $product = Product::create($validated);
-        return response()->json($product, 201);
+        return response()->json([
+            'message' => 'Product created successfully!',
+            'data' => new ProductResource($product->load('brand'))
+        ], 201);
     }
 
     /**
@@ -50,7 +54,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
 
-        return response()->json($product);
+       return new ProductResource($product);
     }
 
     /**
@@ -82,7 +86,7 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Product updated successfully!',
-            'data' => $product
+            'data' => new ProductResource($product->load('brand'))
         ]);
     }
 

@@ -8,6 +8,7 @@ export const ROUTERS = {
 
         //--------------Products-----------------------
         PRODUCTMANAGEMENT:`${ADMIN_PATH}/quan-ly-san-pham`,
+        PRODUCTDETAILS:`${ADMIN_PATH}/chi-tiet-san-pham`,
         COLOR:`${ADMIN_PATH}/quan-ly-mau-sac`,
         PRODUCTIMAGE:`${ADMIN_PATH}/quan-ly-hinh-san-pham`,
         BRANDMANAGEMENT:`${ADMIN_PATH}/quan-ly-thuong-hieu`,
@@ -22,6 +23,7 @@ export const ROUTERS = {
         CONNECTIONS:`${ADMIN_PATH}/quan-ly-ket-noi`,
         BATTERIES:`${ADMIN_PATH}/quan-ly-pin`,
         GENERALINFO:`${ADMIN_PATH}/thong-tin-chung-san-pham`,
+        UTILITY:`${ADMIN_PATH}/tien-ich-san-pham`,
        
         //----------------Users---------------------------
         EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,

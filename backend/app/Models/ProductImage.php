@@ -11,6 +11,12 @@ class ProductImage extends Model
     use HasFactory,softDeletes;
     protected $guarded=[];
 
+
+     public function productDetail()
+    {
+        return $this->belongsTo(ProductDetail::class, 'product_detail_id');
+    }
+
      public function product()
     {
         return $this->belongsTo(Product::class);

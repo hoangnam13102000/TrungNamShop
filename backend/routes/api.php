@@ -24,6 +24,9 @@ use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\CommunicationConnectivityController;
 use App\Http\Controllers\BatteryChargingController;
 use App\Http\Controllers\GeneralInformationController;
+use App\Http\Controllers\UtilityController;
+use App\Http\Controllers\ProductDetailController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -106,4 +109,11 @@ Route::prefix('admin')->group(function () {
 
     // ------------------ General Informations ------------------
     Route::apiResource('general-informations', GeneralInformationController::class);
+
+    // ------------------ General Utility ------------------
+    Route::apiResource('utilities', UtilityController::class);
+
+    // ------------------Product Detail ------------------
+    Route::apiResource('product-details', ProductDetailController::class);
+
 });

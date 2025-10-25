@@ -15,6 +15,7 @@ import Reward from "./pages/admin/employee/Reward";
 //----------------------PRODUCT-------------------------------------
 
 import ProductManagement from "@page_admin/product/ProductManagement";
+import ProductDetail from "./pages/admin/product/ProductDetail";
 import Color from "./pages/admin/product/Color";
 import BrandManagement from "@page_admin/product/BrandManagement";
 import PromotionList from "./pages/admin/product/PromotionManagement";
@@ -28,6 +29,7 @@ import MemoriesManagemnet from "./pages/admin/product/MemoriesManagemnet";
 import CommunicationConnectivity from "./pages/admin/product/CommunicationConnectivity";
 import BatteriesCharging from "./pages/admin/product/BatteriesCharging";
 import GeneralInfomation from "./pages/admin/product/GeneralInfomation";
+import Utility from "./pages/admin/product/Utility";
 
 //----------------------USERS-------------------------------------
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
@@ -65,6 +67,10 @@ const renderAdminRouter = () => {
       path: ROUTERS.ADMIN.PRODUCTMANAGEMENT,
       component: <ProductManagement />,
     },
+    {
+      path: ROUTERS.ADMIN.PRODUCTDETAILS,
+      component: <ProductDetail />,
+    },
      {
       path: ROUTERS.ADMIN.COLOR,
       component: <Color />,
@@ -92,6 +98,10 @@ const renderAdminRouter = () => {
     {
       path: ROUTERS.ADMIN.MEMORIES,
       component: <MemoriesManagemnet />,
+    },
+    {
+      path: ROUTERS.ADMIN.UTILITY,
+      component: <Utility />,
     },
     {
       path: ROUTERS.ADMIN.BATTERIES,

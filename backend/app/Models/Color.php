@@ -15,4 +15,10 @@ class Color extends Model
     {
         return $this->hasMany(ProductImage::class);
     }
+
+    // Relation with  productDetails model
+     public function productDetails()
+    {
+        return $this->hasMany(ProductDetail::class);
+    }
 }

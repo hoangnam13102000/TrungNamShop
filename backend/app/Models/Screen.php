@@ -10,4 +10,9 @@ class Screen extends Model
     use HasFactory,SoftDeletes;
     protected $guarded = [];
     
+    // Relation with  productDetails model
+     public function productDetails()
+    {
+        return $this->hasMany(ProductDetail::class);
+    }
 }

@@ -11,9 +11,27 @@ class ProductImageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $images = ProductImage::with(['product', 'color'])->get();
+        $query = ProductImage::with(['product', 'color']);
+
+        // Lọc theo product hoặc product_detail nếu cần
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('product_detail_id')) {
+            $query->where('product_detail_id', $request->product_detail_id);
+        }
+
+        $images = $query->get();
+
+        // Thêm URL đầy đủ cho ảnh
+        $images->transform(function ($img) {
+            $img->image_url = Storage::url($img->image_path);
+            return $img;
+        });
+
         return response()->json($images);
     }
 
@@ -22,23 +40,32 @@ class ProductImageController extends Controller
      */
     public function store(Request $request)
     {
+        // Boolean casting
+        $request->merge([
+            'is_primary' => filter_var($request->is_primary, FILTER_VALIDATE_BOOLEAN),
+        ]);
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'product_detail_id' => 'nullable|exists:product_details,id',
             'color_id' => 'nullable|exists:colors,id',
-            'image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096',
             'is_primary' => 'nullable|boolean',
         ]);
 
         // Upload file
         $path = $request->file('image')->store('products', 'public');
 
-        // Create a record
+        // Create record
         $image = ProductImage::create([
-            'product_id'  => $validated['product_id'],
-            'color_id'    => $validated['color_id'] ?? null,
-            'image_path'  => $path,
-            'is_primary'  => $validated['is_primary'] ?? false,
+            'product_id' => $validated['product_id'],
+            'product_detail_id' => $validated['product_detail_id'] ?? null,
+            'color_id' => $validated['color_id'] ?? null,
+            'image_path' => $path,
+            'is_primary' => $validated['is_primary'] ?? false,
         ]);
+
+        $image->image_url = Storage::url($image->image_path);
 
         return response()->json([
             'message' => 'Image created successfully',
@@ -52,6 +79,7 @@ class ProductImageController extends Controller
     public function show(string $id)
     {
         $image = ProductImage::with(['product', 'color'])->findOrFail($id);
+        $image->image_url = Storage::url($image->image_path);
         return response()->json($image);
     }
 
@@ -64,12 +92,13 @@ class ProductImageController extends Controller
 
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
+            'product_detail_id' => 'nullable|exists:product_details,id',
             'color_id' => 'nullable|exists:colors,id',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:4096',
             'is_primary' => 'nullable|boolean',
         ]);
 
-      // If there is a new photo → delete the old photo and upload a new photo
+        // Nếu có ảnh mới → xóa ảnh cũ & upload ảnh mới
         if ($request->hasFile('image')) {
             if ($image->image_path && Storage::disk('public')->exists($image->image_path)) {
                 Storage::disk('public')->delete($image->image_path);
@@ -79,10 +108,10 @@ class ProductImageController extends Controller
             $validated['image_path'] = $path;
         }
 
-        // Delete key 'image' to avoid column non-existent error
         unset($validated['image']);
 
         $image->update($validated);
+        $image->image_url = Storage::url($image->image_path);
 
         return response()->json([
             'message' => 'Image updated successfully',
