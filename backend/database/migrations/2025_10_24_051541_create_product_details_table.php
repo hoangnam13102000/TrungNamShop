@@ -15,23 +15,31 @@ return new class extends Migration
             $table->id();
 
             // FK to PK
-            $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->foreignId('color_id')->nullable()->constrained('colors')->onDelete('set null');
+            $table->foreignId('product_id')
+                ->constrained('products')
+                ->cascadeOnDelete()
+                ->index();
 
-            // Technical information
-            $table->foreignId('screen_id')->nullable()->constrained('screens')->onDelete('set null');
-            $table->foreignId('rear_camera_id')->nullable()->constrained('rear_cameras')->onDelete('set null');
-            $table->foreignId('front_camera_id')->nullable()->constrained('front_cameras')->onDelete('set null');
-            $table->foreignId('memory_id')->nullable()->constrained('memories')->onDelete('set null');
-            $table->foreignId('operating_system_id')->nullable()->constrained('operating_systems')->onDelete('set null');
-            $table->foreignId('general_information_id')->nullable()->constrained('general_informations')->onDelete('set null');
-            $table->foreignId('communication_connectivity_id')->nullable()->constrained('communication_connectivities')->onDelete('set null');
-            $table->foreignId('battery_charging_id')->nullable()->constrained('batteries_charging')->onDelete('set null');
-            $table->foreignId('utility_id')->nullable()->constrained('utilities')->onDelete('set null');
+            $table->foreignId('color_id')
+                ->nullable()
+                ->constrained('colors')
+                ->nullOnDelete()
+                ->index();
 
-            //bussiness Info
+            // Technical specifications
+            $table->foreignId('screen_id')->nullable()->constrained('screens')->nullOnDelete()->index();
+            $table->foreignId('rear_camera_id')->nullable()->constrained('rear_cameras')->nullOnDelete()->index();
+            $table->foreignId('front_camera_id')->nullable()->constrained('front_cameras')->nullOnDelete()->index();
+            $table->foreignId('memory_id')->nullable()->constrained('memories')->nullOnDelete()->index();
+            $table->foreignId('operating_system_id')->nullable()->constrained('operating_systems')->nullOnDelete()->index();
+            $table->foreignId('general_information_id')->nullable()->constrained('general_informations')->nullOnDelete()->index();
+            $table->foreignId('communication_connectivity_id')->nullable()->constrained('communication_connectivities')->nullOnDelete()->index();
+            $table->foreignId('battery_charging_id')->nullable()->constrained('battery_chargings')->nullOnDelete()->index();
+            $table->foreignId('utility_id')->nullable()->constrained('utilities')->nullOnDelete()->index();
+
+            // Business info
             $table->decimal('price', 15, 2)->nullable();
-            $table->integer('stock_quantity')->default(0);
+            $table->unsignedInteger('stock_quantity')->default(0);
 
             $table->timestamps();
             $table->softDeletes();

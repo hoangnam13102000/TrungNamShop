@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Dropdown from "../../components/dropdown/DropDown";
 import DynamicDialog from "../../components/formAndDialog/DynamicDialog";
 import placeholder from "../../assets/admin/logoicon1.jpg";
 import { getImageUrl } from "../../utils/getImageUrl";
-import { validateGeneral } from "../../utils/validate"; 
+import { validateGeneral } from "../../utils/validate";
 
 export default function DynamicForm({
   title,
@@ -14,34 +14,11 @@ export default function DynamicForm({
   onClose,
   mode = "create", // create | edit | view
 }) {
-  const safeData = initialData || {};
-
   /** ============================================================
-   *                           1. STATE
+   * 1. STATE
    * ============================================================ */
-  const [formData, setFormData] = useState(() => {
-    const result = {};
-    fields.forEach((f) => {
-      result[f.name] = safeData[f.name] ?? "";
-    });
-    return result;
-  });
-
-  const [preview, setPreview] = useState(() => {
-    const result = {};
-    fields.forEach((f) => {
-      if (f.type === "file") {
-        let imageValue =
-          safeData[f.name] || safeData.image_path || "";
-        if (imageValue && typeof imageValue === "string") {
-          imageValue = getImageUrl(imageValue);
-        }
-        result[f.name] = imageValue || placeholder;
-      }
-    });
-    return result;
-  });
-
+  const [formData, setFormData] = useState({});
+  const [preview, setPreview] = useState({});
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [dialog, setDialog] = useState({
@@ -52,13 +29,32 @@ export default function DynamicForm({
     onConfirm: null,
   });
 
-  const openDialog = (mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
-  };
-  const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
+  /** ============================================================
+   * 2. INIT / UPDATE WHEN DATA CHANGES
+   * ============================================================ */
+  useEffect(() => {
+    const updatedData = {};
+    const updatedPreview = {};
+
+    fields.forEach((f) => {
+      updatedData[f.name] = initialData?.[f.name] ?? "";
+
+      if (f.type === "file") {
+        let imageValue =
+          initialData?.[f.name] || initialData?.image_path || "";
+        if (imageValue && typeof imageValue === "string") {
+          imageValue = getImageUrl(imageValue);
+        }
+        updatedPreview[f.name] = imageValue || placeholder;
+      }
+    });
+
+    setFormData(updatedData);
+    setPreview(updatedPreview);
+  }, [initialData, fields]);
 
   /** ============================================================
-   * HANDLE INPUT
+   * 3. HANDLERS
    * ============================================================ */
   const handleChange = (name, value) => {
     if (mode === "view") return;
@@ -75,17 +71,16 @@ export default function DynamicForm({
   };
 
   /** ============================================================
-   *                VALIDATION (sử dụng validateGeneral)
+   * 4. VALIDATION
    * ============================================================ */
   const validate = () => {
     if (mode === "view") return true;
 
-    // Tạo rules tự động từ fields
     const rules = {};
     fields.forEach((f) => {
       rules[f.name] = {
         required: f.required,
-        type: f.validationType, // ví dụ: "email", "phone"
+        type: f.validationType,
         minLength: f.minLength,
         match: f.match,
         message: f.message,
@@ -94,23 +89,30 @@ export default function DynamicForm({
 
     const newErrors = validateGeneral(formData, rules);
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
 
   /** ============================================================
-   *                         SUBMIT FORM
+   * 5. SUBMIT
    * ============================================================ */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting || mode === "view") return;
     if (!validate()) return;
 
-    await onSave(formData);
+    setSubmitting(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  const closeDialog = () =>
+    setDialog((prev) => ({ ...prev, open: false }));
+
   /** ============================================================
-   *                               RENDER
+   * 6. RENDER
    * ============================================================ */
   return (
     <AnimatePresence>
@@ -145,7 +147,9 @@ export default function DynamicForm({
                 <div key={field.name}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {field.label}{" "}
-                    {field.required && <span className="text-red-500">*</span>}
+                    {field.required && (
+                      <span className="text-red-500">*</span>
+                    )}
                   </label>
 
                   {/* FILE UPLOAD */}
@@ -153,14 +157,20 @@ export default function DynamicForm({
                     <div className="flex flex-col items-center gap-2 w-full">
                       <div
                         className={`w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover ${
-                          mode !== "view" ? "cursor-pointer" : "opacity-80"
+                          mode !== "view"
+                            ? "cursor-pointer"
+                            : "opacity-80"
                         }`}
                         style={{
-                          backgroundImage: `url(${preview[field.name] || placeholder})`,
+                          backgroundImage: `url(${
+                            preview[field.name] || placeholder
+                          })`,
                         }}
                         onClick={() => {
                           if (mode !== "view")
-                            document.getElementById(field.name + "-file").click();
+                            document
+                              .getElementById(field.name + "-file")
+                              .click();
                         }}
                       />
                       <input
@@ -168,38 +178,47 @@ export default function DynamicForm({
                         type="file"
                         accept="image/*"
                         onChange={(e) =>
-                          handleFileChange(field.name, e.target.files[0])
+                          handleFileChange(
+                            field.name,
+                            e.target.files[0]
+                          )
                         }
                         className="hidden"
                         disabled={mode === "view"}
                       />
                       <p className="text-xs text-gray-500 truncate max-w-[90%] text-center">
                         {formData[field.name]?.name ||
-                          safeData[field.name] ||
-                          safeData.image_path ||
+                          initialData[field.name] ||
+                          initialData.image_path ||
                           "Chưa chọn ảnh"}
                       </p>
                     </div>
                   ) : field.type === "select" ? (
                     <Dropdown
-                      value={value}
+                      value={String(value ?? "")}
                       options={field.options || []}
                       placeholder={`Chọn ${field.label}`}
-                      onSelect={(opt) => handleChange(field.name, opt.value)}
+                      onSelect={(opt) =>
+                        handleChange(field.name, opt.value)
+                      }
                       disabled={mode === "view"}
                     />
                   ) : field.type === "checkbox" ? (
                     <input
                       type="checkbox"
                       checked={!!value}
-                      onChange={(e) => handleChange(field.name, e.target.checked)}
+                      onChange={(e) =>
+                        handleChange(field.name, e.target.checked)
+                      }
                       disabled={field.disabled || mode === "view"}
                     />
                   ) : (
                     <input
                       type={field.type}
                       value={value}
-                      onChange={(e) => handleChange(field.name, e.target.value)}
+                      onChange={(e) =>
+                        handleChange(field.name, e.target.value)
+                      }
                       className={`w-full border rounded-lg px-3 py-2 ${
                         mode === "view"
                           ? "bg-gray-100 text-gray-600 cursor-not-allowed"
@@ -210,7 +229,9 @@ export default function DynamicForm({
                   )}
 
                   {error && mode !== "view" && (
-                    <p className="text-red-500 text-sm mt-1">{error}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {error}
+                    </p>
                   )}
                 </div>
               );
@@ -246,7 +267,7 @@ export default function DynamicForm({
             </div>
           </form>
 
-          {/* CONFIRM DIALOG */}
+          {/* DIALOG */}
           <DynamicDialog
             open={dialog.open}
             mode={dialog.mode}

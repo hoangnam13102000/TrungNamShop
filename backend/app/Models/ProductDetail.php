@@ -10,8 +10,28 @@ class ProductDetail extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'product_id',
+        'color_id',
+        'screen_id',
+        'rear_camera_id',
+        'front_camera_id',
+        'memory_id',
+        'operating_system_id',
+        'general_information_id',
+        'communication_connectivity_id',
+        'battery_charging_id',
+        'utility_id',
+        'price',
+        'stock_quantity',
+    ];
 
+    protected $casts = [
+        'price' => 'decimal:2',
+        'stock_quantity' => 'integer',
+    ];
+
+    // Relationships
     public function product() { return $this->belongsTo(Product::class); }
     public function color() { return $this->belongsTo(Color::class); }
     public function screen() { return $this->belongsTo(Screen::class); }
@@ -23,5 +43,12 @@ class ProductDetail extends Model
     public function communicationConnectivity() { return $this->belongsTo(CommunicationConnectivity::class); }
     public function batteryCharging() { return $this->belongsTo(BatteryCharging::class); }
     public function utility() { return $this->belongsTo(Utility::class); }
-    public function images(){return $this->hasMany(ProductImage::class);}
+
+    public function images() { return $this->hasMany(ProductImage::class); }
+
+    // Optional helper for displaying main image
+    public function getMainImageAttribute()
+    {
+        return $this->images()->first()?->url ?? asset('images/default.jpg');
+    }
 }

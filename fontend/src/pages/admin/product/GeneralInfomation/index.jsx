@@ -56,11 +56,16 @@ export default memo(function AdminGeneralInformationPage() {
     );
   }, [generalInfos, search]);
 
+  // 👉 Hiển thị chỉ NGÀY (ko giờ)
   const mappedItems = useMemo(() => {
     return filteredItems.map((info) => ({
       ...info,
       launch_label: info.launch_time
-        ? new Date(info.launch_time).toLocaleDateString("vi-VN")
+        ? new Date(info.launch_time).toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })
         : "Chưa có",
     }));
   }, [filteredItems]);
@@ -101,7 +106,7 @@ export default memo(function AdminGeneralInformationPage() {
               { field: "material", label: "Chất liệu" },
               { field: "dimensions", label: "Kích thước" },
               { field: "weight", label: "Khối lượng" },
-              { field: "launch_time", label: "Thời điểm ra mắt" },
+              { field: "launch_label", label: "Ngày ra mắt" }, 
             ]}
             data={mappedItems}
             actions={[
@@ -123,7 +128,11 @@ export default memo(function AdminGeneralInformationPage() {
             { name: "material", label: "Chất liệu", type: "text" },
             { name: "dimensions", label: "Kích thước", type: "text" },
             { name: "weight", label: "Khối lượng", type: "text" },
-            { name: "launch_time", label: "Thời điểm ra mắt", type: "date" },
+            {
+              name: "launch_time",
+              label: "Ngày ra mắt",
+              type: "date",
+            },
           ]}
           initialData={crud.selectedItem}
           onSave={handleSave}

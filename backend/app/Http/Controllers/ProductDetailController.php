@@ -8,9 +8,6 @@ use App\Http\Resources\ProductDetailResource;
 
 class ProductDetailController extends Controller
 {
-     /**
-     * List of relations to load together
-     */
     protected array $relations = [
         'product.brand',
         'color',
@@ -23,14 +20,12 @@ class ProductDetailController extends Controller
         'communicationConnectivity',
         'batteryCharging',
         'utility',
+        'images',
     ];
 
-     /**
-     * General validation rules
-     */
-     protected function validationRules($isUpdate = false): array
+    protected function validationRules($isUpdate = false): array
     {
-        $baseRules = [
+        return [
             'product_id' => $isUpdate ? 'sometimes|exists:products,id' : 'required|exists:products,id',
             'color_id' => 'nullable|exists:colors,id',
             'screen_id' => 'nullable|exists:screens,id',
@@ -40,69 +35,67 @@ class ProductDetailController extends Controller
             'operating_system_id' => 'nullable|exists:operating_systems,id',
             'general_information_id' => 'nullable|exists:general_informations,id',
             'communication_connectivity_id' => 'nullable|exists:communication_connectivities,id',
-            'battery_charging_id' => 'nullable|exists:batteries_charging,id',
+            'battery_charging_id' => 'nullable|exists:battery_chargings,id',
             'utility_id' => 'nullable|exists:utilities,id',
             'price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'nullable|integer|min:0',
         ];
-
-        return $baseRules;
     }
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
-        $details = ProductDetail::with($this->relations)->latest()->get();
+        $details = ProductDetail::with($this->relations)
+            ->latest()
+            ->paginate(20);
 
-         $details = ProductDetail::with($this->relations)->latest()->get();
         return ProductDetailResource::collection($details);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate($this->validationRules());
 
-        $detail = ProductDetail::create($validated)->load($this->relations);
+        $data = collect($validated)
+            ->only((new ProductDetail())->getFillable())
+            ->map(fn($v) => $v ?? null)
+            ->toArray();
+
+        $detail = ProductDetail::create($data)->load($this->relations);
 
         return new ProductDetailResource($detail);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         $detail = ProductDetail::with($this->relations)->findOrFail($id);
-
         return new ProductDetailResource($detail);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         $detail = ProductDetail::findOrFail($id);
 
-        $validated = $request->validate($this->validationRules(isUpdate: true));
+        $validated = $request->validate($this->validationRules(true));
 
-        $detail->update($validated);
+        $data = collect($validated)
+            ->only((new ProductDetail())->getFillable())
+            ->map(fn($v) => $v ?? null)
+            ->toArray();
 
+        $detail->update($data);
         $detail->load($this->relations);
 
         return new ProductDetailResource($detail);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-       $detail = ProductDetail::findOrFail($id);
+        $detail = ProductDetail::with('images')->findOrFail($id);
+
+        foreach ($detail->images as $img) {
+            $img->delete();
+        }
+
         $detail->delete();
 
         return response()->json([

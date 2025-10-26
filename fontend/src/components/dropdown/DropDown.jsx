@@ -9,11 +9,13 @@ const Dropdown = ({
   className = "",
   buttonClassName = "",
   listClassName = "",
-  placeholder,
+  placeholder = "Danh mục",
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef();
+  const dropdownRef = useRef(null);
 
+  /** 🔹 Đóng menu khi click ra ngoài */
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -21,49 +23,77 @@ const Dropdown = ({
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /** 🔹 Tìm option được chọn — ép kiểu string để tránh bug */
+  const selectedOption = options.find(
+    (opt) => String(opt.value) === String(value)
+  );
+
+  /** 🔹 Khi chọn option */
   const handleSelect = (option) => {
+    if (disabled) return;
     setIsOpen(false);
     onSelect?.(option);
   };
 
-  const selectedOption = options.find((opt) => opt.value === value);
+  /** 🔹 Toggle dropdown */
+  const toggleDropdown = () => {
+    if (disabled) return;
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <div
       ref={dropdownRef}
-      className={`relative ${className} ${!className ? "w-full" : ""}`}
+      className={`relative ${className || "w-full"}`}
     >
-      {/* Button */}
+      {/* BUTTON */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`bg-white border border-gray-300 px-4 py-2 text-left  shadow-sm flex justify-between items-center hover:border-blue-400 focus:outline-none w-full ${buttonClassName}`}
+        onClick={toggleDropdown}
+        disabled={disabled}
+        className={`bg-white border border-gray-300 px-4 py-2 text-left shadow-sm flex justify-between items-center w-full
+          ${
+            disabled
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : "hover:border-blue-400"
+          } ${buttonClassName}`}
       >
-        {selectedOption?.label || placeholder || label}
-        <span className="ml-2">
+        <span className="truncate">
+          {selectedOption?.label || placeholder || label}
+        </span>
+        <span className="ml-2 text-gray-500">
           {isOpen ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
         </span>
       </button>
 
-      {/* Menu */}
-      {isOpen && (
+      {/* MENU */}
+      {isOpen && !disabled && (
         <ul
           className={`absolute left-0 z-50 bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-auto w-full ${listClassName}`}
         >
-          {options.map((opt) => (
-            <li
-              key={opt.value}
-              onClick={() => handleSelect(opt)}
-              className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                value === opt.value ? "bg-gray-100 font-medium" : ""
-              }`}
-            >
-              {opt.label}
+          {options.length > 0 ? (
+            options.map((opt) => (
+              <li
+                key={opt.value}
+                onClick={() => handleSelect(opt)}
+                className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
+                  String(value) === String(opt.value)
+                    ? "bg-gray-100 font-medium"
+                    : ""
+                }`}
+              >
+                {opt.label}
+              </li>
+            ))
+          ) : (
+            <li className="px-4 py-2 text-gray-400 text-sm italic">
+              Không có dữ liệu
             </li>
-          ))}
+          )}
         </ul>
       )}
     </div>

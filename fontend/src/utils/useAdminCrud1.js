@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+/** Kiểm tra giá trị có phải file upload không */
 const isFile = (value) => value instanceof File || value instanceof Blob;
 
+/** Chuyển object sang FormData (tự động stringify object con) */
 const toFormData = (data) => {
   const fd = new FormData();
   for (const key in data) {
@@ -18,6 +20,7 @@ const toFormData = (data) => {
   return fd;
 };
 
+/** CRUD logic tổng quát cho Admin Panel */
 export default function useAdminCrud1(api, queryKey) {
   const queryClient = useQueryClient();
 
@@ -55,6 +58,7 @@ export default function useAdminCrud1(api, queryKey) {
     try {
       if (api.deleteMutation) await api.deleteMutation.mutateAsync(id);
       else if (api.delete) await api.delete(id);
+
       await queryClient.invalidateQueries([queryKey]);
     } catch (err) {
       console.error("Delete error:", err);
@@ -72,9 +76,16 @@ export default function useAdminCrud1(api, queryKey) {
     setLoading(true);
 
     try {
+      // 🧩 Chuẩn hóa dữ liệu
       let payload = { ...formData };
 
-      // Giữ file cũ khi edit mà người dùng không thay đổi ảnh
+      // Xử lý giá / số lượng (nếu nhập string)
+      if (payload.price)
+        payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
+      if (payload.stock_quantity)
+        payload.stock_quantity = Number(payload.stock_quantity) || 0;
+
+      // Giữ ảnh cũ khi không thay đổi
       if (
         mode === "edit" &&
         selectedItem &&
@@ -82,32 +93,30 @@ export default function useAdminCrud1(api, queryKey) {
         payload.image &&
         !isFile(payload.image)
       ) {
-        // Nếu formData.image là chuỗi hoặc URL (chưa thay đổi)
-        delete payload.image; // backend sẽ giữ ảnh cũ
+        delete payload.image;
       }
 
-      // Tự chuyển sang FormData nếu có file
+      // Nếu có file → chuyển sang FormData
       const hasFile = Object.values(payload).some(isFile);
       const finalData = hasFile ? toFormData(payload) : payload;
 
-      // Gọi API
+      // 🧠 Gọi API
       if (mode === "create") {
-        if (api.createMutation)
-          await api.createMutation.mutateAsync(finalData);
+        if (api.createMutation) await api.createMutation.mutateAsync(finalData);
         else if (api.create) await api.create(finalData);
       } else {
         const id = selectedItem?.id;
         if (!id) throw new Error("Thiếu ID để cập nhật");
+
         if (api.updateMutation)
-          await api.updateMutation.mutateAsync({ id, data: finalData });
+          await api.updateMutation.mutateAsync({ id, ...finalData });
         else if (api.update) await api.update(id, finalData);
       }
 
-      // Refresh lại danh sách
       await queryClient.invalidateQueries([queryKey]);
       handleCloseForm();
     } catch (err) {
-      console.error(" Save error:", err);
+      console.error("Save error:", err);
       throw err.response?.data || err;
     } finally {
       setLoading(false);

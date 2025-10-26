@@ -11,6 +11,9 @@ class GeneralInformation extends Model
     protected $table = 'general_informations';
    use HasFactory, SoftDeletes;
     protected $guarded=[]; 
+    protected $casts = [
+    'launch_time' => 'date',
+];
 
     // Relation with  productDetails model
      public function productDetails()

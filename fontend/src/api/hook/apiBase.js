@@ -4,52 +4,63 @@ const isFile = (value) => value instanceof File || value instanceof Blob;
 
 const toFormData = (data) => {
   const formData = new FormData();
-  for (const key in data) {
-    if (data[key] !== undefined && data[key] !== null) {
-      formData.append(key, data[key]);
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (typeof value === "object" && !isFile(value)) {
+        formData.append(key, JSON.stringify(value)); 
+      } else {
+        formData.append(key, value);
+      }
     }
-  }
+  });
+
   return formData;
 };
 
+/** API CRUD generator ( RESTful) */
 export const createCRUD = (endpoint) => ({
+  /** Get List */
   getAll: async () => {
     const res = await api.get(endpoint);
     if (Array.isArray(res.data)) return res.data;
     if (Array.isArray(res.data.data)) return res.data.data;
-    return [];
+    return res.data?.data ?? [];
   },
 
+  /** get record*/
   getOne: async (id) => {
     const res = await api.get(`${endpoint}/${id}`);
-    return res.data.data ?? res.data;
+    return res.data?.data ?? res.data;
   },
 
+  /** Create */
   create: async (data) => {
-    // Check if exist file => use FormData
     const hasFile = Object.values(data).some(isFile);
     const payload = hasFile ? toFormData(data) : data;
 
     const res = await api.post(endpoint, payload, hasFile ? {
-      headers: { "Content-Type": "multipart/form-data" }
+      headers: { "Content-Type": "multipart/form-data" },
     } : undefined);
 
-    return res.data.data ?? res.data;
+    return res.data?.data ?? res.data;
   },
 
+  /** Update */
   update: async (id, data) => {
     const hasFile = Object.values(data).some(isFile);
     const payload = hasFile ? toFormData(data) : data;
 
-    const res = await api.put(`${endpoint}/${id}`, payload, hasFile ? {
-      headers: { "Content-Type": "multipart/form-data" }
+    const res = await api.post(`${endpoint}/${id}?_method=PUT`, payload, hasFile ? {
+      headers: { "Content-Type": "multipart/form-data" },
     } : undefined);
 
-    return res.data.data ?? res.data;
+    return res.data?.data ?? res.data;
   },
 
+  /** Delete */
   delete: async (id) => {
-    await api.delete(`${endpoint}/${id}`);
-    return id;
+    const res = await api.delete(`${endpoint}/${id}`);
+    return res.data ?? id;
   },
 });

@@ -19,6 +19,9 @@ use App\Observers\ProductObserver;
 
 use App\Models\Brand;
 use App\Observers\BrandObserver;
+
+use App\Models\ProductDetail;
+use App\Observers\ProductDetailObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -42,5 +45,7 @@ class AppServiceProvider extends ServiceProvider
         //-----------Product and Brand---------------------
         Product::observe(ProductObserver::class);
         Brand::observe(BrandObserver::class);
+
+        ProductDetail::observe(ProductDetailObserver::class);
     }
 }
