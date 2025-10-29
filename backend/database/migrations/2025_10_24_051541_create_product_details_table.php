@@ -20,22 +20,50 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->index();
 
-            $table->foreignId('color_id')
-                ->nullable()
-                ->constrained('colors')
-                ->nullOnDelete()
-                ->index();
+            // Technical specifications with custom FK names
+            $table->foreignId('screen_id')->nullable()->index();
+            $table->foreign('screen_id', 'product_details_screen_id_fk')
+                ->references('id')->on('screens')
+                ->nullOnDelete();
 
-            // Technical specifications
-            $table->foreignId('screen_id')->nullable()->constrained('screens')->nullOnDelete()->index();
-            $table->foreignId('rear_camera_id')->nullable()->constrained('rear_cameras')->nullOnDelete()->index();
-            $table->foreignId('front_camera_id')->nullable()->constrained('front_cameras')->nullOnDelete()->index();
-            $table->foreignId('memory_id')->nullable()->constrained('memories')->nullOnDelete()->index();
-            $table->foreignId('operating_system_id')->nullable()->constrained('operating_systems')->nullOnDelete()->index();
-            $table->foreignId('general_information_id')->nullable()->constrained('general_informations')->nullOnDelete()->index();
-            $table->foreignId('communication_connectivity_id')->nullable()->constrained('communication_connectivities')->nullOnDelete()->index();
-            $table->foreignId('battery_charging_id')->nullable()->constrained('battery_chargings')->nullOnDelete()->index();
-            $table->foreignId('utility_id')->nullable()->constrained('utilities')->nullOnDelete()->index();
+            $table->foreignId('rear_camera_id')->nullable()->index();
+            $table->foreign('rear_camera_id', 'product_details_rear_camera_id_fk')
+                ->references('id')->on('rear_cameras')
+                ->nullOnDelete();
+
+            $table->foreignId('front_camera_id')->nullable()->index();
+            $table->foreign('front_camera_id', 'product_details_front_camera_id_fk')
+                ->references('id')->on('front_cameras')
+                ->nullOnDelete();
+
+            $table->foreignId('memory_id')->nullable()->index();
+            $table->foreign('memory_id', 'product_details_memory_id_fk')
+                ->references('id')->on('memories')
+                ->nullOnDelete();
+
+            $table->foreignId('operating_system_id')->nullable()->index();
+            $table->foreign('operating_system_id', 'product_details_os_id_fk')
+                ->references('id')->on('operating_systems')
+                ->nullOnDelete();
+
+            $table->foreignId('general_information_id')->nullable()->index();
+            $table->foreign('general_information_id', 'product_details_general_info_id_fk')
+                ->references('id')->on('general_informations')
+                ->nullOnDelete();
+
+            $table->foreignId('communication_connectivity_id')->nullable()->index();
+            $table->foreign('communication_connectivity_id', 'product_details_comm_id_fk')
+                ->references('id')->on('communication_connectivities')
+                ->nullOnDelete();
+
+            $table->foreignId('battery_charging_id')->nullable()
+                ->constrained('batteries_charging')
+                ->nullOnDelete();
+
+            $table->foreignId('utility_id')->nullable()->index();
+            $table->foreign('utility_id', 'product_details_utility_id_fk')
+                ->references('id')->on('utilities')
+                ->nullOnDelete();
 
             // Business info
             $table->decimal('price', 15, 2)->nullable();

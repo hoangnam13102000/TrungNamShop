@@ -25,12 +25,12 @@ export default function useAdminCrud1(api, queryKey) {
   const queryClient = useQueryClient();
 
   const [openForm, setOpenForm] = useState(false);
-  const [mode, setMode] = useState("create");
+  const [mode, setMode] = useState("create"); // create | edit
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
 
   /** ==========================
-   *  FORM CONTROL
+   * FORM CONTROL
    * ========================== */
   const handleAdd = () => {
     setMode("create");
@@ -39,6 +39,7 @@ export default function useAdminCrud1(api, queryKey) {
   };
 
   const handleEdit = (item) => {
+    if (!item) return;
     setMode("edit");
     setSelectedItem(item);
     setOpenForm(true);
@@ -50,7 +51,7 @@ export default function useAdminCrud1(api, queryKey) {
   };
 
   /** ==========================
-   *  DELETE
+   * DELETE
    * ========================== */
   const handleDelete = async (id) => {
     if (!id) return;
@@ -69,50 +70,79 @@ export default function useAdminCrud1(api, queryKey) {
   };
 
   /** ==========================
-   *  SAVE (CREATE / UPDATE)
+   * SAVE (CREATE / UPDATE)
    * ========================== */
   const handleSave = async (formData) => {
-    if (!formData || typeof formData !== "object") return;
+    console.log("🧩 handleSave payload:", formData);
+
+    if (!formData || typeof formData !== "object") {
+      console.error("handleSave nhận dữ liệu không hợp lệ:", formData);
+      return;
+    }
+
     setLoading(true);
-
+    const id = selectedItem?.id;
+    console.log("🔍 selectedItem id:", id);
     try {
-      // 🧩 Chuẩn hóa dữ liệu
-      let payload = { ...formData };
+      // Clone payload
+      let payload = JSON.parse(JSON.stringify(formData));
 
-      // Xử lý giá / số lượng (nếu nhập string)
+      // Chuyển price và stock_quantity về số
       if (payload.price)
         payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
       if (payload.stock_quantity)
         payload.stock_quantity = Number(payload.stock_quantity) || 0;
 
-      // Giữ ảnh cũ khi không thay đổi
+      // Xử lý image khi edit
       if (
         mode === "edit" &&
-        selectedItem &&
-        selectedItem.image &&
+        selectedItem?.image &&
         payload.image &&
         !isFile(payload.image)
       ) {
         delete payload.image;
       }
 
-      // Nếu có file → chuyển sang FormData
+      if (!payload || Object.keys(payload).length === 0) {
+        throw new Error("Payload rỗng — không có dữ liệu để lưu");
+      }
+
+      // Kiểm tra có file upload không
       const hasFile = Object.values(payload).some(isFile);
       const finalData = hasFile ? toFormData(payload) : payload;
 
-      // 🧠 Gọi API
+      console.log("finalData chuẩn bị gửi:", finalData);
+
       if (mode === "create") {
         if (api.createMutation) await api.createMutation.mutateAsync(finalData);
         else if (api.create) await api.create(finalData);
       } else {
+        // UPDATE
         const id = selectedItem?.id;
         if (!id) throw new Error("Thiếu ID để cập nhật");
+        console.assert(
+          finalData && Object.keys(finalData).length,
+          "Data rỗng khi cập nhật"
+        );
 
-        if (api.updateMutation)
-          await api.updateMutation.mutateAsync({ id, ...finalData });
-        else if (api.update) await api.update(id, finalData);
+        console.log("🔄 Gửi update:", { id, data: finalData });
+
+        // Tách trường hợp có file và không có file
+        if (hasFile) {
+          // Nếu api.updateMutation hỗ trợ FormData trực tiếp
+          if (api.updateMutation) {
+            await api.updateMutation.mutateAsync({ id, data: finalData });
+          } else if (api.update) {
+            // ép theo cùng cấu trúc để api nhận đúng
+            await api.update({ id, data: finalData });
+          }
+        } else {
+          // JSON bình thường
+          if (api.updateMutation)
+            await api.updateMutation.mutateAsync({ id, data: finalData });
+          else if (api.update) await api.update(id, finalData);
+        }
       }
-
       await queryClient.invalidateQueries([queryKey]);
       handleCloseForm();
     } catch (err) {

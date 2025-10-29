@@ -1,11 +1,11 @@
 import { memo, useMemo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
-import DynamicForm from "../../../../components/formAndDialog/ProductDetailForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
-import useAdminHandler from "../../../../components/common/useAdminHandler";
-import ProductDetailViewModal from "../../../../components/product/ProductDetailView";
+import ProductDetailForm from "../../../../components/formAndDialog/ProductDetailForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import ProductDetailViewModal from "../../../../components/product/ProductDetailView";
+import useAdminCrud from "../../../../utils/useAdminCrud";
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { getImageUrl } from "../../../../utils/getImageUrl";
 
 import {
@@ -29,9 +29,6 @@ import {
 } from "../../../../api/product/hooks";
 
 export default memo(function AdminProductDetailPage() {
-  /** ==========================
-   *  1 FETCH DATA
-   * ========================== */
   const { data: details = [], isLoading, refetch } = useProductDetails();
   const { data: products = [] } = useProducts();
   const { data: screens = [] } = useScreens();
@@ -44,9 +41,6 @@ export default memo(function AdminProductDetailPage() {
   const { data: connectivities = [] } = useCommunicationConnectivities();
   const { data: generalInfos = [] } = useGeneralInformations();
 
-  /** ==========================
-   *  2 CRUD SETUP
-   * ========================== */
   const createMutation = useCreateProductDetail();
   const updateMutation = useUpdateProductDetail();
   const deleteMutation = useDeleteProductDetail();
@@ -71,9 +65,6 @@ export default memo(function AdminProductDetailPage() {
     updateMutation.isLoading ||
     deleteMutation.isLoading;
 
-  /** ==========================
-   *  3 SEARCH & FILTER
-   * ========================== */
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
 
@@ -92,199 +83,208 @@ export default memo(function AdminProductDetailPage() {
       }));
   }, [details, search]);
 
-  /** ==========================
-   *  4 FORM FIELDS
-   * ========================== */
-  const formFields = useMemo(
-    () => [
-      {
-        section: "Thông tin chung",
-        fields: [
-          {
-            name: "product_id",
-            label: "Sản phẩm",
-            type: "select",
-            required: true,
-            options: products.map((p) => ({ label: p.name, value: p.id })),
-          },
-          {
-            name: "general_information_id",
-            label: "Thông tin chung (General)",
-            type: "select",
-            options: generalInfos.map((g) => ({
-              label: g.design || g.material || `General #${g.id}`,
-              value: g.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "Màn hình",
-        fields: [
-          {
-            name: "screen_id",
-            label: "Màn hình",
-            type: "select",
-            options: screens.map((s) => ({
-              label:
-                s.display_technology ||
-                `${s.screen_size || ""} ${s.resolution || ""}`.trim(),
-              value: s.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "Camera",
-        fields: [
-          {
-            name: "rear_camera_id",
-            label: "Camera sau",
-            type: "select",
-            options: rearCameras.map((c) => ({
-              label: c.features || c.resolution || `Rear #${c.id}`,
-              value: c.id,
-            })),
-          },
-          {
-            name: "front_camera_id",
-            label: "Camera trước",
-            type: "select",
-            options: frontCameras.map((c) => ({
-              label: c.features || c.resolution || `Front #${c.id}`,
-              value: c.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "Bộ nhớ",
-        fields: [
-          {
-            name: "memory_id",
-            label: "Bộ nhớ (RAM / ROM)",
-            type: "select",
-            options: memories.map((m) => ({
-              label:
-                (m.ram ? `${m.ram}` : "") +
-                (m.internal_storage ? ` / ${m.internal_storage}` : ""),
-              value: m.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "Pin & Hệ điều hành",
-        fields: [
-          {
-            name: "operating_system_id",
-            label: "Hệ điều hành",
-            type: "select",
-            options: operatingSystems.map((os) => ({
-              label: os.name,
-              value: os.id,
-            })),
-          },
-          {
-            name: "battery_id",
-            label: "Pin / Sạc",
-            type: "select",
-            options: batteries.map((b) => ({
-              label: b.battery_capacity
-                ? `${b.battery_capacity}`
-                : `Battery #${b.id}`,
-              value: b.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "Tiện ích & Kết nối",
-        fields: [
-          {
-            name: "utility_id",
-            label: "Tiện ích",
-            type: "select",
-            options: utilities.map((u) => ({
-              label: u.advanced_security || u.special_features || `#${u.id}`,
-              value: u.id,
-            })),
-          },
-          {
-            name: "communication_id",
-            label: "Kết nối & SIM",
-            type: "select",
-            options: connectivities.map((c) => ({
-              label: c.sim_slot || `#${c.id}`,
-              value: c.id,
-            })),
-          },
-        ],
-      },
-      {
-        section: "💰 Giá & Tồn kho",
-        fields: [
-          {
-            name: "price",
-            label: "Giá bán (₫)",
-            type: "number",
-            min: 0,
-            step: 1000,
-          },
-          {
-            name: "stock_quantity",
-            label: "Số lượng tồn kho",
-            type: "number",
-            min: 0,
-            step: 1,
-          },
-        ],
-      },
-    ],
-    [
-      products,
-      screens,
-      rearCameras,
-      frontCameras,
-      memories,
-      operatingSystems,
-      batteries,
-      utilities,
-      connectivities,
-      generalInfos,
-    ]
-  );
+  const safeEntries = (obj) => (obj ? Object.entries(obj) : []);
 
-  /** ==========================
-   *  5 HANDLE INITIAL DATA (FIX)
-   * ========================== */
-  const selectedData =
-    crud.mode === "edit" && crud.selectedItem
-      ? {
-          ...crud.selectedItem,
-          product_id: crud.selectedItem.product?.id,
-          general_information_id: crud.selectedItem.general_information?.id,
-          screen_id: crud.selectedItem.screen?.id,
-          rear_camera_id: crud.selectedItem.rear_camera?.id,
-          front_camera_id: crud.selectedItem.front_camera?.id,
-          memory_id: crud.selectedItem.memory?.id,
-          operating_system_id: crud.selectedItem.operating_system?.id,
-          battery_id: crud.selectedItem.battery?.id || null, // ✅ đúng key
-          utility_id: crud.selectedItem.utility?.id,
-          communication_id: crud.selectedItem.communication?.id || null, // ✅ đúng key
-        }
-      : crud.selectedItem || {};
+  const formFields = useMemo(() => [
+    {
+      section: "Thông tin chung",
+      fields: [
+        {
+          name: "product_id",
+          label: "Sản phẩm",
+          type: "select",
+          required: true,
+          options: products.map((p) => ({ label: p.name, value: p.id })),
+        },
+        {
+          name: "general_information_id",
+          label: "Thông tin chung",
+          type: "select",
+          options: generalInfos.filter(Boolean).map((g) => ({
+            label: Object.values(g)
+              .filter((v) => v != null && v !== "")
+              .join(" | "),
+            value: g.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "Màn hình",
+      fields: [
+        {
+          name: "screen_id",
+          label: "Màn hình",
+          type: "select",
+          options: screens.filter(Boolean).map((s) => ({
+            label: safeEntries(s)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: s.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "Camera",
+      fields: [
+        {
+          name: "rear_camera_id",
+          label: "Camera sau",
+          type: "select",
+          options: rearCameras.filter(Boolean).map((c) => ({
+            label: safeEntries(c)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: c.id,
+          })),
+        },
+        {
+          name: "front_camera_id",
+          label: "Camera trước",
+          type: "select",
+          options: frontCameras.filter(Boolean).map((c) => ({
+            label: safeEntries(c)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: c.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "Bộ nhớ",
+      fields: [
+        {
+          name: "memory_id",
+          label: "Bộ nhớ (RAM / ROM)",
+          type: "select",
+          options: memories.filter(Boolean).map((m) => ({
+            label: safeEntries(m)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: m.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "Pin & Hệ điều hành",
+      fields: [
+        {
+          name: "operating_system_id",
+          label: "Hệ điều hành",
+          type: "select",
+          options: operatingSystems.filter(Boolean).map((os) => ({
+            label: safeEntries(os)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: os.id,
+          })),
+        },
+        {
+          name: "battery_charging_id",
+          label: "Pin / Sạc",
+          type: "select",
+          options: batteries.filter(Boolean).map((b) => ({
+            label: safeEntries(b)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: b.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "Tiện ích & Kết nối",
+      fields: [
+        {
+          name: "utility_id",
+          label: "Tiện ích",
+          type: "select",
+          options: utilities.filter(Boolean).map((u) => ({
+            label: safeEntries(u)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: u.id,
+          })),
+        },
+        {
+          name: "communication_connectivity_id",
+          label: "Kết nối & SIM",
+          type: "select",
+          options: connectivities.filter(Boolean).map((c) => ({
+            label: safeEntries(c)
+              .filter(([k]) => k !== "id")
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(" | "),
+            value: c.id,
+          })),
+        },
+      ],
+    },
+    {
+      section: "💰 Giá & Tồn kho",
+      fields: [
+        { name: "price", label: "Giá bán (₫)", type: "number", min: 0, step: 1000 },
+        { name: "stock_quantity", label: "Số lượng tồn kho", type: "number", min: 0, step: 1 },
+      ],
+    },
+  ], [
+    products, screens, rearCameras, frontCameras, memories, operatingSystems,
+    batteries, utilities, connectivities, generalInfos
+  ]);
 
-  /** ==========================
-   *  6 UI
-   * ========================== */
+  const selectedData = useMemo(() => {
+    if (crud.mode === "edit" && crud.selectedItem) {
+      const item = crud.selectedItem;
+      return {
+        product_id: item.product?.id ?? null,
+        general_information_id: item.general_information?.id ?? null,
+        screen_id: item.screen?.id ?? null,
+        rear_camera_id: item.rear_camera?.id ?? null,
+        front_camera_id: item.front_camera?.id ?? null,
+        memory_id: item.memory?.id ?? null,
+        operating_system_id: item.operating_system?.id ?? null,
+        battery_charging_id: item.battery_charging?.id ?? null,
+        utility_id: item.utility?.id ?? null,
+        communication_connectivity_id: item.communication_connectivity?.id ?? null,
+        price: item.price  ? parseFloat(item.price) : 0,
+        stock_quantity: item.stock_quantity ?? 0,
+      };
+    } else if (crud.mode === "create") {
+      return {
+        product_id: null,
+        general_information_id: null,
+        screen_id: null,
+        rear_camera_id: null,
+        front_camera_id: null,
+        memory_id: null,
+        operating_system_id: null,
+        battery_charging_id: null,
+        utility_id: null,
+        communication_connectivity_id: null,
+        price: 0,
+        stock_quantity: 0,
+      };
+    }
+    return {};
+  }, [crud.mode, crud.selectedItem]);
+
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">📦 Quản lý Chi Tiết Sản Phẩm</h1>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
-          onClick={crud.handleAdd}
+          onClick={() => crud.handleAdd()}
           className="flex items-center gap-2 bg-red-600 text-white px-5 py-2 rounded-xl hover:bg-red-700"
           disabled={isLoading || isMutating}
         >
@@ -342,18 +342,17 @@ export default memo(function AdminProductDetailPage() {
       )}
 
       {crud.openForm && (
-        <DynamicForm
+        <ProductDetailForm
           title={
             crud.mode === "edit"
-              ? "✏️ Sửa chi tiết sản phẩm"
-              : "➕ Thêm chi tiết sản phẩm mới"
+              ? "Sửa chi tiết sản phẩm"
+              : "Thêm chi tiết sản phẩm mới"
           }
           fieldGroups={formFields}
-          initialData={selectedData} // ✅ FIXED
+          initialData={selectedData}
           onSave={handleSave}
           onClose={crud.handleCloseForm}
           isSaving={isMutating}
-          className="w-full max-w-3xl mx-auto"
         />
       )}
 

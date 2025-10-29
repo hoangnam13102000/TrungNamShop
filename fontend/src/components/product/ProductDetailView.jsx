@@ -61,7 +61,7 @@ const FIELD_LABELS = {
   gpu: "GPU",
 
   // Pin & Sạc
-  battery: "Pin & Sạc",
+  batteryCharging: "Pin & Sạc",
   battery_capacity: "Dung lượng pin",
   charging_port: "Cổng sạc",
   charging: "Công nghệ sạc",

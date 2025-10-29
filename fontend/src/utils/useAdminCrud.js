@@ -1,153 +1,168 @@
-import { useState, useMemo, useEffect } from "react";
-import { validateGeneral } from "../utils/validate";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-/**
- * General CRUD hook, used for many forms
- * @param {Array} initialData - Init Data 
- * @param {Object} options - {
- *   rules: object validation,
- *   api: { fetch, create, update, delete },
- *   hooks: { beforeSave: async (data, editingItem) => boolean }
- * }
- */
-export default function useAdminCrud(initialData = [], options = {}) {
-  const { rules = {}, api = {}, hooks = {} } = options;
+/** Kiểm tra giá trị có phải file upload không */
+const isFile = (value) => value instanceof File || value instanceof Blob;
 
-  const [items, setItems] = useState(Array.isArray(initialData) ? initialData : []);
-  const [editingItem, setEditingItem] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [search, setSearch] = useState("");
-  const [errors, setErrors] = useState({});
+/** Chuyển object sang FormData (tự động stringify object con) */
+const toFormData = (data) => {
+  const fd = new FormData();
+  for (const key in data) {
+    const value = data[key];
+    if (value !== undefined && value !== null) {
+      if (typeof value === "object" && !isFile(value)) {
+        fd.append(key, JSON.stringify(value));
+      } else {
+        fd.append(key, value);
+      }
+    }
+  }
+  return fd;
+};
+
+/** CRUD logic tổng quát cho Admin Panel */
+export default function useAdminCrud1(api, queryKey) {
+  const queryClient = useQueryClient();
+
+  const [openForm, setOpenForm] = useState(false);
+  const [mode, setMode] = useState("create"); // create | edit
+  const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Filter theo search
-  const filteredItems = useMemo(() => {
-    if (!items || !Array.isArray(items)) return [];
-    if (!search) return items;
-    return items.filter((item) =>
-      Object.values(item).some((v) =>
-        String(v).toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [items, search]);
+  /** ==========================
+   * FORM CONTROL
+   * ========================== */
+  const handleAdd = () => {
+    setMode("create");
+    setSelectedItem(null);
+    setOpenForm(true);
+  };
 
-  // Fetch data from server
-  const fetchData = async () => {
-    if (!api.fetch) return;
+  const handleEdit = (item) => {
+    if (!item) return;
+    setMode("edit");
+    setSelectedItem(item);
+    setOpenForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setOpenForm(false);
+    setSelectedItem(null);
+  };
+
+  /** ==========================
+   * DELETE
+   * ========================== */
+  const handleDelete = async (id) => {
+    if (!id) return;
     setLoading(true);
     try {
-      const data = await api.fetch();
-      setItems(Array.isArray(data) ? data : []);
-      setError(null);
+      if (api.deleteMutation) await api.deleteMutation.mutateAsync(id);
+      else if (api.delete) await api.delete(id);
+
+      await queryClient.invalidateQueries([queryKey]);
     } catch (err) {
-      console.error("Error fetching data:", err);
-      setError(err);
+      console.error("Delete error:", err);
+      throw err.response?.data || err;
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  /** ==========================
+   * SAVE (CREATE / UPDATE)
+   * ========================== */
+  const handleSave = async (formData) => {
+    console.log("🧩 handleSave payload:", formData);
 
-  // Save (create/update)
-  const handleSave = async (data) => {
-    if (!api.create || !api.update) return false;
-
-    // Validate according to general rules
-    const validationErrors = validateGeneral(data, rules);
-
-    // Check existence: if field name exists, check for duplicates
-    if (!editingItem && data.name) {
-      const isDuplicate = items.some(
-        (item) => item.name.toLowerCase() === data.name.toLowerCase()
-      );
-      if (isDuplicate) validationErrors.name = "Tên đã tồn tại";
+    if (!formData || typeof formData !== "object") {
+      console.error("handleSave nhận dữ liệu không hợp lệ:", formData);
+      return;
     }
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return false;
-    }
-
-    // beforeSave hook (confirm)
-    if (hooks.beforeSave) {
-      const ok = await hooks.beforeSave(data, editingItem);
-      if (!ok) return false;
-    }
-
+    setLoading(true);
+    const id = selectedItem?.id;
+    console.log("🔍 selectedItem id:", id);
     try {
-      let res;
-      if (editingItem) {
-        res = await api.update(editingItem.id, data);
-        setItems((prev) => (prev || []).map((i) => (i.id === editingItem.id ? res : i)));
-      } else {
-        res = await api.create(data);
-        setItems((prev) => [...(prev || []), res]);
+      // Clone payload
+      let payload = JSON.parse(JSON.stringify(formData));
+
+      // Chuyển price và stock_quantity về số
+      if (payload.price)
+        payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
+      if (payload.stock_quantity)
+        payload.stock_quantity = Number(payload.stock_quantity) || 0;
+
+      // Xử lý image khi edit
+      if (
+        mode === "edit" &&
+        selectedItem?.image &&
+        payload.image &&
+        !isFile(payload.image)
+      ) {
+        delete payload.image;
       }
 
-      setShowForm(false);
-      setEditingItem(null);
-      setErrors({});
-      return true;
+      if (!payload || Object.keys(payload).length === 0) {
+        throw new Error("Payload rỗng — không có dữ liệu để lưu");
+      }
+
+      // Kiểm tra có file upload không
+      const hasFile = Object.values(payload).some(isFile);
+      const finalData = hasFile ? toFormData(payload) : payload;
+
+      console.log("finalData chuẩn bị gửi:", finalData);
+
+      if (mode === "create") {
+        if (api.createMutation) await api.createMutation.mutateAsync(finalData);
+        else if (api.create) await api.create(finalData);
+      } else {
+        // UPDATE
+        const id = selectedItem?.id;
+        if (!id) throw new Error("Thiếu ID để cập nhật");
+        console.assert(
+          finalData && Object.keys(finalData).length,
+          "Data rỗng khi cập nhật"
+        );
+
+        console.log("🔄 Gửi update:", { id, data: finalData });
+
+        // Tách trường hợp có file và không có file
+        if (hasFile) {
+          // Nếu api.updateMutation hỗ trợ FormData trực tiếp
+          if (api.updateMutation) {
+            await api.updateMutation.mutateAsync({ id, data: finalData });
+          } else if (api.update) {
+            // ép theo cùng cấu trúc để api nhận đúng
+            await api.update({ id, data: finalData });
+          }
+        } else {
+          // JSON bình thường
+          if (api.updateMutation)
+            await api.updateMutation.mutateAsync({ id, data: finalData });
+          else if (api.update) await api.update({ id, data: finalData });
+        }
+      }
+
+      await queryClient.invalidateQueries([queryKey]);
+      handleCloseForm();
     } catch (err) {
-      console.error("Error saving:", err);
-      return false;
+      console.error("Save error:", err);
+      throw err.response?.data || err;
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Delete
-  const handleDelete = async (itemOrId) => {
-    if (!api.delete) return false;
-    const id = typeof itemOrId === "object" ? itemOrId.id : itemOrId;
-    try {
-      await api.delete(id);
-      setItems((prev) => (prev || []).filter((i) => i.id !== id));
-      return true;
-    } catch (err) {
-      console.error("Error deleting:", err);
-      return false;
-    }
-  };
-
-  // Form control
-  const handleEdit = (item) => {
-    setEditingItem({ ...item });
-    setShowForm(true);
-    setErrors({});
-  };
-
-  const handleAdd = () => {
-    setEditingItem(null);
-    setShowForm(true);
-    setErrors({});
-  };
-  const handleCloseModal = () => {
-    setShowForm(false);
-    setEditingItem(null);
-    setErrors({});
   };
 
   return {
-    items,
-    setItems,
-    editingItem,
-    showForm,
-    search,
-    setSearch,
-    filteredItems,
-    errors,
-    setErrors,
+    openForm,
+    mode,
+    selectedItem,
     loading,
-    error,
-
     handleAdd,
     handleEdit,
     handleDelete,
     handleSave,
-    handleCloseModal,
-    fetchData,
+    handleCloseForm,
   };
 }

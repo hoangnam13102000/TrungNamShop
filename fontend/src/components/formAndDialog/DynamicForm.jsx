@@ -14,9 +14,6 @@ export default function DynamicForm({
   onClose,
   mode = "create", // create | edit | view
 }) {
-  /** ============================================================
-   * 1. STATE
-   * ============================================================ */
   const [formData, setFormData] = useState({});
   const [preview, setPreview] = useState({});
   const [errors, setErrors] = useState({});
@@ -29,9 +26,7 @@ export default function DynamicForm({
     onConfirm: null,
   });
 
-  /** ============================================================
-   * 2. INIT / UPDATE WHEN DATA CHANGES
-   * ============================================================ */
+  // INIT / UPDATE WHEN DATA CHANGES
   useEffect(() => {
     const updatedData = {};
     const updatedPreview = {};
@@ -40,8 +35,7 @@ export default function DynamicForm({
       updatedData[f.name] = initialData?.[f.name] ?? "";
 
       if (f.type === "file") {
-        let imageValue =
-          initialData?.[f.name] || initialData?.image_path || "";
+        let imageValue = initialData?.[f.name] || initialData?.image_path || "";
         if (imageValue && typeof imageValue === "string") {
           imageValue = getImageUrl(imageValue);
         }
@@ -53,9 +47,7 @@ export default function DynamicForm({
     setPreview(updatedPreview);
   }, [initialData, fields]);
 
-  /** ============================================================
-   * 3. HANDLERS
-   * ============================================================ */
+  // HANDLE CHANGE
   const handleChange = (name, value) => {
     if (mode === "view") return;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -70,9 +62,7 @@ export default function DynamicForm({
     }));
   };
 
-  /** ============================================================
-   * 4. VALIDATION
-   * ============================================================ */
+  // VALIDATION
   const validate = () => {
     if (mode === "view") return true;
 
@@ -92,9 +82,8 @@ export default function DynamicForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  /** ============================================================
-   * 5. SUBMIT
-   * ============================================================ */
+  
+  // SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting || mode === "view") return;
@@ -111,9 +100,6 @@ export default function DynamicForm({
   const closeDialog = () =>
     setDialog((prev) => ({ ...prev, open: false }));
 
-  /** ============================================================
-   * 6. RENDER
-   * ============================================================ */
   return (
     <AnimatePresence>
       <motion.div
@@ -140,16 +126,14 @@ export default function DynamicForm({
             className="flex-1 overflow-y-auto space-y-4 pr-2"
           >
             {fields.map((field) => {
-              const value = formData[field.name] ?? "";
-              const error = errors[field.name];
+              let value = formData?.[field.name] ?? "";
+              const error = errors?.[field.name];
 
               return (
                 <div key={field.name}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {field.label}{" "}
-                    {field.required && (
-                      <span className="text-red-500">*</span>
-                    )}
+                    {field.required && <span className="text-red-500">*</span>}
                   </label>
 
                   {/* FILE UPLOAD */}
@@ -157,20 +141,16 @@ export default function DynamicForm({
                     <div className="flex flex-col items-center gap-2 w-full">
                       <div
                         className={`w-40 h-40 border border-gray-300 rounded-lg bg-gray-100 bg-center bg-cover ${
-                          mode !== "view"
-                            ? "cursor-pointer"
-                            : "opacity-80"
+                          mode !== "view" ? "cursor-pointer" : "opacity-80"
                         }`}
                         style={{
-                          backgroundImage: `url(${
-                            preview[field.name] || placeholder
-                          })`,
+                          backgroundImage: `url(${preview?.[field.name] || placeholder})`,
                         }}
                         onClick={() => {
                           if (mode !== "view")
                             document
                               .getElementById(field.name + "-file")
-                              .click();
+                              ?.click();
                         }}
                       />
                       <input
@@ -178,60 +158,47 @@ export default function DynamicForm({
                         type="file"
                         accept="image/*"
                         onChange={(e) =>
-                          handleFileChange(
-                            field.name,
-                            e.target.files[0]
-                          )
+                          handleFileChange(field.name, e.target.files?.[0] || null)
                         }
                         className="hidden"
                         disabled={mode === "view"}
                       />
                       <p className="text-xs text-gray-500 truncate max-w-[90%] text-center">
-                        {formData[field.name]?.name ||
-                          initialData[field.name] ||
-                          initialData.image_path ||
+                        {formData?.[field.name]?.name ||
+                          initialData?.[field.name] ||
+                          initialData?.image_path ||
                           "Chưa chọn ảnh"}
                       </p>
                     </div>
                   ) : field.type === "select" ? (
                     <Dropdown
-                      value={String(value ?? "")}
-                      options={field.options || []}
+                      value={value}
+                      options={field.options} // giữ nguyên kiểu value
                       placeholder={`Chọn ${field.label}`}
-                      onSelect={(opt) =>
-                        handleChange(field.name, opt.value)
-                      }
+                      onSelect={(opt) => handleChange(field.name, opt.value)}
                       disabled={mode === "view"}
                     />
                   ) : field.type === "checkbox" ? (
                     <input
                       type="checkbox"
                       checked={!!value}
-                      onChange={(e) =>
-                        handleChange(field.name, e.target.checked)
-                      }
+                      onChange={(e) => handleChange(field.name, e.target.checked)}
                       disabled={field.disabled || mode === "view"}
                     />
                   ) : (
                     <input
                       type={field.type}
                       value={value}
-                      onChange={(e) =>
-                        handleChange(field.name, e.target.value)
-                      }
+                      onChange={(e) => handleChange(field.name, e.target.value)}
                       className={`w-full border rounded-lg px-3 py-2 ${
-                        mode === "view"
-                          ? "bg-gray-100 text-gray-600 cursor-not-allowed"
-                          : ""
+                        mode === "view" ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""
                       }`}
                       disabled={field.disabled || mode === "view"}
                     />
                   )}
 
                   {error && mode !== "view" && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {error}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1">{error}</p>
                   )}
                 </div>
               );

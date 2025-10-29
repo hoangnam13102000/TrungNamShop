@@ -10,7 +10,6 @@ class ProductDetailController extends Controller
 {
     protected array $relations = [
         'product.brand',
-        'color',
         'screen',
         'rearCamera',
         'frontCamera',
@@ -27,7 +26,6 @@ class ProductDetailController extends Controller
     {
         return [
             'product_id' => $isUpdate ? 'sometimes|exists:products,id' : 'required|exists:products,id',
-            'color_id' => 'nullable|exists:colors,id',
             'screen_id' => 'nullable|exists:screens,id',
             'rear_camera_id' => 'nullable|exists:rear_cameras,id',
             'front_camera_id' => 'nullable|exists:front_cameras,id',
@@ -35,7 +33,7 @@ class ProductDetailController extends Controller
             'operating_system_id' => 'nullable|exists:operating_systems,id',
             'general_information_id' => 'nullable|exists:general_informations,id',
             'communication_connectivity_id' => 'nullable|exists:communication_connectivities,id',
-            'battery_charging_id' => 'nullable|exists:battery_chargings,id',
+            'battery_charging_id' => 'nullable|exists:batteries_charging,id',
             'utility_id' => 'nullable|exists:utilities,id',
             'price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'nullable|integer|min:0',

@@ -32,7 +32,7 @@ export const useMutate = (key, apiFn, options = {}) => {
       if (variables && typeof variables === "object") {
         if ("id" in variables && "data" in variables) {
           // update
-          return await apiFn(variables.id, variables.data);
+           return await apiFn({ id: variables.id, data: variables.data });
         } else if ("id" in variables) {
           // delete
           return await apiFn(variables.id);

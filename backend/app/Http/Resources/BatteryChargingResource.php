@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BatteryResource extends JsonResource
+class BatteryChargingResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
