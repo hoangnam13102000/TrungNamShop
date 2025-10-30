@@ -24,7 +24,6 @@ export const useMutate = (key, apiFn, options = {}) => {
   return useMutation({
     mutationFn: async (variables) => {
       /**
-       * Cho phép 3 dạng gọi:
        *  1️. create(data)
        *  2️. update({ id, data })
        *  3️. delete(id)
@@ -32,7 +31,11 @@ export const useMutate = (key, apiFn, options = {}) => {
       if (variables && typeof variables === "object") {
         if ("id" in variables && "data" in variables) {
           // update
-          return await apiFn(variables.id, variables.data);
+          try {
+            return await apiFn(variables.id, variables.data);
+          } catch {
+            return await apiFn({ id: variables.id, data: variables.data });
+          }
         } else if ("id" in variables) {
           // delete
           return await apiFn(variables.id);
@@ -43,14 +46,14 @@ export const useMutate = (key, apiFn, options = {}) => {
     },
 
     onSuccess: (data) => {
-      console.log(`Mutation ${key} success:`, data);
-      // invalidate cache -> reload dữ liệu sau khi mutate
+      // console.log(`Mutation ${key} success:`, data);
+      // invalidate cache -> reload data after mutate
       queryClient.invalidateQueries([key]);
       options?.onSuccess?.(data);
     },
 
     onError: (error) => {
-      console.error(`Mutation ${key} failed:`, error);
+      // console.error(`Mutation ${key} failed:`, error);
       options?.onError?.(error);
     },
   });

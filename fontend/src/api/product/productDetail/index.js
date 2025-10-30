@@ -1,5 +1,5 @@
-import { createCRUD } from "./apiProduct";
-import { useGetAll, useMutate } from "./useProductQuery";
+import { createCRUD } from "../../hook/apiBase";
+import { useGetAll, useMutate } from "../../hook/useBaseQuery";
 
 const productDetailAPI = createCRUD("/product-details");
 
@@ -13,7 +13,7 @@ export const useUpdateProductDetail = (options) =>
   useMutate(
     "product-details",
     async ({ id, data }) => {
-      console.log("🧩 useUpdateProductDetail variables:", { id, data });
+      // console.log(" useUpdateProductDetail variables:", { id, data });
       if (!id) throw new Error("Missing ID for update");
       return await productDetailAPI.update(id, data);
     },

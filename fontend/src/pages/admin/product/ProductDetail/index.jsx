@@ -4,7 +4,7 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import ProductDetailForm from "../../../../components/formAndDialog/ProductDetailForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import ProductDetailViewModal from "../../../../components/product/ProductDetailView";
-import useAdminCrud from "../../../../utils/useAdminCrud";
+import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { getImageUrl } from "../../../../utils/getImageUrl";
 

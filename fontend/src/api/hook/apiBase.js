@@ -8,7 +8,7 @@ const toFormData = (data) => {
   Object.entries(data).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       if (typeof value === "object" && !isFile(value)) {
-        formData.append(key, JSON.stringify(value)); 
+        formData.append(key, JSON.stringify(value));
       } else {
         formData.append(key, value);
       }
@@ -39,24 +39,39 @@ export const createCRUD = (endpoint) => ({
     const hasFile = Object.values(data).some(isFile);
     const payload = hasFile ? toFormData(data) : data;
 
-    const res = await api.post(endpoint, payload, hasFile ? {
-      headers: { "Content-Type": "multipart/form-data" },
-    } : undefined);
+    const res = await api.post(
+      endpoint,
+      payload,
+      hasFile
+        ? {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        : undefined
+    );
 
     return res.data?.data ?? res.data;
   },
 
   /** Update */
   update: async (id, data) => {
-    const hasFile = Object.values(data).some(isFile);
-    const payload = hasFile ? toFormData(data) : data;
+  if (!id) throw new Error(" Missing ID for update");
+  if (!data) throw new Error(" update() called with undefined data");
 
-    const res = await api.post(`${endpoint}/${id}?_method=PUT`, payload, hasFile ? {
-      headers: { "Content-Type": "multipart/form-data" },
-    } : undefined);
+  const hasFile = Object.values(data).some(isFile);
+  const payload = hasFile ? toFormData(data) : data;
 
-    return res.data?.data ?? res.data;
-  },
+  const res = await api.post(
+    `${endpoint}/${id}?_method=PUT`,
+    payload,
+    hasFile
+      ? {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      : undefined
+  );
+
+  return res.data?.data ?? res.data;
+},
 
   /** Delete */
   delete: async (id) => {
