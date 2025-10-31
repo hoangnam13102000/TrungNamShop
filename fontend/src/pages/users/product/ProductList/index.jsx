@@ -1,27 +1,11 @@
-import { memo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { memo, useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import ProductCard from "../../../../components/product/ProductCard";
-import Dropdown from "../../../../components/dropdown/DropDown"; 
+import Dropdown from "../../../../components/dropdown/DropDown";
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
-
-const PRODUCTS = [
-  { id: 1, brand: "iphone", memory: 128, name: "iPhone 13 128GB - Xanh dương", image: "/iphone13.png", oldPrice: 30000000, newPrice: 28500000 },
-  { id: 2, brand: "iphone", memory: 256, name: "iPhone 14 Pro 256GB - Đen", image: "/iphone13.png", oldPrice: 35000000, newPrice: 32000000 },
-  { id: 3, brand: "samsung", memory: 256, name: "Samsung Galaxy S23 Ultra 256GB", image: "/samsung.png", oldPrice: 28000000, newPrice: 25000000 },
-  { id: 4, brand: "xiaomi", memory: 512, name: "Xiaomi 13T Pro 12GB/512GB", image: "/xiaomi.png", oldPrice: 18000000, newPrice: 16000000 },
-  { id: 5, brand: "iphone", memory: 256, name: "iPhone 15 Pro Max 256GB", image: "/iphone13.png", oldPrice: 34000000, newPrice: 29990000 },
-  { id: 6, brand: "samsung", memory: 512, name: "Samsung Galaxy Z Fold 5", image: "/samsung.png", oldPrice: 40000000, newPrice: 35000000 },
-];
-
-const BRANDS = {
-  iphone: "iPhone",
-  samsung: "Samsung",
-  xiaomi: "Xiaomi",
-  oppo: "OPPO",
-  vivo: "Vivo",
-  realme: "Realme",
-};
+import { useProducts } from "../../../../api/product/products";
+import { useBrands } from "../../../../api/brand";
 
 const PRICE_RANGES = [
   { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
@@ -46,70 +30,83 @@ const MEMORY_OPTIONS = [
   { id: "512", label: "512GB", value: "512" },
 ];
 
-const ProductList = () => {
-  const { brand } = useParams();
+const useQuery = () => new URLSearchParams(useLocation().search);
 
-  const [brandFilter, setBrandFilter] = useState(brand || "all");
+const ProductList = () => {
+  const query = useQuery();
+  const brandQuery = query.get("brand");
+
+  const { data: products = [], isLoading } = useProducts();
+  const { data: brandsData = [] } = useBrands();
+
+  const brandMap = useMemo(() => {
+    const map = {};
+    brandsData.forEach(b => { map[b.id] = b.name; });
+    return map;
+  }, [brandsData]);
+
+  const [brandFilter, setBrandFilter] = useState(brandQuery || "all");
   const [priceRange, setPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("default");
   const [memoryFilter, setMemoryFilter] = useState("all");
 
-  // Filter products by brand
-  let filteredProducts = PRODUCTS.filter(product => 
-    (brandFilter === "all" || product.brand === brandFilter) &&
-    (memoryFilter === "all" || product.memory === Number(memoryFilter))
+  useEffect(() => {
+    setBrandFilter(brandQuery || "all");
+  }, [brandQuery]);
+
+  const brandOptions = useMemo(() => {
+    return [{ label: "Tất cả", value: "all" }, ...brandsData.map(b => ({ label: b.name, value: b.id }))];
+  }, [brandsData]);
+
+  const mappedProducts = useMemo(() => {
+    return products.map(p => ({
+      ...p,
+      primary_image: p.primary_image ?? { image_path: p.image ?? null },
+      newPrice: p.newPrice ?? p.price ?? 0,
+      oldPrice: p.oldPrice ?? null,
+    }));
+  }, [products]);
+
+  let filteredProducts = mappedProducts.filter(p =>
+    (brandFilter === "all" || p.brand?.id === Number(brandFilter)) &&
+    (memoryFilter === "all" || p.memory === Number(memoryFilter))
   );
 
-  // Filter products by price
   const selectedRange = PRICE_RANGES.find(r => r.id === priceRange);
   if (selectedRange) {
     filteredProducts = filteredProducts.filter(
-      product => product.newPrice >= selectedRange.min && product.newPrice < selectedRange.max
+      p => p.newPrice >= selectedRange.min && p.newPrice < selectedRange.max
     );
   }
 
-  // Sort
-  if (sortBy === "price-asc") {
-    filteredProducts = [...filteredProducts].sort((a, b) => a.newPrice - b.newPrice);
-  } else if (sortBy === "price-desc") {
-    filteredProducts = [...filteredProducts].sort((a, b) => b.newPrice - a.newPrice);
-  } else if (sortBy === "name-asc") {
-    filteredProducts = [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
-  }
+  if (sortBy === "price-asc") filteredProducts = [...filteredProducts].sort((a,b) => a.newPrice - b.newPrice);
+  else if (sortBy === "price-desc") filteredProducts = [...filteredProducts].sort((a,b) => b.newPrice - a.newPrice);
+  else if (sortBy === "name-asc") filteredProducts = [...filteredProducts].sort((a,b) => a.name.localeCompare(b.name));
 
-  const brandName = brandFilter !== "all" ? BRANDS[brandFilter] || "Sản phẩm" : "Tất cả sản phẩm";
+  const brandName = brandFilter !== "all" ? brandMap[brandFilter] || "Sản phẩm" : "Tất cả sản phẩm";
 
   return (
-    <div 
-      className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
-    >
+    <div className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex gap-4">
-
           <div className="flex-1 bg-white rounded-3xl shadow-2xl p-6 md:p-8 border-4 border-red-600">
             <div className="text-sm text-gray-500 mb-4">
               <BreadCrumb name="Danh sách sản phẩm"/>
             </div>
-
             <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">{brandName}</h1>
 
-            {/* Filter Section */}
+            {/* Filters */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Brand */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Thương hiệu</label>
                   <Dropdown
-                    label={brandFilter !== "all" ? BRANDS[brandFilter] : "Tất cả"}
-                    options={[{ label: "Tất cả", value: "all" }, ...Object.entries(BRANDS).map(([key, value]) => ({ label: value, value: key }))]}
+                    label={brandFilter !== "all" ? brandMap[brandFilter] : "Tất cả"}
+                    options={brandOptions}
                     onSelect={(option) => setBrandFilter(option.value)}
                   />
                 </div>
-
-                {/* Price */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá</label>
                   <Dropdown
@@ -118,8 +115,6 @@ const ProductList = () => {
                     onSelect={(option) => setPriceRange(option.value)}
                   />
                 </div>
-
-                {/* Sort */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Sắp xếp</label>
                   <Dropdown
@@ -128,8 +123,6 @@ const ProductList = () => {
                     onSelect={(option) => setSortBy(option.value)}
                   />
                 </div>
-
-                {/* Memory */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Bộ nhớ</label>
                   <Dropdown
@@ -139,28 +132,27 @@ const ProductList = () => {
                   />
                 </div>
               </div>
-
               <div className="mt-4 text-sm text-gray-600">
                 Tìm thấy <span className="font-semibold text-red-600">{filteredProducts.length}</span> sản phẩm
               </div>
             </div>
 
             {/* Product Grid */}
-            {filteredProducts.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-20">Đang tải sản phẩm...</div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredProducts.map((product) => (
+                {filteredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-20">
-                <div className="text-gray-400 text-6xl mb-4">📱</div>
                 <p className="text-gray-500 text-lg">Không tìm thấy sản phẩm nào</p>
                 <p className="text-gray-400 text-sm mt-2">Vui lòng thử điều chỉnh bộ lọc</p>
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

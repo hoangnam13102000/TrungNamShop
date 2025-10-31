@@ -20,6 +20,7 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'status' => (bool) $this->status,
             'brand'       => new BrandResource($this->whenLoaded('brand')),
+            'price' => optional($this->details()->latest()->first())->price,
             'primary_image' => $this->images()->where('is_primary', true)->first(),
         ];
     }

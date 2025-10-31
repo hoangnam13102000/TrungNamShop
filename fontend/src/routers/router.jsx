@@ -43,7 +43,7 @@ export const ROUTERS = {
         LOGIN:"dang-nhap",
         REGISTER:"dang-ky",
         PRODUCTLIST:"danh-sach-san-pham",
-        PRODUCTDETAILS:"chi-tiet-san-pham",
+        PRODUCTDETAILS:"chi-tiet-san-pham/:id",
         PROFILE:"thong-tin-ca-nhan",
         INTRODUCE:"gioi-thieu",
         CONTACT:"lien-he",

@@ -1,4 +1,5 @@
 import { memo, useRef } from "react";
+import { motion } from "framer-motion";
 import ProductCard from "./ProductCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 

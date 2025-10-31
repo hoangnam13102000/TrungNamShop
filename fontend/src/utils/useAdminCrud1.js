@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-/** Check exist File*/
+/** Check exist File */
 const isFile = (value) => value instanceof File || value instanceof Blob;
 
 /** Chuyển object sang FormData (tự động stringify object con) */
@@ -67,7 +67,7 @@ export default function useAdminCrud1(api, queryKey) {
 
   /** SAVE (CREATE / UPDATE) */
   const handleSave = async (formData) => {
-    console.log(" handleSave payload:", formData);
+    console.log("handleSave payload:", formData);
     if (!formData || typeof formData !== "object") {
       console.error("handleSave nhận dữ liệu không hợp lệ:", formData);
       return;
@@ -77,20 +77,17 @@ export default function useAdminCrud1(api, queryKey) {
     const id = selectedItem?.id;
 
     try {
-      // Clone payload
-      let payload = JSON.parse(JSON.stringify(formData));
+      // Shallow clone payload để giữ File nguyên vẹn
+      let payload = { ...formData };
 
+      // Chuyển số về dạng number
       if (payload.price)
         payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
       if (payload.stock_quantity)
         payload.stock_quantity = Number(payload.stock_quantity) || 0;
 
-      if (
-        mode === "edit" &&
-        selectedItem?.image &&
-        payload.image &&
-        !isFile(payload.image)
-      ) {
+      // Tránh gửi image cũ nếu không có file mới
+      if (mode === "edit" && selectedItem?.image && payload.image && !isFile(payload.image)) {
         delete payload.image;
       }
 
@@ -98,33 +95,38 @@ export default function useAdminCrud1(api, queryKey) {
         throw new Error("Payload rỗng — không có dữ liệu để lưu");
       }
 
+      // Kiểm tra có file để gửi FormData
       const hasFile = Object.values(payload).some(isFile);
       const finalData = hasFile ? toFormData(payload) : payload;
 
       console.log("finalData chuẩn bị gửi:", finalData);
+      if (hasFile) {
+        // Log kiểm tra FormData
+        for (let pair of finalData.entries()) {
+          console.log(pair[0], pair[1]);
+        }
+      }
 
+      // CREATE
       if (mode === "create") {
         if (api.createMutation) await api.createMutation.mutateAsync(finalData);
         else if (api.create) await api.create(finalData);
       } else {
         // UPDATE
         if (!id) throw new Error("Thiếu ID để cập nhật");
-        console.log("Gửi update:", { id, data: finalData });
 
         const executeUpdate = async () => {
           try {
-            // type 1: (id, data)
+            // Kiểu 1: (id, data)
             return await api.update(id, finalData);
           } catch {
-            // type: ({ id, data })
+            // Kiểu 2: ({ id, data })
             return await api.update({ id, data: finalData });
           }
         };
 
-        if (api.updateMutation)
-          await api.updateMutation.mutateAsync({ id, data: finalData });
-        else if (api.update)
-          await executeUpdate(); // Tự động thử cả 2 kiểu
+        if (api.updateMutation) await api.updateMutation.mutateAsync({ id, data: finalData });
+        else await executeUpdate();
       }
 
       await queryClient.invalidateQueries([queryKey]);

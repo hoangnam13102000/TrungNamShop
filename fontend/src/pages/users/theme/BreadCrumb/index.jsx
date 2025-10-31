@@ -1,20 +1,24 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
 
-const BreadCrumb = ( props ) => {
+const BreadCrumb = ({ paths = [] }) => {
+  if (!paths.length) return null;
+
   return (
     <nav className="bg-gray-50 py-3 px-4 rounded-lg text-sm font-medium text-gray-600">
-      <ol className="flex items-center space-x-2">
-        <li>
-          <Link to="/" className="hover:text-red-600 font-medium">
-            Trang chủ
-          </Link>
-        </li>
-
-        <li className="flex items-center space-x-2">
-          <span className="text-gray-400">/</span>
-          <span className="capitalize text-gray-800">{props.name}</span>
-        </li>
+      <ol className="flex items-center space-x-2 flex-wrap">
+        {paths.map((path, index) => (
+          <li key={index} className="flex items-center space-x-2">
+            {index > 0 && <span className="text-gray-400">/</span>}
+            {path.to ? (
+              <Link to={path.to} className="hover:text-red-600 font-medium capitalize">
+                {path.name}
+              </Link>
+            ) : (
+              <span className="text-gray-800 capitalize">{path.name}</span>
+            )}
+          </li>
+        ))}
       </ol>
     </nav>
   );

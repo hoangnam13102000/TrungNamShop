@@ -78,7 +78,7 @@ export default memo(function AdminProductDetailPage() {
         product_name: d.product?.name || "-",
         product_image: getImageUrl(d.product?.primary_image?.image_path),
         price_label:
-          (d.price ? parseFloat(d.price).toLocaleString("vi-VN") : "0") + " ₫",
+          (d.price ? parseFloat(d.price).toLocaleString("vi-VN") : "0") + " VNĐ",
         stock_quantity: d.stock_quantity ?? 0,
       }));
   }, [details, search]);
