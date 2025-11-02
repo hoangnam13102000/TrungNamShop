@@ -1,12 +1,12 @@
 import { memo } from "react";
 
 const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
-  // ✅ Lấy 4 nhóm thông số đầu tiên làm "Thông số nổi bật"
+  // Lấy 4 nhóm thông số đầu tiên làm "Thông số nổi bật"
   const previewSpecs = specs.slice(0, 4);
 
   return (
     <div className="space-y-6">
-      {/* 🏷️ Tên + Mã sản phẩm + Mô tả */}
+      {/*  Tên + Mã sản phẩm + Mô tả */}
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
           {product.name}
@@ -18,7 +18,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
         <p className="text-gray-700 leading-relaxed">{product.description}</p>
       )}
 
-      {/* 💰 Giá bán */}
+      {/* Giá bán */}
       {product.price && (
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6">
           <p className="text-gray-600 text-sm mb-2">Giá bán</p>
@@ -29,7 +29,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
         </div>
       )}
 
-      {/* ⚡ Thông số nổi bật */}
+      {/* Thông số nổi bật */}
       {previewSpecs.length > 0 && (
         <div className="space-y-3">
           <h3 className="font-semibold text-gray-900 text-sm">
@@ -37,7 +37,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {previewSpecs.map((spec, idx) => {
-              // ✅ Tìm dòng đầu tiên có value hợp lệ
+              // Tìm dòng đầu tiên có value hợp lệ
               const firstValid = spec.details.find(
                 (d) => d.value && d.value !== "-"
               );

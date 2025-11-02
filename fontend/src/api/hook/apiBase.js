@@ -1,26 +1,27 @@
 import api from "../axios";
 
+/** Check if value is File/Blob */
 const isFile = (value) => value instanceof File || value instanceof Blob;
 
+/** Convert object → FormData, stringify nested object safely */
 const toFormData = (data) => {
   const formData = new FormData();
-
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (typeof value === "object" && !isFile(value)) {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, value);
-      }
+    if (value === undefined || value === null) return;
+    if (isFile(value)) {
+      formData.append(key, value);
+    } else if (typeof value === "object") {
+      formData.append(key, JSON.stringify(value));
+    } else {
+      formData.append(key, value);
     }
   });
-
   return formData;
 };
 
-/** API CRUD generator ( RESTful) */
+/** API CRUD generator (RESTful) */
 export const createCRUD = (endpoint) => ({
-  /** Get List */
+  /** Get list */
   getAll: async () => {
     const res = await api.get(endpoint);
     if (Array.isArray(res.data)) return res.data;
@@ -28,53 +29,49 @@ export const createCRUD = (endpoint) => ({
     return res.data?.data ?? [];
   },
 
-  /** get record*/
+  /** Get single record */
   getOne: async (id) => {
+    if (!id) throw new Error("Missing ID for getOne");
     const res = await api.get(`${endpoint}/${id}`);
     return res.data?.data ?? res.data;
   },
 
-  /** Create */
+  /** Create record */
   create: async (data) => {
+    if (!data) throw new Error("create() called with undefined data");
+
     const hasFile = Object.values(data).some(isFile);
     const payload = hasFile ? toFormData(data) : data;
 
     const res = await api.post(
       endpoint,
       payload,
-      hasFile
-        ? {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        : undefined
+      hasFile ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
     );
 
     return res.data?.data ?? res.data;
   },
 
-  /** Update */
+  /** Update record */
   update: async (id, data) => {
-  if (!id) throw new Error(" Missing ID for update");
-  if (!data) throw new Error(" update() called with undefined data");
+    if (!id) throw new Error("Missing ID for update");
+    if (!data) throw new Error("update() called with undefined data");
 
-  const hasFile = Object.values(data).some(isFile);
-  const payload = hasFile ? toFormData(data) : data;
+    const hasFile = Object.values(data).some(isFile);
+    const payload = hasFile ? toFormData(data) : data;
 
-  const res = await api.post(
-    `${endpoint}/${id}?_method=PUT`,
-    payload,
-    hasFile
-      ? {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      : undefined
-  );
+    const res = await api.post(
+      `${endpoint}/${id}?_method=PUT`,
+      payload,
+      hasFile ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+    );
 
-  return res.data?.data ?? res.data;
-},
+    return res.data?.data ?? res.data;
+  },
 
-  /** Delete */
+  /** Delete record */
   delete: async (id) => {
+    if (!id) throw new Error("Missing ID for delete");
     const res = await api.delete(`${endpoint}/${id}`);
     return res.data ?? id;
   },

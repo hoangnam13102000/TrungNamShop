@@ -8,18 +8,20 @@ use App\Http\Resources\ProductDetailResource;
 
 class ProductDetailController extends Controller
 {
+    // Chỉ load các cột tồn tại trong DB
     protected array $relations = [
-        'product.brand',
-        'screen',
-        'rearCamera',
-        'frontCamera',
-        'memory',
-        'operatingSystem',
-        'generalInformation',
-        'communicationConnectivity',
-        'batteryCharging',
-        'utility',
-        'images',
+        'product:id,name,brand_id', // products table
+        'product.brand:id,name',    // brand table
+        'screen:id,display_technology,resolution,screen_size,max_brightness,glass_protection',
+        'rearCamera:id,resolution,aperture,video_capability,features',
+        'frontCamera:id,resolution,aperture,video_capability,features',
+        'memory:id,ram,internal_storage,memory_card_slot',
+        'operatingSystem:id,name,processor,cpu_speed,gpu',
+        'generalInformation:id,design,material,dimensions,weight,launch_time',
+        'communicationConnectivity:id,nfc,sim_slot,mobile_network,gps',
+        'batteryCharging:id,battery_capacity,charging_port,charging',
+        'utility:id,advanced_security,special_features,water_dust_resistance',
+        'images:id,product_id,product_detail_id,color_id,image_path,is_primary',
     ];
 
     protected function validationRules($isUpdate = false): array
@@ -58,14 +60,19 @@ class ProductDetailController extends Controller
             ->map(fn($v) => $v ?? null)
             ->toArray();
 
-        $detail = ProductDetail::create($data)->load($this->relations);
+        $detail = ProductDetail::create($data);
+
+        // Load eager relations sau khi tạo
+        $detail->load($this->relations);
 
         return new ProductDetailResource($detail);
     }
 
     public function show($id)
     {
-        $detail = ProductDetail::with($this->relations)->findOrFail($id);
+        $detail = ProductDetail::with($this->relations)
+            ->findOrFail($id);
+
         return new ProductDetailResource($detail);
     }
 
@@ -81,6 +88,8 @@ class ProductDetailController extends Controller
             ->toArray();
 
         $detail->update($data);
+
+        // Load lại relations cần thiết
         $detail->load($this->relations);
 
         return new ProductDetailResource($detail);
@@ -90,9 +99,8 @@ class ProductDetailController extends Controller
     {
         $detail = ProductDetail::with('images')->findOrFail($id);
 
-        foreach ($detail->images as $img) {
-            $img->delete();
-        }
+        // Bulk delete images để giảm query
+        $detail->images()->delete();
 
         $detail->delete();
 

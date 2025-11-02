@@ -26,6 +26,8 @@ use App\Http\Controllers\BatteryChargingController;
 use App\Http\Controllers\GeneralInformationController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\ProductDetailController;
+use App\Http\Controllers\ReviewController;
+use App\Models\Review;
 
 /*
 |--------------------------------------------------------------------------
@@ -92,9 +94,9 @@ Route::prefix('admin')->group(function () {
     // ------------------ FrontCamera ------------------
     Route::apiResource('front-cameras', FrontCameraController::class);
 
-     // ------------------ RearCamera ------------------
+    // ------------------ RearCamera ------------------
     Route::apiResource('rear-cameras', RearCameraController::class);
-    
+
     // ------------------ OperatingSystems ------------------
     Route::apiResource('operating-systems', OperatingSystemController::class);
 
@@ -116,4 +118,6 @@ Route::prefix('admin')->group(function () {
     // ------------------Product Detail ------------------
     Route::apiResource('product-details', ProductDetailController::class);
 
+    // ------------------Reviews ------------------
+    Route::apiResource('reviews', ReviewController::class);
 });

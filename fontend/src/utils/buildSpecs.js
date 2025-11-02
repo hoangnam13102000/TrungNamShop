@@ -1,36 +1,20 @@
-import { memo, useState } from "react";
-import { useParams } from "react-router-dom";
-import BreadCrumb from "../../theme/BreadCrumb";
-import ImageCarousel from "../../../../components/product/ImageCarousel";
-import SpecModal from "../../../../components/product/specs/SpecModal";
-import ProductInfo from "../../../../components/product/ProductInfo";
-import ReviewForm from "../../../../components/product/review/ReviewForm";
-import ReviewSummary from "../../../../components/product/review/ReviewSummary";
-import ReviewList from "../../../../components/product/review/ReviewList";
-import { useProductDetailById } from "../../../../api/product/productDetail";
+export const buildSpecs = (data) => {
+  if (!data) return [];
 
-const ProductDetail = () => {
-  const { id } = useParams();
-  const productId = Number(id);
-  const { data, isLoading, error } = useProductDetailById(productId);
-
-  const [reviews, setReviews] = useState([]);
-  const [showSpecModal, setShowSpecModal] = useState(false);
-
-  if (isLoading) return <p className="text-center mt-8">Đang tải dữ liệu...</p>;
-  if (error) return <p className="text-center mt-8 text-red-500">Lỗi: {error.message}</p>;
-  if (!data) return <p className="text-center mt-8 text-gray-600">Không tìm thấy sản phẩm.</p>;
-
-  const product = data.product || data;
-  const images =
-    data.images?.length > 0
-      ? data.images
-      : product.primary_image
-      ? [product.primary_image]
-      : ["/placeholder.png"];
-
-  // --- Build specs ---
   const specs = [];
+
+  if (data.product) {
+    specs.push({
+      category: "Thông tin sản phẩm",
+      details: [
+        { label: "Tên sản phẩm", value: data.product?.name },
+        { label: "Mã sản phẩm", value: data.product?.code },
+        { label: "Thương hiệu", value: data.product?.brand?.name },
+        { label: "Danh mục", value: data.product?.category?.name },
+        { label: "Mô tả", value: data.product?.description },
+      ].filter((d) => d.value),
+    });
+  }
 
   if (data.general_information) {
     specs.push({
@@ -139,67 +123,6 @@ const ProductDetail = () => {
     });
   }
 
-
-  // --- Handle reviews ---
-  const handleAddReview = ({ rating, comment }) => {
-    setReviews([
-      {
-        id: Date.now(),
-        name: "Khách ẩn danh",
-        stars: rating,
-        content: comment,
-        date: new Date().toISOString().split("T")[0],
-      },
-      ...reviews,
-    ]);
-  };
-
-  const breadcrumbPaths = [
-    { name: "Trang chủ", to: "/" },
-    { name: "Danh sách sản phẩm", to: "/danh-sach-san-pham" },
-    { name: product.name },
-  ];
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      <BreadCrumb paths={breadcrumbPaths} />
-
-      {/* Grid chính */}
-      <div className="grid md:grid-cols-2 gap-8 mt-6">
-        {/* Ảnh */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <ImageCarousel images={images} />
-        </div>
-
-        {/* Thông tin sản phẩm */}
-        <ProductInfo
-          product={product}
-          specs={specs}
-          showAddToCart={true}
-          onShowSpecs={() => setShowSpecModal(true)}
-        />
-      </div>
-
-      {/* Modal thông số */}
-      <SpecModal
-        specs={specs}
-        isOpen={showSpecModal}
-        onClose={() => setShowSpecModal(false)}
-      />
-
-      {/* Reviews */}
-      <div className="mt-16 grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-8">
-          <ReviewForm onSubmit={handleAddReview} />
-        </div>
-        <ReviewSummary reviews={reviews} />
-      </div>
-
-      <div className="mt-12">
-        <ReviewList reviews={reviews} />
-      </div>
-    </div>
-  );
+  return specs;
 };
-
-export default memo(ProductDetail);
+ 

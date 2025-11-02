@@ -20,7 +20,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->date('birth_date')->nullable();
             $table->enum('gender', ['male', 'female'])->nullable();
-            $table->softDeletes(); // soft delete
+            $table->string('avatar')->nullable();
+            $table->softDeletes(); 
             $table->timestamps();
             $table->foreign('account_id')
                 ->references('id')

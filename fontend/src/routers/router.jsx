@@ -24,6 +24,7 @@ export const ROUTERS = {
         BATTERIES:`${ADMIN_PATH}/quan-ly-pin`,
         GENERALINFO:`${ADMIN_PATH}/thong-tin-chung-san-pham`,
         UTILITY:`${ADMIN_PATH}/tien-ich-san-pham`,
+        REVIEW:`${ADMIN_PATH}/quan-ly-danh-gia`,
        
         //----------------Users---------------------------
         EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,

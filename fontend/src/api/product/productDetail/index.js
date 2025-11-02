@@ -11,38 +11,34 @@ export const useProductDetailById = (productId) => {
     queryFn: async () => {
       if (!productId) throw new Error("Missing product ID");
 
-      // 1️⃣ Lấy toàn bộ product-details
       const allDetails = await productDetailAPI.getAll();
 
-      // 2️⃣ Tìm chi tiết sản phẩm theo product_id
-      const found = allDetails.find(
-        (item) => item.product?.id === productId
-      );
-      if (!found) throw new Error("Không tìm thấy chi tiết sản phẩm.");
+      const detail = allDetails.find(item => item.product?.id === productId);
 
-      // 3️⃣ Lấy danh sách ảnh của sản phẩm
+      if (!detail) return null; // fallback: không tìm thấy
+
+      
       const allImages = await productImageAPI.getAll();
-      const productImages = allImages.filter(
-        (img) => img.product_id === productId
-      );
 
-      // 4️⃣ Nếu không có ảnh thì fallback về primary_image trong product
-      const images =
-        productImages.length > 0
-          ? productImages
-          : found.product?.primary_image
-          ? [found.product.primary_image]
-          : [];
+      
+      const images = allImages.filter(img => img.product_id === productId);
 
-      // 5️⃣ Trả về object gộp
+      const finalImages = images.length > 0
+        ? images
+        : detail.product?.primary_image
+        ? [detail.product.primary_image]
+        : [];
+
       return {
-        ...found,
-        images,
+        ...detail,
+        images: finalImages,
       };
     },
     enabled: !!productId,
   });
 };
+
+
 
 export const useProductDetails = (options) =>
   useGetAll("product-details", productDetailAPI.getAll, options);
@@ -60,5 +56,5 @@ export const useUpdateProductDetail = (options) =>
     options
   );
 
-export const useDeleteProductDetail = (options) =>
-  useMutate("product-details", productDetailAPI.delete, options);
+// export const useDeleteProductDetail = (options) =>
+//   useMutate("product-details", productDetailAPI.delete, options);

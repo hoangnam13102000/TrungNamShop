@@ -1,13 +1,13 @@
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-const timeout = import.meta.env.VITE_API_TIMEOUT || 30000;
+const timeout = Number(import.meta.env.VITE_API_TIMEOUT) || 20000; 
 
 const api = axios.create({
   baseURL,
   timeout,
   headers: {
-    Accept: "application/json", // giữ, JSON hoặc FormData Axios sẽ tự set Content-Type
+    Accept: "application/json",
   },
 });
 
@@ -19,7 +19,6 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Nếu gửi FormData, không override Content-Type
     if (config.data instanceof FormData) {
       delete config.headers["Content-Type"];
     }
@@ -35,7 +34,6 @@ api.interceptors.response.use(
   (error) => {
     console.error("Axios error:", error);
 
-    // Logout on 401
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";

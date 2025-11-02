@@ -30,6 +30,7 @@ import CommunicationConnectivity from "./pages/admin/product/CommunicationConnec
 import BatteriesCharging from "./pages/admin/product/BatteriesCharging";
 import GeneralInfomation from "./pages/admin/product/GeneralInfomation";
 import Utility from "./pages/admin/product/Utility";
+import Review from "./pages/admin/product/Review";
 
 //----------------------USERS-------------------------------------
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
@@ -82,6 +83,7 @@ const adminRouter = [
   { path: ROUTERS.ADMIN.MEMBERLEVEL, element: <MemberLevelList /> },
   { path: ROUTERS.ADMIN.STOREMANAGEMENT, element: <StoreManagement /> },
   { path: ROUTERS.ADMIN.WAREHOUSE, element: <WarehouseManagement /> },
+  { path: ROUTERS.ADMIN.REVIEW, element: <Review /> },
 ];
 
 const renderAdminRouter = () => (

@@ -2,53 +2,34 @@ import { useState, useEffect } from "react";
 import { FiEdit2, FiShoppingCart } from "react-icons/fi";
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
-import {
-  getCustomersAPI,
-  updateCustomerAPI,
-} from "../../../api/customer/request";
+import { useCustomers, useUpdateCustomer } from "../../../api/customer";
+import { getImageUrl } from "../../../utils/getImageUrl";
+import placeholder from "../../../assets/admin/logoicon1.jpg";
 
 export default function Profile() {
+  const { data: customers = [], isLoading, refetch } = useCustomers();
+  const updateCustomer = useUpdateCustomer();
+
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [dialog, setDialog] = useState({ open: false }); 
+  const [dialog, setDialog] = useState({ open: false });
+  const [profileData, setProfileData] = useState(null);
 
-  const [profileData, setProfileData] = useState({
-    full_name: "",
-    email: "",
-    phone_number: "",
-    address: "",
-    birthday: "",
-    gender: "",
-    avatar: "",
-  });
-
-  //Fetch API 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getCustomersAPI();
-        setProfileData(data);
-      } catch (error) {
-        console.error("Lỗi khi tải thông tin khách hàng:", error);
-        setDialog({
-          open: true,
-          mode: "error",
-          title: "Lỗi tải dữ liệu",
-          message: "Không thể tải thông tin khách hàng. Vui lòng thử lại sau.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+    if (customers.length > 0) {
+      const customer = customers[0];
+      setProfileData({
+        ...customer,
+        avatar: customer.avatar ? getImageUrl(customer.avatar) : placeholder,
+      });
+    }
+  }, [customers]);
 
   const fields = [
     { name: "full_name", label: "Họ và tên", type: "text", required: true },
     { name: "email", label: "Email", type: "email" },
     { name: "phone_number", label: "Số điện thoại", type: "text" },
-    { name: "birthday", label: "Ngày sinh", type: "date" },
+    { name: "birth_date", label: "Ngày sinh", type: "date" },
     {
       name: "gender",
       label: "Giới tính",
@@ -56,16 +37,24 @@ export default function Profile() {
       options: [
         { label: "Nam", value: "male" },
         { label: "Nữ", value: "female" },
-        { label: "Khác", value: "other" },
       ],
     },
     { name: "address", label: "Địa chỉ", type: "textarea" },
-    { name: "avatar", label: "Ảnh đại diện", type: "file" },
+    { name: "avatar", label: "Ảnh đại diện", type: isEditing ? "file" : "custom-image" },
   ];
 
-  // Save
   const handleSave = async (data) => {
-    // Show Dialog
+    const formData = new FormData();
+    for (const key in data) {
+      if (data[key] !== undefined && data[key] !== null) {
+        if (key === "avatar" && data[key] instanceof File) {
+          formData.append("avatar", data[key]);
+        } else {
+          formData.append(key, data[key]);
+        }
+      }
+    }
+
     setDialog({
       open: true,
       mode: "confirm",
@@ -73,14 +62,22 @@ export default function Profile() {
       message: `Bạn có chắc chắn muốn cập nhật thông tin của "${data.full_name}" không?`,
       onConfirm: async () => {
         try {
-          const updated = await updateCustomerAPI(data);
-          setProfileData(updated);
+          const updated = await updateCustomer.mutateAsync({
+            id: profileData.id,
+            data: formData,
+          });
+          setProfileData({
+            ...updated,
+            avatar: updated.avatar ? getImageUrl(updated.avatar) : placeholder,
+          });
           setIsEditing(false);
+          refetch();
           setDialog({
             open: true,
             mode: "success",
             title: "Cập nhật thành công",
             message: "Thông tin cá nhân của bạn đã được cập nhật!",
+            onClose: () => setDialog({ open: false }),
           });
         } catch (error) {
           console.error("Lỗi khi cập nhật:", error);
@@ -89,6 +86,7 @@ export default function Profile() {
             mode: "error",
             title: "Cập nhật thất bại",
             message: "Không thể cập nhật thông tin, vui lòng thử lại.",
+            onClose: () => setDialog({ open: false }),
           });
         }
       },
@@ -96,7 +94,7 @@ export default function Profile() {
     });
   };
 
-  if (loading) {
+  if (isLoading || !profileData) {
     return <div className="p-6 text-center text-gray-500">Đang tải...</div>;
   }
 
@@ -105,28 +103,18 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-6 flex flex-col sm:flex-row items-center gap-6">
-          <div className="w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center text-white text-4xl md:text-5xl font-bold bg-gradient-to-br from-red-400 to-red-600 overflow-hidden">
+          <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden flex items-center justify-center text-white text-4xl md:text-5xl font-bold bg-gradient-to-br from-red-400 to-red-600">
             {profileData.avatar ? (
-              <img
-                src={profileData.avatar}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
+              <img src={profileData.avatar} alt="avatar" className="w-full h-full object-cover" />
             ) : (
               profileData.full_name?.charAt(0)?.toUpperCase() || "?"
             )}
           </div>
-
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              {profileData.full_name}
-            </h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">{profileData.full_name}</h1>
             <p className="text-gray-600 mt-1">{profileData.email}</p>
-            <p className="text-gray-500 text-sm mt-1">
-              {profileData.phone_number}
-            </p>
+            <p className="text-gray-500 text-sm mt-1">{profileData.phone_number}</p>
           </div>
-
           <div className="flex gap-3 mt-4 sm:mt-0">
             <button
               onClick={() => setShowHistory(true)}
@@ -165,7 +153,9 @@ export default function Profile() {
                 <div key={f.name}>
                   <p className="text-gray-500">{f.label}</p>
                   <p className="text-gray-800 font-medium">
-                    {profileData[f.name] || "—"}
+                    {f.name === "birth_date" && profileData[f.name]
+                      ? new Date(profileData[f.name]).toLocaleDateString()
+                      : profileData[f.name] || "—"}
                   </p>
                 </div>
               ))}
@@ -207,8 +197,15 @@ export default function Profile() {
           </div>
         )}
 
-        {/*  DynamicDialog */}
-        <DynamicDialog {...dialog} />
+        {/* DynamicDialog */}
+        <DynamicDialog
+          open={dialog.open}
+          mode={dialog.mode}
+          title={dialog.title}
+          message={dialog.message}
+          onClose={dialog.onClose}
+          onConfirm={dialog.onConfirm}
+        />
       </div>
     </div>
   );

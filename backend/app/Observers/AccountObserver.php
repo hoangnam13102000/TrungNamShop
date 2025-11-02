@@ -13,13 +13,14 @@ class AccountObserver
     {
         if (!$account->customer) {
             Customer::create([
-                'account_id' => $account->id,
-                'full_name' => null,
-                'address' => null,
+                'account_id'   => $account->id,
+                'full_name'    => null,
+                'address'      => null,
                 'phone_number' => null,
-                'email' => null,
-                'birth_date' => null,
-                'gender' => null,
+                'email'        => null,
+                'birth_date'   => null,
+                'gender'       => null,
+                'avatar'       => null,
             ]);
         }
     }
