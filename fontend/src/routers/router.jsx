@@ -51,7 +51,7 @@ export const ROUTERS = {
         FORGOTPASSWORD:"quen-mat-khau",
         CART:"gio-hang",
         PAYMENT:"thanh-toan",
-        
+        NOTFOUND:"4-0-4"
     }
 
 }

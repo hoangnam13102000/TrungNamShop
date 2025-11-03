@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import { FaChevronDown, FaSignOutAlt } from "react-icons/fa";
 import defaultAvatar from "../../assets/users/images/user/user.png";
+import { getImageUrl } from "../../utils/getImageUrl"; // ✅ import hàm của bạn
 
 const AuthDropdown = ({
   isLoggedIn,
@@ -9,14 +9,14 @@ const AuthDropdown = ({
   avatar,
   onLogout,
   onNavigate,
-  menuItems = [], // [{ label, icon, link, action }]
-  showRegisterLogin = true, // Nếu false, ẩn nút đăng nhập/đăng ký
+  menuItems = [],
+  showRegisterLogin = true,
   maxUsernameLength = 120,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef();
 
-  // Click outside để đóng dropdown
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -27,7 +27,7 @@ const AuthDropdown = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Chưa đăng nhập
+  // Nếu chưa đăng nhập
   if (!isLoggedIn) {
     if (!showRegisterLogin) return null;
     return (
@@ -47,6 +47,9 @@ const AuthDropdown = ({
       </div>
     );
   }
+
+  // ✅ Dùng hàm getImageUrl
+  const resolvedAvatar = getImageUrl(avatar) || defaultAvatar;
 
   const handleLogout = () => {
     setIsOpen(false);
@@ -69,24 +72,32 @@ const AuthDropdown = ({
         className="flex items-center gap-2 px-3 py-1.5 bg-white text-gray-700 hover:bg-gray-50 rounded-lg transition border border-gray-200"
       >
         <img
-          src={avatar || defaultAvatar}
+          src={resolvedAvatar}
           alt="Avatar"
+          onError={(e) => (e.target.src = defaultAvatar)}
           className="w-6 h-6 rounded-full object-cover ring-1 ring-red-200"
         />
-        <span className={`text-sm font-medium truncate max-w-[${maxUsernameLength}px]`}>
+        <span
+          className={`text-sm font-medium truncate max-w-[${maxUsernameLength}px]`}
+        >
           {username}
         </span>
-        <FaChevronDown className={`text-xs text-gray-500 transition ${isOpen ? "rotate-180" : ""}`} />
+        <FaChevronDown
+          className={`text-xs text-gray-500 transition ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50">
-          {/* User Info Header */}
+          {/* Header */}
           <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex items-center gap-3">
               <img
-                src={avatar || defaultAvatar}
+                src={resolvedAvatar}
                 alt="Avatar"
+                onError={(e) => (e.target.src = defaultAvatar)}
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-red-200 flex-shrink-0"
               />
               <div className="min-w-0 flex-1">
@@ -96,7 +107,7 @@ const AuthDropdown = ({
             </div>
           </div>
 
-          {/* Dynamic Menu Items */}
+          {/* Menu Items */}
           <div className="py-2">
             {menuItems.map((item, idx) => (
               <button

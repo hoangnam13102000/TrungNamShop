@@ -3,11 +3,13 @@ import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
 import { validateGeneral } from "../../../utils/validate";
 import { loginAPI } from "../../../api/auth/request";
+import { useAuth } from "../../../context/AuthContext";
 import AuthWrapper from "../../../components/formAndDialog/AuthWapper";
+import { useCustomerByAccountId } from "../../../api/customer"; 
 
 export default function Login() {
   const navigate = useNavigate();
-
+  const { setUser } = useAuth();
   const accountTypes = [
     { id: 1, name: "Admin" },
     { id: 2, name: "Nhân viên" },
@@ -18,6 +20,8 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [accountId, setAccountId] = useState(null); // để hook lấy customer
+  const { data: customer } = useCustomerByAccountId(accountId);
 
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
@@ -43,12 +47,36 @@ export default function Login() {
       const res = await loginAPI(formData);
 
       if (res?.token && res?.user) {
-        localStorage.setItem("token", res.token);
-        localStorage.setItem("username", res.user.username);
-        localStorage.setItem("avatar", res.user.avatar || "/default-avatar.png");
+        const { token, user } = res;
+        const { username, account_type_id, status, id: accId } = user;
 
-        const typeObj = accountTypes.find((t) => t.id === res.user.account_type_id);
+        if (status === 0) {
+          showAlert("error", "Tài khoản của bạn đã bị ngừng hoạt động!");
+          setLoading(false);
+          return;
+        }
+
+        const typeObj = accountTypes.find((t) => t.id === account_type_id);
         const roleName = typeObj ? typeObj.name.toLowerCase() : "";
+
+        // Lưu token tạm thời
+        localStorage.setItem("token", token);
+        setAccountId(accId); // trigger hook useCustomerByAccountId
+
+        // chờ hook load customer
+        const avatarUrl = customer?.avatar || "/default-avatar.png";
+
+        // Lưu thông tin user vào localStorage & context
+        localStorage.setItem("username", username);
+        localStorage.setItem("avatar", avatarUrl);
+        localStorage.setItem("role", roleName);
+
+        setUser({
+          username,
+          avatar: avatarUrl,
+          token,
+          role: roleName,
+        });
 
         window.dispatchEvent(new Event("storage"));
 
@@ -88,6 +116,7 @@ export default function Login() {
     >
       {({ showAlert }) => (
         <form onSubmit={(e) => handleSubmit(e, showAlert)} className="space-y-4">
+          {/* Tên đăng nhập */}
           <div>
             <input
               type="text"
@@ -102,6 +131,7 @@ export default function Login() {
             {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
           </div>
 
+          {/* Mật khẩu */}
           <div>
             <input
               type={showPassword ? "text" : "password"}
@@ -128,6 +158,7 @@ export default function Login() {
             </div>
           </div>
 
+          {/* Nút đăng nhập */}
           <button
             type="submit"
             disabled={loading}
@@ -138,8 +169,12 @@ export default function Login() {
             {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
           </button>
 
+          {/* Google login (placeholder) */}
           <div className="mt-6 flex items-center justify-center">
-            <button type="button" className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition">
+            <button
+              type="button"
+              className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+            >
               <FcGoogle className="mr-2" size={24} />
               Tiếp tục với Google
             </button>

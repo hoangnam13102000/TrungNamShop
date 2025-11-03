@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/dropdown/DropDown";
 import { useStores } from "../../../../api/stores";
-import { useBrands } from "../../../../api/brand"; // <-- dùng API brand
+import { useBrands } from "../../../../api/brand"; 
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 import defaultAvatar from "../../../../assets/users/images/user/user.png";
 import {

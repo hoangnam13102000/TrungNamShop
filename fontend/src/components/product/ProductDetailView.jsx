@@ -213,7 +213,7 @@ const ProductDetailViewModal = ({ item, onClose }) => {
               Chi tiết
             </p>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
-              Thông số sản phẩm
+              Thông số sản phẩm 1
             </h2>
           </div>
           <button

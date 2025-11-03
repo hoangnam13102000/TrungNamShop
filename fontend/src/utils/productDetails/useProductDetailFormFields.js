@@ -132,9 +132,9 @@ export const getProductDetailFormFields = ({
       ],
     },
     {
-      section: "💰 Giá & Tồn kho",
+      section: "Giá & Tồn kho",
       fields: [
-        { name: "price", label: "Giá bán (₫)", type: "number", min: 0, step: 1000 },
+        { name: "price", label: "Giá bán (VNĐ)", type: "number", min: 0, step: 1000 },
         { name: "stock_quantity", label: "Số lượng tồn kho", type: "number", min: 0, step: 1 },
       ],
     },

@@ -74,8 +74,10 @@ export default function useAdminCrud1(api, queryKey) {
       const payload = { ...formData };
 
       // Convert number fields
-      if (payload.price) payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
-      if (payload.stock_quantity) payload.stock_quantity = Number(payload.stock_quantity) || 0;
+      if (payload.price)
+        payload.price = Number(String(payload.price).replace(/\D/g, "")) || 0;
+      if (payload.stock_quantity)
+        payload.stock_quantity = Number(payload.stock_quantity) || 0;
 
       // File keys to consider for edit (avatar, image, etc.)
       const fileKeys = ["avatar", "image"];
@@ -90,7 +92,10 @@ export default function useAdminCrud1(api, queryKey) {
       const finalData = hasFile ? toFormData(payload) : payload;
 
       // Debug
-      console.log("Final data sending:", hasFile ? [...finalData.entries()] : finalData);
+      console.log(
+        "Final data sending:",
+        hasFile ? [...finalData.entries()] : finalData
+      );
 
       if (mode === "create") {
         // CREATE

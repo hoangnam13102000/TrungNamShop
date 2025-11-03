@@ -16,7 +16,7 @@ export default function DynamicForm({
   mode = "create", // create | edit | view
 }) {
   /** ============================================================
-   *                 0. GHÉP FIELDS (an toàn)
+   *                 0. GHÉP FIELDS (Safe)
    * ============================================================ */
   let allFields = [];
   if (Array.isArray(fieldGroups) && fieldGroups.length > 0) {
@@ -24,7 +24,7 @@ export default function DynamicForm({
   } else if (Array.isArray(fields)) {
     allFields = fields;
   } else {
-    console.warn("⚠️ DynamicForm: không có field hợp lệ nào được truyền vào!");
+    console.warn(" DynamicForm: không có field hợp lệ nào được truyền vào!");
   }
 
   const safeData = initialData || {};

@@ -1,31 +1,32 @@
 import { createCRUD } from "../../api/hook/apiBase";
-import { useGetAll, useMutate } from "../../api/hook/useBaseQuery";
 import { useQuery } from "@tanstack/react-query";
-import { getImageUrl } from "../../utils/getImageUrl";
-import placeholder from "../../assets/admin/logoicon1.jpg";
+import { useGetAll, useMutate } from "../../api/hook/useBaseQuery";
+const customersAPI = createCRUD("/customers");
 
-export const useCustomerDetailById = (customerId, options = {}) => {
+
+export const useCustomerByAccountId = (accountId) => {
   return useQuery({
-    queryKey: ["customer-detail", customerId],
+    queryKey: ["customer-by-account", accountId],
     queryFn: async () => {
-      if (!customerId) throw new Error("Missing customer ID");
+      if (!accountId) throw new Error("Missing accountId");
 
-      const customer = await customersAPI.getById(customerId); // GET /customers/:id
+      // gọi API custom
+      const customer = await customersAPI.getByAccountId(accountId);
 
-      if (!customer) return null;
+      // Chuẩn hóa avatar URL
+      const avatarUrl =
+        customer?.avatar_url ||
+        (customer?.avatar ? `/storage/${customer.avatar}` : "/default-avatar.png");
 
       return {
         ...customer,
-        avatar: customer.avatar ? getImageUrl(customer.avatar) : placeholder,
-        birth_date: customer.birth_date || null,
+        avatar_url: avatarUrl,
       };
     },
-    enabled: !!customerId,
-    ...options,
+    enabled: !!accountId, // chỉ gọi khi có accountId
   });
 };
 
-const customersAPI = createCRUD("/customers");
 
 export const useCustomers = (options) => useGetAll("customers", customersAPI.getAll, options);
 

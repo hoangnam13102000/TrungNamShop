@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -35,6 +37,16 @@ return new class extends Migration
                   ->on('account_levels')
                   ->onDelete('cascade');
         });
+         DB::table('accounts')->insert([
+        'account_type_id' => 3,
+        'account_level_id' => 1,
+        'username' => 'admin',
+        'password' => Hash::make('123456'),
+        'reward_points' => 0,
+        'status' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
     }
 
     /**
