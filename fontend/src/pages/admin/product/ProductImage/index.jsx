@@ -6,24 +6,20 @@ import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-
-import {
-  useProductImages,
-  useCreateProductImage,
-  useUpdateProductImage,
-  useDeleteProductImage,
-} from "../../../../api/product/productImage";
 import { getImageUrl } from "../../../../utils/getImageUrl";
-import { useColors } from "../../../../api/product/color";
-import { useProducts } from "../../../../api/product/products";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function ProductImageManagement() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const { data: images = [], isLoading, refetch } = useProductImages();
-  const { data: colors = [] } = useColors();
-  const { data: products = [] } = useProducts();
+  const imageApi = useCRUDApi("product-images");
+  const colorApi = useCRUDApi("colors");
+  const productApi = useCRUDApi("products");
+
+  const { data: images = [], isLoading, refetch } = imageApi.useGetAll();
+  const { data: colors = [] } = colorApi.useGetAll();
+  const { data: products = [] } = productApi.useGetAll();
 
   const colorOptions = colors.map((c) => ({ label: c.name, value: c.id }));
   const productOptions = products.map((p) => ({ label: p.name, value: p.id }));
@@ -31,9 +27,9 @@ export default memo(function ProductImageManagement() {
   /** ==========================
    * 2. CRUD MUTATIONS
    * ========================== */
-  const createMutation = useCreateProductImage();
-  const updateMutation = useUpdateProductImage();
-  const deleteMutation = useDeleteProductImage();
+  const createMutation = imageApi.useCreate();
+  const updateMutation = imageApi.useUpdate();
+  const deleteMutation = imageApi.useDelete();
 
   const crud = useAdminCrud(
     {
@@ -151,7 +147,7 @@ export default memo(function ProductImageManagement() {
         </div>
       )}
 
-      {/* FORM: EDIT / CREATE */}
+      {/* FORM */}
       {crud.openForm && (
         <DynamicForm
           title={

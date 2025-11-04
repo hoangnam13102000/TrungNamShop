@@ -1,32 +1,34 @@
+import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
+
 // ===================== PRODUCT =====================
-export * from "../products";
+export const useProducts = () => useCRUDApi("products");
 
 // ===================== SCREEN =====================
-export * from "../screen";
+export const useScreens = () => useCRUDApi("screens");
 
 // ===================== FRONT CAMERA =====================
-export * from "../frontCamera";
+export const useFrontCameras = () => useCRUDApi("frontCameras");
 
 // ===================== REAR CAMERA =====================
-export * from "../rearCamera";
+export const useRearCameras = () => useCRUDApi("rearCameras");
 
 // ===================== MEMORY =====================
-export * from "../memories";
+export const useMemories = () => useCRUDApi("memories");
 
 // ===================== OPERATING SYSTEM =====================
-export * from "../operatingSystem";
+export const useOperatingSystems = () => useCRUDApi("operatingSystems");
 
 // ===================== UTILITY =====================
-export * from "../utilities";
+export const useUtilities = () => useCRUDApi("utilities");
 
 // ===================== BATTERY CHARGING =====================
-export * from "../batteryCharging";
+export const useBatteriesCharging  = () => useCRUDApi("batteries-charging");
 
 // ===================== GENERAL INFORMATION =====================
-export * from "../generalInfo";
+export const useGeneralInformations = () => useCRUDApi("general-informations");
 
 // ===================== COMMUNICATION CONNECTIVITY =====================
-export * from "../communicationConnectivity";
+export const useCommunicationConnectivities = () => useCRUDApi("communicationConnectivities");
 
-// ===================== PRODUCT DETAIL (nếu cần dùng trực tiếp) =====================
-export * from "../productDetail";
+// ===================== PRODUCT DETAIL =====================
+export const useProductDetails = () => useCRUDApi("productDetails");

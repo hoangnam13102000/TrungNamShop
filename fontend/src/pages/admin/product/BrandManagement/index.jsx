@@ -1,31 +1,27 @@
 import { memo, useMemo, useState } from "react";
-import { FaPlus, FaEdit, FaTrash, FaEye } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
-import useAdminHandler from "../../../../components/common/useAdminHandler"; 
+import useAdminHandler from "../../../../components/common/useAdminHandler";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-import {
-  useBrands,
-  useCreateBrand,
-  useUpdateBrand,
-  useDeleteBrand,
-} from "../../../../api/brand";
+
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function BrandManagement() {
   /** ==========================
-   *  1. FETCH DATA
+   *  1. CRUDApi
    *  ========================== */
-  const { data: brands = [], isLoading, refetch } = useBrands();
+  const brandAPI = useCRUDApi("brands");
+  const { data: brands = [], isLoading, refetch } = brandAPI.useGetAll();
+  const createMutation = brandAPI.useCreate();
+  const updateMutation = brandAPI.useUpdate();
+  const deleteMutation = brandAPI.useDelete();
 
   /** ==========================
-   *  2. CRUD MUTATIONS
+   *  2. CRUD LOGIC
    *  ========================== */
-  const createMutation = useCreateBrand();
-  const updateMutation = useUpdateBrand();
-  const deleteMutation = useDeleteBrand();
-
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -35,24 +31,17 @@ export default memo(function BrandManagement() {
     "brands"
   );
 
-  /** ==========================
-   *  3. ADMIN HANDLER
-   *  ========================== */
-  const {
-    dialog,
-    closeDialog,
-    handleSave: handleSaveAdmin,
-    handleDelete: handleDeleteAdmin,
-  } = useAdminHandler(crud, refetch);
+  const { dialog, closeDialog, handleSave: handleSaveAdmin, handleDelete: handleDeleteAdmin } =
+    useAdminHandler(crud, refetch);
 
   /** ==========================
-   *  4. STATE
+   *  3. STATE
    *  ========================== */
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
 
   /** ==========================
-   *  5. FILTER DATA
+   *  4. FILTER DATA
    *  ========================== */
   const filteredItems = useMemo(() => {
     return brands.filter((b) =>
@@ -61,18 +50,13 @@ export default memo(function BrandManagement() {
   }, [brands, search]);
 
   /** ==========================
-   *  6. HANDLERS
+   *  5. HANDLERS
    *  ========================== */
-
-  const handleSave = (formData) => {
-    handleSaveAdmin(formData, { name: "name" });
-  };
-  const handleDelete = (item) => {
-    handleDeleteAdmin(item, "name");
-  };
+  const handleSave = (formData) => handleSaveAdmin(formData, { name: "name" });
+  const handleDelete = (item) => handleDeleteAdmin(item, "name");
 
   /** ==========================
-   *  7. UI RENDER
+   *  6. UI RENDER
    *  ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -126,7 +110,7 @@ export default memo(function BrandManagement() {
         </div>
       )}
 
-      {/* FORM: VIEW */}
+      {/* FORM VIEW */}
       {viewItem && (
         <DynamicForm
           mode="view"
@@ -141,7 +125,7 @@ export default memo(function BrandManagement() {
         />
       )}
 
-      {/* FORM: EDIT / CREATE */}
+      {/* FORM EDIT / CREATE */}
       {crud.openForm && (
         <DynamicForm
           title={
@@ -150,12 +134,7 @@ export default memo(function BrandManagement() {
               : "Thêm thương hiệu"
           }
           fields={[
-            {
-              name: "name",
-              label: "Tên thương hiệu",
-              type: "text",
-              required: true,
-            },
+            { name: "name", label: "Tên thương hiệu", type: "text", required: true },
             {
               name: "image",
               label: "Hình ảnh đại diện",

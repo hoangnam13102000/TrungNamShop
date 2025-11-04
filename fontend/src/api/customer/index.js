@@ -10,7 +10,7 @@ export const useCustomerByAccountId = (accountId) => {
     queryFn: async () => {
       if (!accountId) throw new Error("Missing accountId");
 
-      // gọi API custom
+      // Call API custom
       const customer = await customersAPI.getByAccountId(accountId);
 
       // Chuẩn hóa avatar URL
@@ -23,7 +23,7 @@ export const useCustomerByAccountId = (accountId) => {
         avatar_url: avatarUrl,
       };
     },
-    enabled: !!accountId, // chỉ gọi khi có accountId
+    enabled: !!accountId, 
   });
 };
 

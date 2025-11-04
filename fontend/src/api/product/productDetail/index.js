@@ -1,6 +1,6 @@
-import { createCRUD } from "../../hook/apiBase";
+import { createCRUD } from "../../hooks/apiBase";
 import { useQuery } from "@tanstack/react-query";
-import { useGetAll, useMutate } from "../../hook/useBaseQuery";
+import { useGetAll, useMutate } from "../../hooks/useBaseQuery";
 
 const productDetailAPI = createCRUD("/product-details");
 const productImageAPI = createCRUD("/product-images");

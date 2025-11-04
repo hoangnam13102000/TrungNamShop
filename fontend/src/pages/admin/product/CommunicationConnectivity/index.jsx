@@ -11,27 +11,22 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useCommunicationConnectivities,
-  useCreateCommunicationConnectivity,
-  useUpdateCommunicationConnectivity,
-  useDeleteCommunicationConnectivity,
-} from "../../../../api/product/communicationConnectivity";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 
 export default memo(function AdminCommunicationConnectivityPage() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
+  const connectivityApi = useCRUDApi("communication-connectivities"); 
   const { data: connectivities = [], isLoading, refetch } =
-    useCommunicationConnectivities();
+    connectivityApi.useGetAll();
 
   /** ==========================
    * 2. CRUD MUTATIONS
    * ========================== */
-  const createMutation = useCreateCommunicationConnectivity();
-  const updateMutation = useUpdateCommunicationConnectivity();
-  const deleteMutation = useDeleteCommunicationConnectivity();
+  const createMutation = connectivityApi.useCreate();
+  const updateMutation = connectivityApi.useUpdate();
+  const deleteMutation = connectivityApi.useDelete();
 
   const crud = useAdminCrud(
     {

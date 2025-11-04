@@ -1,7 +1,7 @@
-import { memo, useRef } from "react";
+import { memo, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../../../components/product/ProductCard";
-import { useProducts } from "../../../api/product/products";
+import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
 
 const ProductCarousel = ({ products }) => {
@@ -17,9 +17,12 @@ const ProductCarousel = ({ products }) => {
   };
 
   // Lọc sản phẩm đang bán
-  const availableProducts = products.filter(product => product.status === true);
+  const availableProducts = useMemo(
+    () => products.filter((product) => Number(product.status) === 1 || product.status === true),
+    [products]
+  );
 
-  if (availableProducts.length === false) {
+  if (!availableProducts.length) {
     return (
       <div className="text-center py-10 text-gray-500">
         Hiện tại không có sản phẩm nào đang bán.
@@ -58,7 +61,9 @@ const ProductCarousel = ({ products }) => {
 };
 
 const HomePage = () => {
-  const { data: products = [] } = useProducts();
+  // Sử dụng useCRUDApi cho products
+  const { useGetAll } = useCRUDApi("products");
+  const { data: products = [], isLoading } = useGetAll();
 
   return (
     <div className="w-full">
@@ -76,7 +81,7 @@ const HomePage = () => {
               <p className="text-gray-600 mt-2">Những sản phẩm được ưa chuộng nhất</p>
             </div>
 
-            <ProductCarousel products={products} />
+            {!isLoading && <ProductCarousel products={products} />}
 
             <div className="text-center mt-10">
               <Link

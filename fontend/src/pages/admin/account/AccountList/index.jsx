@@ -4,30 +4,23 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
-import {
-  useAccounts,
-  useCreateAccount,
-  useUpdateAccount,
-  useDeleteAccount,
-} from "../../../../api/account/accountManagement";
-import {
-  useAccountTypes,
-} from "../../../../api/account/accountType";
-import {
-  useMemberLevelings,
-} from "../../../../api/account/memberLeveling";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const AccountList = () => {
-  // ==========================
-  // 1. FETCH DATA + OPTIONS
-  // ==========================
-  const { data: accounts = [], isLoading: loadingAccounts, refetch: fetchAccounts } = useAccounts();
-  const createMutation = useCreateAccount();
-  const updateMutation = useUpdateAccount();
-  const deleteMutation = useDeleteAccount();
+  /** ==========================
+   * 1. CRUDApi
+   * ========================== */
+  const accountAPI = useCRUDApi("accounts");
+  const { data: accounts = [], isLoading, refetch } = accountAPI.useGetAll();
+  const createMutation = accountAPI.useCreate();
+  const updateMutation = accountAPI.useUpdate();
+  const deleteMutation = accountAPI.useDelete();
 
-  const { data: accountTypes = [] } = useAccountTypes();
-  const { data: accountLevels = [] } = useMemberLevelings();
+  const accountTypeAPI = useCRUDApi("account-types");
+  const { data: accountTypes = [] } = accountTypeAPI.useGetAll();
+
+  const accountLevelAPI = useCRUDApi("account-leveling");
+  const { data: accountLevels = [] } = accountLevelAPI.useGetAll();
 
   const accountTypeOptions = useMemo(
     () => accountTypes.map(t => ({ value: t.id, label: t.account_type_name })),
@@ -39,9 +32,9 @@ const AccountList = () => {
     [accountLevels]
   );
 
-  // ==========================
-  // 2. CRUD HOOK
-  // ==========================
+  /** ==========================
+   * 2. CRUD HOOK
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -68,20 +61,19 @@ const AccountList = () => {
     setDialog(prev => ({ ...prev, open: false }));
   }, []);
 
-  // ==========================
-  // 3. FILTER DATA
-  // ==========================
+  /** ==========================
+   * 3. Filter data
+   * ========================== */
   const filteredItems = useMemo(() => {
     return accounts.filter(acc =>
       (acc.username || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [accounts, search]);
 
-  // ==========================
-  // 4. HANDLERS
-  // ==========================
+  /** ==========================
+   * 4. Handlers
+   * ========================== */
   const handleSave = async (formData) => {
-    // Prepare payload: convert select object to id
     const payload = {
       ...formData,
       account_type_id: formData.account_type_id?.value || formData.account_type_id,
@@ -97,7 +89,7 @@ const AccountList = () => {
       async () => {
         try {
           await crud.handleSave(payload);
-          await fetchAccounts();
+          await refetch();
           crud.handleCloseForm();
           showDialog(
             "success",
@@ -122,7 +114,7 @@ const AccountList = () => {
       async () => {
         try {
           await crud.handleDelete(item.id);
-          await fetchAccounts();
+          await refetch();
           showDialog("success", "Thành công", "Tài khoản đã được xóa thành công!");
         } catch (err) {
           console.error(err);
@@ -132,10 +124,10 @@ const AccountList = () => {
     );
   };
 
-  // ==========================
-  // 5. UI
-  // ==========================
-  if (loadingAccounts)
+  /** ==========================
+   * 5. UI
+   * ========================== */
+  if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
 
   return (

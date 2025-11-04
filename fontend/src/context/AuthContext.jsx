@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { loginAPI, logoutAPI } from "../api/auth/request";
 import { useNavigate } from "react-router-dom";
-
+import userUnknow from "../assets/users/images/user/user.png"
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     if (res?.token && res?.user) {
       const token = res.token;
       const username = res.user.username;
-      const avatar = res.user.avatar || "/default-avatar.png";
+      const avatar = res.user.avatar || userUnknow;
       const accountTypeId = res.user.account_type_id;
 
       // Define role from accountTypeId

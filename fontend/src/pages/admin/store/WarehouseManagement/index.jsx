@@ -5,21 +5,17 @@ import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import {
-  useWarehouses,
-  useCreateWarehouse,
-  useUpdateWarehouse,
-  useDeleteWarehouse,
-} from "../../../../api/warehouse";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const WarehouseManagement = () => {
   /** ==========================
    * 1. FETCH DATA & CRUD
    * ========================== */
-  const { data: warehouses = [], isLoading, refetch } = useWarehouses();
-  const createMutation = useCreateWarehouse();
-  const updateMutation = useUpdateWarehouse();
-  const deleteMutation = useDeleteWarehouse();
+  const warehouseAPI = useCRUDApi("warehouses");
+  const { data: warehouses = [], isLoading, refetch } = warehouseAPI.useGetAll();
+  const createMutation = warehouseAPI.useCreate();
+  const updateMutation = warehouseAPI.useUpdate();
+  const deleteMutation = warehouseAPI.useDelete();
 
   const crud = useAdminCrud(
     {
@@ -106,7 +102,7 @@ const WarehouseManagement = () => {
             { name: "note", label: "Ghi chú", type: "textarea" },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave} // handleSave đã xử lý dialog
+          onSave={handleSave}
           onClose={crud.handleCloseForm}
           errors={crud.errors}
         />
@@ -119,7 +115,7 @@ const WarehouseManagement = () => {
         title={dialog.title}
         message={dialog.message}
         onConfirm={dialog.onConfirm}
-        onClose={closeDialog} // ← fix để đóng dialog
+        onClose={closeDialog}
       />
     </div>
   );

@@ -5,27 +5,24 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import {
-  useProducts,
-  useCreateProduct,
-  useUpdateProduct,
-  useDeleteProduct,
-} from "../../../../api/product/products";
-import { useBrands } from "../../../../api/brand";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminProductPage() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const { data: products = [], isLoading, refetch } = useProducts();
-  const { data: brands = [] } = useBrands();
+  const productApi = useCRUDApi("products");
+  const brandApi = useCRUDApi("brands");
+
+  const { data: products = [], isLoading, refetch } = productApi.useGetAll();
+  const { data: brands = [] } = brandApi.useGetAll();
 
   /** ==========================
    * 2. CRUD MUTATIONS
    * ========================== */
-  const createMutation = useCreateProduct();
-  const updateMutation = useUpdateProduct();
-  const deleteMutation = useDeleteProduct();
+  const createMutation = productApi.useCreate();
+  const updateMutation = productApi.useUpdate();
+  const deleteMutation = productApi.useDelete();
 
   const crud = useAdminCrud(
     {
@@ -60,7 +57,7 @@ export default memo(function AdminProductPage() {
     return filteredItems.map((p) => ({
       ...p,
       brand_name: p.brand?.name || "Không rõ",
-      status_val: Number(p.status), // 1 hoặc 0
+      status_val: Number(p.status),
     }));
   }, [filteredItems]);
 
@@ -129,12 +126,7 @@ export default memo(function AdminProductPage() {
         <DynamicForm
           title={crud.mode === "edit" ? "Sửa sản phẩm" : "Thêm sản phẩm"}
           fields={[
-            {
-              name: "name",
-              label: "Tên sản phẩm",
-              type: "text",
-              required: true,
-            },
+            { name: "name", label: "Tên sản phẩm", type: "text", required: true },
             {
               name: "brand_id",
               label: "Thương hiệu",
@@ -145,11 +137,7 @@ export default memo(function AdminProductPage() {
               })),
               required: true,
             },
-            {
-              name: "description",
-              label: "Mô tả",
-              type: "textarea",
-            },
+            { name: "description", label: "Mô tả", type: "textarea" },
             {
               name: "status",
               label: "Trạng thái",
@@ -160,7 +148,6 @@ export default memo(function AdminProductPage() {
               ],
             },
           ]}
-          // FIX: map brand_id và status từ selectedItem
           initialData={
             crud.selectedItem
               ? {
@@ -171,7 +158,7 @@ export default memo(function AdminProductPage() {
                   status:
                     crud.selectedItem.status !== undefined
                       ? Number(crud.selectedItem.status)
-                      : 1, // default trạng thái
+                      : 1,
                 }
               : {}
           }

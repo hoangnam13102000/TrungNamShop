@@ -5,11 +5,12 @@ import { validateGeneral } from "../../../utils/validate";
 import { loginAPI } from "../../../api/auth/request";
 import { useAuth } from "../../../context/AuthContext";
 import AuthWrapper from "../../../components/formAndDialog/AuthWapper";
-import { useCustomerByAccountId } from "../../../api/customer"; 
+import { useRelatedDataByForeignKey } from "../../../api/hooks/useRelatedDataByForeignKey"; 
 
 export default function Login() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+
   const accountTypes = [
     { id: 1, name: "Admin" },
     { id: 2, name: "Nhân viên" },
@@ -20,8 +21,14 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [accountId, setAccountId] = useState(null); // để hook lấy customer
-  const { data: customer } = useCustomerByAccountId(accountId);
+  const [accountId, setAccountId] = useState(null);
+
+  const {
+    data: customers = [],
+    isLoading: customerLoading,
+  } = useRelatedDataByForeignKey("/api/admin/customers", "account_id", accountId);
+
+  const customer = customers.length > 0 ? customers[0] : null;
 
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
@@ -36,6 +43,7 @@ export default function Login() {
 
   const handleSubmit = async (e, showAlert) => {
     e.preventDefault();
+
     const validationErrors = validateGeneral(formData, rules);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -59,14 +67,14 @@ export default function Login() {
         const typeObj = accountTypes.find((t) => t.id === account_type_id);
         const roleName = typeObj ? typeObj.name.toLowerCase() : "";
 
-        // Lưu token tạm thời
+        //  Lưu token trước
         localStorage.setItem("token", token);
-        setAccountId(accId); // trigger hook useCustomerByAccountId
+        setAccountId(accId); // trigger hook
 
-        // chờ hook load customer
-        const avatarUrl = customer?.avatar || "/default-avatar.png";
+        // Chờ hook lấy dữ liệu xong (nếu có)
+        const avatarUrl = customer?.avatar_url || "/default-avatar.png";
 
-        // Lưu thông tin user vào localStorage & context
+        //  Lưu thông tin user
         localStorage.setItem("username", username);
         localStorage.setItem("avatar", avatarUrl);
         localStorage.setItem("role", roleName);
@@ -128,7 +136,9 @@ export default function Login() {
                 errors.username ? "border-red-500" : ""
               }`}
             />
-            {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+            {errors.username && (
+              <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+            )}
           </div>
 
           {/* Mật khẩu */}
@@ -143,7 +153,9 @@ export default function Login() {
                 errors.password ? "border-red-500" : ""
               }`}
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+            )}
             <div className="flex items-center mt-2">
               <input
                 type="checkbox"
@@ -169,7 +181,7 @@ export default function Login() {
             {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
           </button>
 
-          {/* Google login (placeholder) */}
+          {/* Google login */}
           <div className="mt-6 flex items-center justify-center">
             <button
               type="button"

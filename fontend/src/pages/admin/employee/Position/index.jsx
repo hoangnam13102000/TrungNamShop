@@ -3,47 +3,43 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+
 import useAdminCrud from "../../../../utils/useAdminCrud1";
-import useAdminHandler from "../../../../components/common/useAdminHandler"; 
-
-import {
-  usePositions,
-  useCreatePosition,
-  useUpdatePosition,
-  useDeletePosition,
-} from "../../../../api/employee/position";
-
-export default memo(function PositionManagement() {
+import useAdminHandler from "../../../../components/common/useAdminHandler";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+const PositionManagement = () => {
   /** ==========================
-   *  1️ FETCH DATA
-   *  ========================== */
-  const { data: positions = [], isLoading, isError, refetch } = usePositions();
+   * 1️ FETCH DATA & CRUD API
+   * ========================== */
+  const positionAPI = useCRUDApi("positions");
 
-  /** ==========================
-   *  2 CRUD MUTATIONS
-   *  ========================== */
-  const createMutation = useCreatePosition();
-  const updateMutation = useUpdatePosition();
-  const deleteMutation = useDeletePosition();
+  const { data: positions = [], isLoading, isError, refetch } =
+    positionAPI.useGetAll();
+  const create = positionAPI.useCreate();
+  const update = positionAPI.useUpdate();
+  const remove = positionAPI.useDelete();
 
   const crud = useAdminCrud(
     {
-      create: createMutation.mutateAsync,
-      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
-      delete: async (id) => deleteMutation.mutateAsync({ id }),
+      create: create.mutateAsync,
+      update: async (id, data) => update.mutateAsync({ id, data }),
+      delete: async (id) => remove.mutateAsync(id),
     },
     "positions"
   );
 
   /** ==========================
-   *  3 STATE + HANDLER HOOK
-   *  ========================== */
+   * 2️ STATE + HANDLER HOOK
+   * ========================== */
   const [search, setSearch] = useState("");
-  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(crud, refetch);
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch
+  );
 
   /** ==========================
-   *  4 FILTER DATA
-   *  ========================== */
+   * 3️ FILTER DATA
+   * ========================== */
   const filteredItems = useMemo(() => {
     const term = search.toLowerCase().trim();
     return positions.filter(
@@ -54,13 +50,19 @@ export default memo(function PositionManagement() {
   }, [positions, search]);
 
   /** ==========================
-   *  5 UI RENDER
-   *  ========================== */
+   * 4️ UI RENDER
+   * ========================== */
   if (isLoading)
-    return <div className="p-6 text-center text-gray-600">Đang tải dữ liệu...</div>;
+    return (
+      <div className="p-6 text-center text-gray-600">Đang tải dữ liệu...</div>
+    );
 
   if (isError)
-    return <div className="p-6 text-center text-red-500">Không thể tải dữ liệu.</div>;
+    return (
+      <div className="p-6 text-center text-red-500">
+        Không thể tải dữ liệu chức vụ.
+      </div>
+    );
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -99,7 +101,11 @@ export default memo(function PositionManagement() {
           data={filteredItems}
           actions={[
             { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-            { icon: <FaTrash />, label: "Xoá", onClick: (item) => handleDelete(item, "name") },
+            {
+              icon: <FaTrash />,
+              label: "Xoá",
+              onClick: (item) => handleDelete(item, "name"),
+            },
           ]}
         />
       </div>
@@ -119,7 +125,9 @@ export default memo(function PositionManagement() {
             },
           ]}
           initialData={crud.selectedItem}
-          onSave={(data) => handleSave(data, { name: "name", money: "base_salary" })}
+          onSave={(data) =>
+            handleSave(data, { name: "name", money: "base_salary" })
+          }
           onClose={crud.handleCloseForm}
           className="w-full max-w-lg mx-auto"
         />
@@ -136,4 +144,6 @@ export default memo(function PositionManagement() {
       />
     </div>
   );
-});
+};
+
+export default memo(PositionManagement);

@@ -2,19 +2,30 @@ import { useState, useEffect } from "react";
 import { FiEdit2, FiShoppingCart } from "react-icons/fi";
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
-import { useCustomers, useUpdateCustomer } from "../../../api/customer";
+import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import { getImageUrl } from "../../../utils/getImageUrl";
 import placeholder from "../../../assets/admin/logoicon1.jpg";
 
 export default function Profile() {
-  const { data: customers = [], isLoading, refetch } = useCustomers();
-  const updateCustomer = useUpdateCustomer();
+  /** ==========================
+   * 1 TẠO CRUD HOOK
+   * ========================== */
+  const { useGetAll, useUpdate } = useCRUDApi("customers");
 
+  const { data: customers = [], isLoading, refetch } = useGetAll();
+  const updateMutation = useUpdate();
+
+  /** ==========================
+   * 2 STATE QUẢN LÝ
+   * ========================== */
   const [isEditing, setIsEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [dialog, setDialog] = useState({ open: false });
   const [profileData, setProfileData] = useState(null);
 
+  /** ==========================
+   * 3 LẤY DỮ LIỆU BAN ĐẦU
+   * ========================== */
   useEffect(() => {
     if (customers.length > 0) {
       const customer = customers[0];
@@ -25,6 +36,9 @@ export default function Profile() {
     }
   }, [customers]);
 
+  /** ==========================
+   * 4 CẤU HÌNH FORM
+   * ========================== */
   const fields = [
     { name: "full_name", label: "Họ và tên", type: "text", required: true },
     { name: "email", label: "Email", type: "email" },
@@ -43,6 +57,9 @@ export default function Profile() {
     { name: "avatar", label: "Ảnh đại diện", type: isEditing ? "file" : "custom-image" },
   ];
 
+  /** ==========================
+   * 5 XỬ LÝ LƯU
+   * ========================== */
   const handleSave = async (data) => {
     const formData = new FormData();
     for (const key in data) {
@@ -62,7 +79,7 @@ export default function Profile() {
       message: `Bạn có chắc chắn muốn cập nhật thông tin của "${data.full_name}" không?`,
       onConfirm: async () => {
         try {
-          const updated = await updateCustomer.mutateAsync({
+          const updated = await updateMutation.mutateAsync({
             id: profileData.id,
             data: formData,
           });
@@ -94,6 +111,9 @@ export default function Profile() {
     });
   };
 
+  /** ==========================
+   * 6 UI HIỂN THỊ
+   * ========================== */
   if (isLoading || !profileData) {
     return <div className="p-6 text-center text-gray-500">Đang tải...</div>;
   }
@@ -197,7 +217,7 @@ export default function Profile() {
           </div>
         )}
 
-        {/* DynamicDialog */}
+        {/* Dialog */}
         <DynamicDialog
           open={dialog.open}
           mode={dialog.mode}

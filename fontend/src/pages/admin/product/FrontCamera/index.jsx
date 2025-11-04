@@ -5,26 +5,19 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useFrontCameras,
-  useCreateFrontCamera,
-  useUpdateFrontCamera,
-  useDeleteFrontCamera,
-} from "../../../../api/product/frontCamera";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminFrontCameraPage() {
   /** ==========================
-   *  1. FETCH DATA
+   *  1. FETCH + CRUD API
    * ========================== */
-  const { data: frontCameras = [], isLoading, refetch } = useFrontCameras();
+  const { useGetAll, useCreate, useUpdate, useDelete } =
+    useCRUDApi("front-cameras");
 
-  /** ==========================
-   *  2. CRUD MUTATIONS
-   * ========================== */
-  const createMutation = useCreateFrontCamera();
-  const updateMutation = useUpdateFrontCamera();
-  const deleteMutation = useDeleteFrontCamera();
+  const { data: frontCameras = [], isLoading, refetch } = useGetAll();
+  const createMutation = useCreate();
+  const updateMutation = useUpdate();
+  const deleteMutation = useDelete();
 
   const crud = useAdminCrud(
     {
@@ -36,7 +29,7 @@ export default memo(function AdminFrontCameraPage() {
   );
 
   /** ==========================
-   *  3. HANDLER + DIALOG
+   *  2. HANDLER + DIALOG
    * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
@@ -45,18 +38,18 @@ export default memo(function AdminFrontCameraPage() {
   );
 
   /** ==========================
-   *  4. SEARCH & MAP DATA
+   *  3. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(() => {
     return frontCameras.filter((c) =>
-      c.resolution?.toLowerCase().includes(search.toLowerCase())
+      (c.resolution || "").toLowerCase().includes(search.toLowerCase())
     );
   }, [frontCameras, search]);
 
   /** ==========================
-   *  5. UI
+   *  4. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -104,7 +97,9 @@ export default memo(function AdminFrontCameraPage() {
       {/* FORM */}
       {crud.openForm && (
         <DynamicForm
-          title={crud.mode === "edit" ? "Sửa camera trước" : "Thêm camera trước"}
+          title={
+            crud.mode === "edit" ? "Sửa camera trước" : "Thêm camera trước"
+          }
           fields={[
             {
               name: "resolution",
@@ -113,7 +108,11 @@ export default memo(function AdminFrontCameraPage() {
               required: true,
             },
             { name: "aperture", label: "Khẩu độ (f/)", type: "text" },
-            { name: "video_capability", label: "Video (độ phân giải)", type: "text" },
+            {
+              name: "video_capability",
+              label: "Video (độ phân giải)",
+              type: "text",
+            },
             { name: "features", label: "Tính năng", type: "textarea" },
           ]}
           initialData={crud.selectedItem}

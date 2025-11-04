@@ -4,19 +4,21 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useReviews,
-  useUpdateReview,
-  useDeleteReview,
-} from "../../../../api/product/reviews";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminReviewPage() {
-  const { data: reviews = [], isLoading, refetch } = useReviews();
+  /** ==========================
+   *  1. API HOOKS
+   * ========================== */
+  const { useGetAll, useUpdate, useDelete } = useCRUDApi("reviews");
 
-  const updateMutation = useUpdateReview();
-  const deleteMutation = useDeleteReview();
+  const { data: reviews = [], isLoading, refetch } = useGetAll();
+  const updateMutation = useUpdate();
+  const deleteMutation = useDelete();
 
+  /** ==========================
+   *  2. CRUD HANDLER
+   * ========================== */
   const crud = useAdminCrud(
     {
       update: async (id, data) => updateMutation.mutateAsync({ id, data }),
@@ -31,6 +33,9 @@ export default memo(function AdminReviewPage() {
     (item) => item?.content || "Không rõ"
   );
 
+  /** ==========================
+   *  3. SEARCH & FILTER
+   * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(() => {
@@ -39,10 +44,14 @@ export default memo(function AdminReviewPage() {
     );
   }, [reviews, search]);
 
+  /** ==========================
+   *  4. UI
+   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý đánh giá</h1>
 
+      {/* SEARCH */}
       <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-3 mb-6">
         <input
           type="text"
@@ -53,13 +62,14 @@ export default memo(function AdminReviewPage() {
         />
       </div>
 
+      {/* TABLE */}
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
         <div className="overflow-x-auto">
           <AdminListTable
             columns={[
-              { field: "name", label: "Tên tài khoản" }, 
+              { field: "name", label: "Tên tài khoản" },
               { field: "content", label: "Nội dung" },
               { field: "stars", label: "Số sao" },
               { field: "date", label: "Ngày đánh giá" },
@@ -73,6 +83,7 @@ export default memo(function AdminReviewPage() {
         </div>
       )}
 
+      {/* DIALOG */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}

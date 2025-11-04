@@ -5,38 +5,37 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useMemories,
-  useCreateMemory,
-  useUpdateMemory,
-  useDeleteMemory,
-} from "../../../../api/product/memories"; // API hook mới
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminMemoryPage() {
   /** ==========================
-   *  1. FETCH DATA
+   *  1. HOOK CRUD API
    * ========================== */
-  const { data: memories = [], isLoading, refetch } = useMemories();
+  const { useGetAll, useCreate, useUpdate, useDelete } = useCRUDApi("memories");
 
   /** ==========================
-   *  2. CRUD MUTATIONS
+   *  2. FETCH DATA
    * ========================== */
-  const createMutation = useCreateMemory();
-  const updateMutation = useUpdateMemory();
-  const deleteMutation = useDeleteMemory();
+  const { data: memories = [], isLoading, refetch } = useGetAll();
+
+  /** ==========================
+   *  3. CRUD MUTATIONS
+   * ========================== */
+  const createMutation = useCreate();
+  const updateMutation = useUpdate();
+  const deleteMutation = useDelete();
 
   const crud = useAdminCrud(
     {
-      create: createMutation.mutateAsync,
-      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
-      delete: async (id) => deleteMutation.mutateAsync({ id }),
+      create: createMutation?.mutateAsync,
+      update: async (id, data) => updateMutation?.mutateAsync({ id, data }),
+      delete: async (id) => deleteMutation?.mutateAsync({ id }),
     },
     "memories"
   );
 
   /** ==========================
-   *  3. HANDLER + DIALOG
+   *  4. HANDLER + DIALOG
    * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
@@ -45,7 +44,7 @@ export default memo(function AdminMemoryPage() {
   );
 
   /** ==========================
-   *  4. SEARCH & MAP DATA
+   *  5. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
 
@@ -56,7 +55,7 @@ export default memo(function AdminMemoryPage() {
   }, [memories, search]);
 
   /** ==========================
-   *  5. UI
+   *  6. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -106,7 +105,12 @@ export default memo(function AdminMemoryPage() {
           title={crud.mode === "edit" ? "Sửa bộ nhớ" : "Thêm bộ nhớ"}
           fields={[
             { name: "ram", label: "Dung lượng RAM", type: "text", required: true },
-            { name: "internal_storage", label: "Bộ nhớ trong", type: "text", required: true },
+            {
+              name: "internal_storage",
+              label: "Bộ nhớ trong",
+              type: "text",
+              required: true,
+            },
             { name: "memory_card_slot", label: "Khe cắm thẻ nhớ", type: "text" },
           ]}
           initialData={crud.selectedItem}

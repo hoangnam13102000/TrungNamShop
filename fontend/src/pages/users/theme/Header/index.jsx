@@ -2,8 +2,7 @@ import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/dropdown/DropDown";
-import { useStores } from "../../../../api/stores";
-import { useBrands } from "../../../../api/brand"; 
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
 import defaultAvatar from "../../../../assets/users/images/user/user.png";
 import {
@@ -38,19 +37,23 @@ const Header = () => {
   const showBanner = location.pathname === "/";
 
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [username, setUsername] = useState(
-    localStorage.getItem("username") || "User"
-  );
-  const [avatar, setAvatar] = useState(
-    localStorage.getItem("avatar") || defaultAvatar
-  );
+  const [username, setUsername] = useState(localStorage.getItem("username") || "User");
+  const [avatar, setAvatar] = useState(localStorage.getItem("avatar") || defaultAvatar);
 
-  const { data: stores = [], isLoading } = useStores();
+  /** ==========================
+   * 1. FETCH DATA - Dùng useCRUDApi
+   * ========================== */
+  const storeAPI = useCRUDApi("stores");
+  const brandAPI = useCRUDApi("brands");
+
+  const { data: stores = [], isLoading } = storeAPI.useGetAll();
   const mainStore = stores[0];
 
-  // Lấy brand từ API
-  const { data: brandsData = [], isLoading: isBrandsLoading } = useBrands();
+  const { data: brandsData = [], isLoading: isBrandsLoading } = brandAPI.useGetAll();
 
+  /** ==========================
+   * 2. STATE + EFFECTS
+   * ========================== */
   useEffect(() => setSelectedCategory(null), [location.pathname]);
 
   useEffect(() => {
@@ -71,12 +74,15 @@ const Header = () => {
     navigate("/");
   };
 
-  // Tạo dropdown options từ brand API
+  // Dropdown brand
   const dropdownOptions = brandsData.map((brand) => ({
     label: brand.name,
     value: brand.id,
   }));
 
+  /** ==========================
+   * 3. UI RENDER
+   * ========================== */
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
@@ -107,16 +113,15 @@ const Header = () => {
                     </a>
                     <a
                       href={mainStore.google_map || "#"}
-                      target="_blank" 
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="hidden md:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
                     >
-                      <FaMapMarkerAlt /> {/* Icon */}
+                      <FaMapMarkerAlt />
                       <span>
                         {mainStore.name
                           ? `${mainStore.name} - ${mainStore.address}`
-                          : mainStore.address}{" "}
-                        {/* Nội dung địa chỉ */}
+                          : mainStore.address}
                       </span>
                     </a>
                   </>
@@ -163,10 +168,7 @@ const Header = () => {
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex items-center justify-between py-2 sm:py-3 gap-2 sm:gap-4">
               {/* Logo */}
-              <Link
-                to="/"
-                className="flex items-center flex-shrink-0 justify-center"
-              >
+              <Link to="/" className="flex items-center flex-shrink-0 justify-center">
                 <div className="w-24 sm:w-28 md:w-32 lg:w-36 flex justify-center">
                   <img
                     src="/logo.png"
@@ -176,7 +178,7 @@ const Header = () => {
                 </div>
               </Link>
 
-              {/* Desktop Search + Brand Dropdown */}
+              {/* Desktop Search */}
               <div className="hidden lg:flex flex-1 max-w-2xl relative">
                 <div className="flex items-center border-2 border-red-400 bg-white w-full h-11">
                   <Dropdown
@@ -225,11 +227,7 @@ const Header = () => {
                   onClick={() => setShowMenu(!showMenu)}
                   className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
                 >
-                  {showMenu ? (
-                    <FaTimes className="text-lg" />
-                  ) : (
-                    <FaBars className="text-lg" />
-                  )}
+                  {showMenu ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
                 </button>
               </div>
             </div>

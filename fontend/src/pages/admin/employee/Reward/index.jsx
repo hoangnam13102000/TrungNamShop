@@ -1,48 +1,46 @@
 import { memo, useState, useMemo } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
-import {
-  useRewards,
-  useCreateReward,
-  useUpdateReward,
-  useDeleteReward,
-} from "../../../../api/employee/reward";
-
-export default memo(function RewardManagement() {
- /** ==========================
-   *  1️ FETCH DATA
-   *  ========================== */
-  const { data: rewards = [], isLoading, isError, refetch } = useRewards();
-
+const RewardManagement = () => {
   /** ==========================
-   *  2 CRUD MUTATIONS
-   *  ========================== */
-  const create = useCreateReward();
-  const update = useUpdateReward();
-  const remove = useDeleteReward();
+   * 1. FETCH DATA & CRUD API
+   * ========================== */
+  const rewardAPI = useCRUDApi("rewards");
+
+  const { data: rewards = [], isLoading, isError, refetch } =
+    rewardAPI.useGetAll();
+  const create = rewardAPI.useCreate();
+  const update = rewardAPI.useUpdate();
+  const remove = rewardAPI.useDelete();
 
   const crud = useAdminCrud(
     {
       create: create.mutateAsync,
       update: async (id, data) => update.mutateAsync({ id, data }),
-      delete: async (id) => remove.mutateAsync({ id }),
+      delete: async (id) => remove.mutateAsync(id),
     },
     "rewards"
   );
 
   /** ==========================
-   *  3 HANDLER HOOK
-   *  ========================== */
-  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(crud, refetch);
+   * 2. HANDLER
+   * ========================== */
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
+    crud,
+    refetch
+  );
+
   /** ==========================
-   *  4 STATE
-   *  ========================== */
+   * 3. SEARCH
+   * ========================== */
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -54,8 +52,17 @@ export default memo(function RewardManagement() {
     );
   }, [rewards, search]);
 
-  if (isLoading) return <div className="p-6 text-center">Đang tải...</div>;
-  if (isError) return <div className="p-6 text-center text-red-500">Lỗi tải dữ liệu!</div>;
+  /** ==========================
+   * 4. UI
+   * ========================== */
+  if (isLoading)
+    return <div className="p-6 text-center">Đang tải dữ liệu...</div>;
+  if (isError)
+    return (
+      <div className="p-6 text-center text-red-500">
+        Lỗi tải dữ liệu thưởng!
+      </div>
+    );
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -99,8 +106,19 @@ export default memo(function RewardManagement() {
         <DynamicForm
           title={crud.mode === "edit" ? "Sửa thưởng" : "Thêm thưởng mới"}
           fields={[
-            { name: "reward_name", label: "Tên thưởng", type: "text", required: true },
-            { name: "reward_money", label: "Số tiền (VNĐ)", type: "number", required: true, min: 0 },
+            {
+              name: "reward_name",
+              label: "Tên thưởng",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "reward_money",
+              label: "Số tiền (VNĐ)",
+              type: "number",
+              required: true,
+              min: 0,
+            },
           ]}
           initialData={crud.selectedItem}
           onSave={(data) => handleSave(data, "reward_name", "reward_money")}
@@ -119,4 +137,6 @@ export default memo(function RewardManagement() {
       />
     </div>
   );
-});
+};
+
+export default memo(RewardManagement);

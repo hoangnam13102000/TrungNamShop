@@ -6,19 +6,20 @@ import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-import { useCustomers, useUpdateCustomer } from "../../../../api/customer";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 import { getImageUrl } from "../../../../utils/getImageUrl";
 
 export default memo(function CustomerManagement() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const { data: customers = [], isLoading, refetch } = useCustomers();
+  const { useGetAll, useUpdate } = useCRUDApi("customers"); 
+  const { data: customers = [], isLoading, refetch } = useGetAll();
+  const updateMutation = useUpdate();
 
   /** ==========================
    * 2. CRUD MUTATIONS
    * ========================== */
-  const updateMutation = useUpdateCustomer();
   const crud = useAdminCrud(
     {
       update: async (id, fd) => await updateMutation.mutateAsync({ id, data: fd }),
@@ -146,11 +147,7 @@ export default memo(function CustomerManagement() {
               ],
             },
             { name: "birth_date", label: "Ngày sinh", type: "date", disabled: true },
-            {
-              name: "avatar",
-              label: "Ảnh đại diện",
-              type: "custom-image", // render <img> trực tiếp
-            },
+            { name: "avatar", label: "Ảnh đại diện", type: "custom-image" },
           ]}
           initialData={{
             ...viewItem,

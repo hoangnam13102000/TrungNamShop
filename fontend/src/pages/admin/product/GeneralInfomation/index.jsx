@@ -5,27 +5,19 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useGeneralInformations,
-  useCreateGeneralInformation,
-  useUpdateGeneralInformation,
-  useDeleteGeneralInformation,
-} from "../../../../api/product/generalInfo";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminGeneralInformationPage() {
   /** ==========================
-   *  1. FETCH DATA
+   *  1. FETCH + CRUD API
    * ========================== */
-  const { data: generalInfos = [], isLoading, refetch } =
-    useGeneralInformations();
+  const { useGetAll, useCreate, useUpdate, useDelete } =
+    useCRUDApi("general-informations");
 
-  /** ==========================
-   *  2. CRUD MUTATIONS
-   * ========================== */
-  const createMutation = useCreateGeneralInformation();
-  const updateMutation = useUpdateGeneralInformation();
-  const deleteMutation = useDeleteGeneralInformation();
+  const { data: generalInfos = [], isLoading, refetch } = useGetAll();
+  const createMutation = useCreate();
+  const updateMutation = useUpdate();
+  const deleteMutation = useDelete();
 
   const crud = useAdminCrud(
     {
@@ -37,7 +29,7 @@ export default memo(function AdminGeneralInformationPage() {
   );
 
   /** ==========================
-   *  3. HANDLER + DIALOG
+   *  2. HANDLER + DIALOG
    * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
@@ -46,17 +38,16 @@ export default memo(function AdminGeneralInformationPage() {
   );
 
   /** ==========================
-   *  4. SEARCH & MAP DATA
+   *  3. SEARCH & MAP DATA
    * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(() => {
     return generalInfos.filter((info) =>
-      info.design?.toLowerCase().includes(search.toLowerCase())
+      (info.design || "").toLowerCase().includes(search.toLowerCase())
     );
   }, [generalInfos, search]);
 
-  // 👉 Hiển thị chỉ NGÀY (ko giờ)
   const mappedItems = useMemo(() => {
     return filteredItems.map((info) => ({
       ...info,
@@ -71,7 +62,7 @@ export default memo(function AdminGeneralInformationPage() {
   }, [filteredItems]);
 
   /** ==========================
-   *  5. UI
+   *  4. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -106,7 +97,7 @@ export default memo(function AdminGeneralInformationPage() {
               { field: "material", label: "Chất liệu" },
               { field: "dimensions", label: "Kích thước" },
               { field: "weight", label: "Khối lượng" },
-              { field: "launch_label", label: "Ngày ra mắt" }, 
+              { field: "launch_label", label: "Ngày ra mắt" },
             ]}
             data={mappedItems}
             actions={[
@@ -128,11 +119,7 @@ export default memo(function AdminGeneralInformationPage() {
             { name: "material", label: "Chất liệu", type: "text" },
             { name: "dimensions", label: "Kích thước", type: "text" },
             { name: "weight", label: "Khối lượng", type: "text" },
-            {
-              name: "launch_time",
-              label: "Ngày ra mắt",
-              type: "date",
-            },
+            { name: "launch_time", label: "Ngày ra mắt", type: "date" },
           ]}
           initialData={crud.selectedItem}
           onSave={handleSave}

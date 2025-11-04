@@ -5,27 +5,25 @@ import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import {
-  useStores,
-  useCreateStore,
-  useUpdateStore,
-  useDeleteStore,
-} from "../../../../api/stores";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 
 const StoreManagement = () => {
   /** ==========================
-   * 1. FETCH DATA & CRUD
+   * 1. FETCH DATA & CRUD API
    * ========================== */
-  const { data: stores = [], isLoading, refetch } = useStores();
-  const createMutation = useCreateStore();
-  const updateMutation = useUpdateStore();
-  const deleteMutation = useDeleteStore();
+  const storeAPI = useCRUDApi("stores"); 
+
+  const { data: stores = [], isLoading, isError, refetch } =
+    storeAPI.useGetAll();
+  const create = storeAPI.useCreate();
+  const update = storeAPI.useUpdate();
+  const remove = storeAPI.useDelete();
 
   const crud = useAdminCrud(
     {
-      create: createMutation.mutateAsync,
-      update: async (id, data) => updateMutation.mutateAsync({ id, data }),
-      delete: async (id) => deleteMutation.mutateAsync(id),
+      create: create.mutateAsync,
+      update: async (id, data) => update.mutateAsync({ id, data }),
+      delete: async (id) => remove.mutateAsync(id),
     },
     "stores"
   );
@@ -54,11 +52,8 @@ const StoreManagement = () => {
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (
-    createMutation.isError ||
-    updateMutation.isError ||
-    deleteMutation.isError
-  )
+
+  if (isError)
     return (
       <div className="p-6 text-center text-red-500">
         Có lỗi xảy ra khi tải dữ liệu cửa hàng.
@@ -123,7 +118,7 @@ const StoreManagement = () => {
             { name: "google_map", label: "Link Google Map", type: "text" },
           ]}
           initialData={crud.selectedItem}
-          onSave={handleSave} // handleSave đã xử lý dialog
+          onSave={handleSave}
           onClose={crud.handleCloseForm}
           errors={crud.errors}
         />

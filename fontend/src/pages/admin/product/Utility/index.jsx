@@ -5,26 +5,21 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-
-import {
-  useUtilities,
-  useCreateUtility,
-  useUpdateUtility,
-  useDeleteUtility,
-} from "../../../../api/product/utilities";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 
 export default memo(function AdminUtilityManagementPage() {
   /** ==========================
    *  1. FETCH DATA
    * ========================== */
-  const { data: utilities = [], isLoading, refetch } = useUtilities();
+  const utilityApi = useCRUDApi("utilities"); 
+  const { data: utilities = [], isLoading, refetch } = utilityApi.useGetAll();
 
   /** ==========================
    *  2. CRUD MUTATIONS
    * ========================== */
-  const createMutation = useCreateUtility();
-  const updateMutation = useUpdateUtility();
-  const deleteMutation = useDeleteUtility();
+  const createMutation = utilityApi.useCreate();
+  const updateMutation = utilityApi.useUpdate();
+  const deleteMutation = utilityApi.useDelete();
 
   const crud = useAdminCrud(
     {
@@ -45,13 +40,15 @@ export default memo(function AdminUtilityManagementPage() {
   );
 
   /** ==========================
-   *  4. SEARCH & MAP DATA
+   *  4. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(() => {
     return utilities.filter((u) =>
-      u.special_features?.toLowerCase().includes(search.toLowerCase())
+      (u.special_features || "")
+        .toLowerCase()
+        .includes(search.toLowerCase().trim())
     );
   }, [utilities, search]);
 
@@ -103,9 +100,7 @@ export default memo(function AdminUtilityManagementPage() {
       {/* FORM */}
       {crud.openForm && (
         <DynamicForm
-          title={
-            crud.mode === "edit" ? "Sửa tiện ích" : "Thêm tiện ích"
-          }
+          title={crud.mode === "edit" ? "Sửa tiện ích" : "Thêm tiện ích"}
           fields={[
             {
               name: "advanced_security",

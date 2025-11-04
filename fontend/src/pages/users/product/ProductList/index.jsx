@@ -4,8 +4,7 @@ import ProductCard from "../../../../components/product/ProductCard";
 import Dropdown from "../../../../components/dropdown/DropDown";
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
-import { useProducts } from "../../../../api/product/products";
-import { useBrands } from "../../../../api/brand";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const PRICE_RANGES = [
   { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
@@ -36,12 +35,23 @@ const ProductList = () => {
   const query = useQuery();
   const brandQuery = query.get("brand");
 
-  const { data: products = [], isLoading } = useProducts();
-  const { data: brandsData = [] } = useBrands();
+  /** ===============================
+   *   Lấy dữ liệu qua useCRUDApi
+   * =============================== */
+  const { useGetAll: useGetProducts } = useCRUDApi("products");
+  const { useGetAll: useGetBrands } = useCRUDApi("brands");
 
+  const { data: products = [], isLoading } = useGetProducts();
+  const { data: brandsData = [] } = useGetBrands();
+
+  /** ===============================
+   *   Xử lý dữ liệu Brand & Product
+   * =============================== */
   const brandMap = useMemo(() => {
     const map = {};
-    brandsData.forEach(b => { map[b.id] = b.name; });
+    brandsData.forEach((b) => {
+      map[b.id] = b.name;
+    });
     return map;
   }, [brandsData]);
 
@@ -55,11 +65,11 @@ const ProductList = () => {
   }, [brandQuery]);
 
   const brandOptions = useMemo(() => {
-    return [{ label: "Tất cả", value: "all" }, ...brandsData.map(b => ({ label: b.name, value: b.id }))];
+    return [{ label: "Tất cả", value: "all" }, ...brandsData.map((b) => ({ label: b.name, value: b.id }))];
   }, [brandsData]);
 
   const mappedProducts = useMemo(() => {
-    return products.map(p => ({
+    return products.map((p) => ({
       ...p,
       primary_image: p.primary_image ?? { image_path: p.image ?? null },
       newPrice: p.newPrice ?? p.price ?? 0,
@@ -67,36 +77,46 @@ const ProductList = () => {
     }));
   }, [products]);
 
-  let filteredProducts = mappedProducts.filter(p =>
-    (brandFilter === "all" || p.brand?.id === Number(brandFilter)) &&
-    (memoryFilter === "all" || p.memory === Number(memoryFilter))
+  /** ===============================
+   *   Bộ lọc sản phẩm
+   * =============================== */
+  let filteredProducts = mappedProducts.filter(
+    (p) =>
+      (brandFilter === "all" || p.brand?.id === Number(brandFilter)) &&
+      (memoryFilter === "all" || p.memory === Number(memoryFilter))
   );
 
-  const selectedRange = PRICE_RANGES.find(r => r.id === priceRange);
+  const selectedRange = PRICE_RANGES.find((r) => r.id === priceRange);
   if (selectedRange) {
     filteredProducts = filteredProducts.filter(
-      p => p.newPrice >= selectedRange.min && p.newPrice < selectedRange.max
+      (p) => p.newPrice >= selectedRange.min && p.newPrice < selectedRange.max
     );
   }
 
-  if (sortBy === "price-asc") filteredProducts = [...filteredProducts].sort((a,b) => a.newPrice - b.newPrice);
-  else if (sortBy === "price-desc") filteredProducts = [...filteredProducts].sort((a,b) => b.newPrice - a.newPrice);
-  else if (sortBy === "name-asc") filteredProducts = [...filteredProducts].sort((a,b) => a.name.localeCompare(b.name));
+  if (sortBy === "price-asc") filteredProducts = [...filteredProducts].sort((a, b) => a.newPrice - b.newPrice);
+  else if (sortBy === "price-desc") filteredProducts = [...filteredProducts].sort((a, b) => b.newPrice - a.newPrice);
+  else if (sortBy === "name-asc") filteredProducts = [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
 
   const brandName = brandFilter !== "all" ? brandMap[brandFilter] || "Sản phẩm" : "Tất cả sản phẩm";
 
+  /** ===============================
+   *   Giao diện
+   * =============================== */
   return (
-    <div className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative" style={{ backgroundImage: `url(${backgroundImage})` }}>
+    <div
+      className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: `url(${backgroundImage})` }}
+    >
       <div className="absolute inset-0 bg-black bg-opacity-10"></div>
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex gap-4">
           <div className="flex-1 bg-white rounded-3xl shadow-2xl p-6 md:p-8 border-4 border-red-600">
             <div className="text-sm text-gray-500 mb-4">
-              <BreadCrumb name="Danh sách sản phẩm"/>
+              <BreadCrumb name="Danh sách sản phẩm" />
             </div>
             <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">{brandName}</h1>
 
-            {/* Filters */}
+            {/* 🔹 Bộ lọc */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
@@ -110,16 +130,16 @@ const ProductList = () => {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá</label>
                   <Dropdown
-                    label={PRICE_RANGES.find(r => r.id === priceRange)?.label || "Tất cả"}
-                    options={PRICE_RANGES.map(r => ({ label: r.label, value: r.id }))}
+                    label={PRICE_RANGES.find((r) => r.id === priceRange)?.label || "Tất cả"}
+                    options={PRICE_RANGES.map((r) => ({ label: r.label, value: r.id }))}
                     onSelect={(option) => setPriceRange(option.value)}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Sắp xếp</label>
                   <Dropdown
-                    label={SORT_OPTIONS.find(o => o.id === sortBy)?.label || "Mặc định"}
-                    options={SORT_OPTIONS.map(o => ({ label: o.label, value: o.id }))}
+                    label={SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Mặc định"}
+                    options={SORT_OPTIONS.map((o) => ({ label: o.label, value: o.id }))}
                     onSelect={(option) => setSortBy(option.value)}
                   />
                 </div>
@@ -132,17 +152,19 @@ const ProductList = () => {
                   />
                 </div>
               </div>
+
               <div className="mt-4 text-sm text-gray-600">
-                Tìm thấy <span className="font-semibold text-red-600">{filteredProducts.length}</span> sản phẩm
+                Tìm thấy{" "}
+                <span className="font-semibold text-red-600">{filteredProducts.length}</span> sản phẩm
               </div>
             </div>
 
-            {/* Product Grid */}
+            {/* 🔹 Danh sách sản phẩm */}
             {isLoading ? (
               <div className="text-center py-20">Đang tải sản phẩm...</div>
             ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredProducts.map(product => (
+                {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>

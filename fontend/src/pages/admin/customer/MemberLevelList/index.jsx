@@ -5,22 +5,22 @@ import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import {
-  useMemberLevelings,
-  useCreateMemberLeveling,
-  useUpdateMemberLeveling,
-  useDeleteMemberLeveling,
-} from "../../../../api/account/memberLeveling/";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const MemberLevelingList = () => {
   /** ==========================
-   * 1. FETCH DATA
+   * 1. CRUDApi
    * ========================== */
-  const { data: levels = [], isLoading, refetch } = useMemberLevelings();
-  const createMutation = useCreateMemberLeveling();
-  const updateMutation = useUpdateMemberLeveling();
-  const deleteMutation = useDeleteMemberLeveling();
+  const memberLevelAPI = useCRUDApi("account-leveling");
 
+  const { data: levels = [], isLoading, refetch } = memberLevelAPI.useGetAll();
+  const createMutation = memberLevelAPI.useCreate();
+  const updateMutation = memberLevelAPI.useUpdate();
+  const deleteMutation = memberLevelAPI.useDelete();
+
+  /** ==========================
+   * 2. CRUD HOOK
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -31,7 +31,7 @@ const MemberLevelingList = () => {
   );
 
   /** ==========================
-   * 2. ADMIN HANDLER
+   * 3. ADMIN HANDLER
    * ========================== */
   const { dialog, showDialog, closeDialog, handleSave, handleDelete } =
     useAdminHandler(crud, refetch);
@@ -39,7 +39,7 @@ const MemberLevelingList = () => {
   const [search, setSearch] = useState("");
 
   /** ==========================
-   * 3. FILTER DATA & FORMAT
+   * 4. FILTER DATA & FORMAT
    * ========================== */
   const filteredItems = useMemo(() => {
     return levels
@@ -53,43 +53,37 @@ const MemberLevelingList = () => {
   }, [levels, search]);
 
   /** ==========================
-   * 4. CUSTOM HANDLERS (đặc biệt)
+   * 5. CUSTOM HANDLERS
    * ========================== */
   const onSave = async (formData) => {
-    // No Edit
     if (crud.selectedItem?.id === 1) {
       showDialog("alert", "Cảnh báo", "Không thể sửa bậc đặc biệt!");
       return;
     }
 
-    // force limit to an integer
     if (formData.limit != null) {
       formData.limit = Math.floor(Number(formData.limit));
     }
 
-    //Use hook handleSave for confirm + dialog
     handleSave(formData, { name: "name" });
   };
 
   const onDelete = (item) => {
-    // No Delete
     if (item.id === 1) {
       showDialog("alert", "Cảnh báo", "Không thể xóa bậc đặc biệt!");
       return;
     }
 
-    // use hook handleDelete
     handleDelete(item, "name");
   };
 
   /** ==========================
-   * 5. UI
+   * 6. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý bậc thành viên</h1>
 
-      {/* BUTTON + SEARCH */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <button
           onClick={crud.handleAdd}
@@ -107,7 +101,6 @@ const MemberLevelingList = () => {
         />
       </div>
 
-      {/* TABLE */}
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
@@ -134,7 +127,6 @@ const MemberLevelingList = () => {
         />
       )}
 
-      {/* FORM ADD / EDIT */}
       {crud.openForm && (
         <DynamicForm
           title={
@@ -170,7 +162,6 @@ const MemberLevelingList = () => {
         />
       )}
 
-      {/* DIALOG */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}

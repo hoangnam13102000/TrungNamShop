@@ -5,27 +5,23 @@ import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../../utils/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import {
-  useAccountTypes,
-  useCreateAccountType,
-  useUpdateAccountType,
-  useDeleteAccountType,
-} from "../../../../api/account/accountType";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const AccountTypeList = () => {
-  /** ==========================
-   * 1. Proctected Account
-   * ========================== */
   const protectedNames = ["Admin", "Nhân viên", "Khách hàng"];
 
   /** ==========================
-   * 2. Fetch + CRUD
+   * 1. CRUDApi
    * ========================== */
-  const { data: accountTypes = [], isLoading, refetch } = useAccountTypes();
-  const createMutation = useCreateAccountType();
-  const updateMutation = useUpdateAccountType();
-  const deleteMutation = useDeleteAccountType();
+  const accountTypeAPI = useCRUDApi("account-types");
+  const { data: accountTypes = [], isLoading, refetch } = accountTypeAPI.useGetAll();
+  const createMutation = accountTypeAPI.useCreate();
+  const updateMutation = accountTypeAPI.useUpdate();
+  const deleteMutation = accountTypeAPI.useDelete();
 
+  /** ==========================
+   * 2. CRUD logic
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -35,9 +31,6 @@ const AccountTypeList = () => {
     "account-types"
   );
 
-  /** ==========================
-   * 3. Handler chung + dialog confirm của useAdminHandler
-   * ========================== */
   const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
     crud,
     refetch,
@@ -46,7 +39,7 @@ const AccountTypeList = () => {
   );
 
   /** ==========================
-   * 4. Dialog riêng cho protected-case (không cho sửa/xóa)
+   * 3. Dialog protected-case
    * ========================== */
   const [protectedDialog, setProtectedDialog] = useState({
     open: false,
@@ -56,12 +49,11 @@ const AccountTypeList = () => {
 
   const openProtectedDialog = (title, message) =>
     setProtectedDialog({ open: true, title, message });
-
   const closeProtectedDialog = () =>
     setProtectedDialog({ open: false, title: "", message: "" });
 
   /** ==========================
-   * 5. Click handlers: check protectedNames trước
+   * 4. Click handlers: check protectedNames
    * ========================== */
   const handleEditClick = (row) => {
     if (protectedNames.includes(row.account_type_name)) {
@@ -71,7 +63,6 @@ const AccountTypeList = () => {
       );
       return;
     }
-    // nếu không protected => mở form edit bình thường
     crud.handleEdit(row);
   };
 
@@ -83,24 +74,25 @@ const AccountTypeList = () => {
       );
       return;
     }
-    // nếu không protected => gọi handler xóa bình thường (sẽ mở confirm dialog của useAdminHandler)
     handleDelete(row);
   };
 
   /** ==========================
-   * 6. Search & Filter
+   * 5. Search & filter
    * ========================== */
   const [search, setSearch] = useState("");
-  const filteredItems = useMemo(() => {
-    return accountTypes.filter((a) =>
-      (a.account_type_name || "")
-        .toLowerCase()
-        .includes(search.toLowerCase().trim())
-    );
-  }, [accountTypes, search]);
+  const filteredItems = useMemo(
+    () =>
+      accountTypes.filter((a) =>
+        (a.account_type_name || "")
+          .toLowerCase()
+          .includes(search.toLowerCase().trim())
+      ),
+    [accountTypes, search]
+  );
 
   /** ==========================
-   * 7. Loading / Error UI
+   * 6. Loading / Error
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
@@ -112,7 +104,7 @@ const AccountTypeList = () => {
     );
 
   /** ==========================
-   * 8. Render
+   * 7. Render
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -144,9 +136,7 @@ const AccountTypeList = () => {
           {
             icon: <FaEdit />,
             label: "Sửa",
-            // onClick nhận row từ AdminListTable
-            onClick: (row) => handleEditClick(row),
-            // vẫn có disabled để UI rõ ràng
+            onClick: handleEditClick,
             disabled: (row) => protectedNames.includes(row.account_type_name),
             tooltip: (row) =>
               protectedNames.includes(row.account_type_name)
@@ -156,7 +146,7 @@ const AccountTypeList = () => {
           {
             icon: <FaTrash />,
             label: "Xóa",
-            onClick: (row) => handleDeleteClick(row),
+            onClick: handleDeleteClick,
             disabled: (row) => protectedNames.includes(row.account_type_name),
             tooltip: (row) =>
               protectedNames.includes(row.account_type_name)
@@ -175,12 +165,7 @@ const AccountTypeList = () => {
               : "Thêm loại tài khoản"
           }
           fields={[
-            {
-              name: "account_type_name",
-              label: "Tên loại tài khoản",
-              type: "text",
-              required: true,
-            },
+            { name: "account_type_name", label: "Tên loại tài khoản", type: "text", required: true },
           ]}
           initialData={crud.selectedItem}
           onSave={handleSave}
@@ -188,7 +173,7 @@ const AccountTypeList = () => {
         />
       )}
 
-      {/* Dialog: confirm của useAdminHandler (xóa/cập nhật) */}
+      {/* Dialog confirm */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
@@ -198,14 +183,13 @@ const AccountTypeList = () => {
         onClose={closeDialog}
       />
 
-      {/* Dialog: thông báo không được phép sửa/xóa (protected) */}
+      {/* Dialog protected */}
       <DynamicDialog
         open={protectedDialog.open}
         mode="info"
         title={protectedDialog.title}
         message={protectedDialog.message}
         onClose={closeProtectedDialog}
-        // onConfirm không cần (khi người dùng nhấn OK chỉ đóng)
       />
     </div>
   );
