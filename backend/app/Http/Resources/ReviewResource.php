@@ -16,7 +16,8 @@ class ReviewResource extends JsonResource
     {
        return [
             'id' => $this->id,
-            'name' => $this->account->username, // hoặc fullname
+            'name' => $this->account->username, 
+            'product_id' => $this->product_id,
             'content' => $this->content,
             'stars' => $this->stars,
             'date' => $this->created_at->format('Y-m-d'),

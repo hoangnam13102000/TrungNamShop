@@ -5,30 +5,21 @@ import { validateGeneral } from "../../../utils/validate";
 import { loginAPI } from "../../../api/auth/request";
 import { useAuth } from "../../../context/AuthContext";
 import AuthWrapper from "../../../components/formAndDialog/AuthWapper";
-import { useRelatedDataByForeignKey } from "../../../api/hooks/useRelatedDataByForeignKey"; 
 
 export default function Login() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
 
-  const accountTypes = [
-    { id: 1, name: "Admin" },
-    { id: 2, name: "Nhân viên" },
-    { id: 3, name: "Khách hàng" },
-  ];
+  const accountRoles = {
+    1: "admin",
+    2: "nhân viên",
+    3: "khách hàng",
+  };
 
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [accountId, setAccountId] = useState(null);
-
-  const {
-    data: customers = [],
-    isLoading: customerLoading,
-  } = useRelatedDataByForeignKey("/api/admin/customers", "account_id", accountId);
-
-  const customer = customers.length > 0 ? customers[0] : null;
 
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
@@ -54,47 +45,34 @@ export default function Login() {
     try {
       const res = await loginAPI(formData);
 
-      if (res?.token && res?.user) {
-        const { token, user } = res;
-        const { username, account_type_id, status, id: accId } = user;
-
-        if (status === 0) {
-          showAlert("error", "Tài khoản của bạn đã bị ngừng hoạt động!");
-          setLoading(false);
-          return;
-        }
-
-        const typeObj = accountTypes.find((t) => t.id === account_type_id);
-        const roleName = typeObj ? typeObj.name.toLowerCase() : "";
-
-        //  Lưu token trước
-        localStorage.setItem("token", token);
-        setAccountId(accId); // trigger hook
-
-        // Chờ hook lấy dữ liệu xong (nếu có)
-        const avatarUrl = customer?.avatar_url || "/default-avatar.png";
-
-        //  Lưu thông tin user
-        localStorage.setItem("username", username);
-        localStorage.setItem("avatar", avatarUrl);
-        localStorage.setItem("role", roleName);
-
-        setUser({
-          username,
-          avatar: avatarUrl,
-          token,
-          role: roleName,
-        });
-
-        window.dispatchEvent(new Event("storage"));
-
-        showAlert("success", "Đăng nhập thành công!", () => {
-          if (roleName !== "khách hàng") navigate("/quan-tri");
-          else navigate("/");
-        });
-      } else {
+      if (!res?.token || !res?.user) {
         showAlert("error", "Đăng nhập thất bại. Vui lòng thử lại!");
+        return;
       }
+
+      const { token, user } = res;
+      const { username, account_type_id, status, avatar } = user;
+
+      if (status === 0) {
+        showAlert("error", "Tài khoản của bạn đã bị ngừng hoạt động!");
+        return;
+      }
+
+      const role = accountRoles[account_type_id] || "khách hàng";
+      const avatarUrl = avatar || "/default-avatar.png";
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", username);
+      localStorage.setItem("avatar", avatarUrl);
+      localStorage.setItem("role", role);
+
+      setUser({ username, avatar: avatarUrl, token, role });
+      window.dispatchEvent(new Event("storage"));
+
+      showAlert("success", "Đăng nhập thành công!", () => {
+        if (role !== "khách hàng") navigate("/quan-tri");
+        else navigate("/");
+      });
     } catch (error) {
       const msg = error.response?.data?.message || "Không thể kết nối đến máy chủ!";
       showAlert("error", msg);
@@ -104,95 +82,91 @@ export default function Login() {
   };
 
   return (
-    <AuthWrapper
-      title="Đăng nhập"
-      navigateTo={
-        <>
-          <p>
-            <Link to="/quen-mat-khau" className="text-red-500 hover:underline">
-              Quên mật khẩu?
-            </Link>
-          </p>
-          <p className="mt-1">
-            Chưa có tài khoản?{" "}
-            <Link to="/dang-ky" className="text-red-500 hover:underline">
-              Tạo tài khoản
-            </Link>
-          </p>
-        </>
-      }
-    >
-      {({ showAlert }) => (
-        <form onSubmit={(e) => handleSubmit(e, showAlert)} className="space-y-4">
-          {/* Tên đăng nhập */}
-          <div>
-            <input
-              type="text"
-              name="username"
-              placeholder="Tên đăng nhập"
-              value={formData.username}
-              onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
-                errors.username ? "border-red-500" : ""
-              }`}
-            />
-            {errors.username && (
-              <p className="text-red-500 text-sm mt-1">{errors.username}</p>
-            )}
-          </div>
-
-          {/* Mật khẩu */}
-          <div>
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Mật khẩu"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
-                errors.password ? "border-red-500" : ""
-              }`}
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-            )}
-            <div className="flex items-center mt-2">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md">
+        <AuthWrapper title="Đăng nhập">
+          {({ showAlert }) => (
+            <form onSubmit={(e) => handleSubmit(e, showAlert)} className="bg-white p-8 rounded-xl shadow-md space-y-4">
+              {/* Username */}
               <input
-                type="checkbox"
-                id="showPassword"
-                checked={showPassword}
-                onChange={() => setShowPassword(!showPassword)}
-                className="mr-2"
+                type="text"
+                name="username"
+                placeholder="Tên đăng nhập"
+                value={formData.username}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                  errors.username ? "border-red-500" : ""
+                }`}
               />
-              <label htmlFor="showPassword" className="text-sm">
-                Hiển thị mật khẩu
-              </label>
-            </div>
-          </div>
+              {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
 
-          {/* Nút đăng nhập */}
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-red-500 text-white py-2 rounded-xl shadow-md hover:bg-red-600 transition ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
-            {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
-          </button>
+              {/* Password */}
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Mật khẩu"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                  errors.password ? "border-red-500" : ""
+                }`}
+              />
+              {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
 
-          {/* Google login */}
-          <div className="mt-6 flex items-center justify-center">
-            <button
-              type="button"
-              className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition"
-            >
-              <FcGoogle className="mr-2" size={24} />
-              Tiếp tục với Google
-            </button>
-          </div>
-        </form>
-      )}
-    </AuthWrapper>
+              {/* Show password */}
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="showPassword"
+                  checked={showPassword}
+                  onChange={() => setShowPassword(!showPassword)}
+                  className="mr-2"
+                />
+                <label htmlFor="showPassword" className="text-sm">
+                  Hiển thị mật khẩu
+                </label>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full bg-red-500 text-white py-2 rounded-xl shadow-md hover:bg-red-600 transition ${
+                  loading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+              >
+                {loading ? "Đang đăng nhập..." : "ĐĂNG NHẬP"}
+              </button>
+
+              {/* Google login */}
+              <div className="mt-6 flex items-center justify-center">
+                <button
+                  type="button"
+                  className="flex items-center border px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <FcGoogle className="mr-2" size={24} />
+                  Tiếp tục với Google
+                </button>
+              </div>
+
+              {/* Links */}
+              <div className="mt-4 text-center text-sm text-gray-700 space-y-1">
+                <p>
+                  <Link to="/quen-mat-khau" className="text-red-500 hover:underline">
+                    Quên mật khẩu?
+                  </Link>
+                </p>
+                <p>
+                  Chưa có tài khoản?{" "}
+                  <Link to="/dang-ky" className="text-red-500 hover:underline">
+                    Đăng ký
+                  </Link>
+                </p>
+              </div>
+            </form>
+          )}
+        </AuthWrapper>
+      </div>
+    </div>
   );
 }

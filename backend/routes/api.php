@@ -27,7 +27,7 @@ use App\Http\Controllers\GeneralInformationController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\ProductDetailController;
 use App\Http\Controllers\ReviewController;
-use App\Models\Review;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -36,10 +36,19 @@ use App\Models\Review;
 |
 */
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+// Route::post('/register', [AuthController::class, 'register']);
+// Route::post(uri: '/login', [AuthController::class, 'login']);
 
+// // Authenticated routes (SPA / admin / user)
+// Route::middleware('auth:sanctum')->group(function () {
+//     Route::post('/logout', [AuthController::class, 'logout']);
+//     Route::get('/user', function (Request $request) {
+//         return $request->user();
+//     });
+// });
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 // Get current user information (requires auth)
 Route::get('/user', function (Request $request) {

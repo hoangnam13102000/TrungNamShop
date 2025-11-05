@@ -1,3 +1,4 @@
+// ReviewList.jsx
 import { FaStar, FaRegStar } from "react-icons/fa";
 
 const ReviewList = ({ reviews }) => (
@@ -11,16 +12,12 @@ const ReviewList = ({ reviews }) => (
         <div key={r.id} className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h4 className="font-semibold text-gray-900">{r.name}</h4>
-              <p className="text-sm text-gray-500">{r.date}</p>
+              <h4 className="font-semibold text-gray-900">{r.name || "Người dùng"}</h4>
+              <p className="text-sm text-gray-500">{r.date || new Date().toLocaleDateString()}</p>
             </div>
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) =>
-                i < r.stars ? (
-                  <FaStar key={i} className="text-yellow-400" size={14} />
-                ) : (
-                  <FaRegStar key={i} className="text-gray-300" size={14} />
-                )
+                i < Number(r.stars) ? <FaStar key={i} className="text-yellow-400" size={14} /> : <FaRegStar key={i} className="text-gray-300" size={14} />
               )}
             </div>
           </div>

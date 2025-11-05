@@ -1,33 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-// Hook GET ALL
+/** Hook GET ALL — hỗ trợ params (filters, pagination...) */
 export const useGetAll = (key, apiFn, options = {}) => {
+  const { params, ...rest } = options;
+
   return useQuery({
-    queryKey: [key],
-    queryFn: apiFn,
-    ...options,
+    queryKey: [key, params], // <-- thêm params vào queryKey để cache theo filter
+    queryFn: () => apiFn({ params }), // <-- truyền params xuống API
+    ...rest,
     onSuccess: (data) => {
       console.log(`Fetched ${key}:`, data);
-      options?.onSuccess?.(data);
+      rest?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error(`Fetch ${key} failed:`, error);
-      options?.onError?.(error);
+      rest?.onError?.(error);
     },
   });
 };
 
-// Hook CREATE / UPDATE / DELETE
+/** Hook CREATE / UPDATE / DELETE */
 export const useMutate = (key, apiFn, options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (variables) => {
-      /**
-       *  1️. create(data)
-       *  2️. update({ id, data })
-       *  3️. delete(id)
-       */
       if (variables && typeof variables === "object") {
         if ("id" in variables && "data" in variables) {
           // update
@@ -46,14 +43,11 @@ export const useMutate = (key, apiFn, options = {}) => {
     },
 
     onSuccess: (data) => {
-      // console.log(`Mutation ${key} success:`, data);
-      // invalidate cache -> reload data after mutate
       queryClient.invalidateQueries([key]);
       options?.onSuccess?.(data);
     },
 
     onError: (error) => {
-      // console.error(`Mutation ${key} failed:`, error);
       options?.onError?.(error);
     },
   });

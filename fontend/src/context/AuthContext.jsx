@@ -1,93 +1,109 @@
 /* eslint-disable react-refresh/only-export-components */
-
 import { createContext, useContext, useEffect, useState } from "react";
-import { loginAPI, logoutAPI } from "../api/auth/request";
+import { loginAPI, logoutAPI, getCurrentUser } from "../api/auth/request";
 import { useNavigate } from "react-router-dom";
-import userUnknow from "../assets/users/images/user/user.png"
+import userUnknown from "../assets/users/images/user/user.png";
+
 const AuthContext = createContext();
 
+/**
+ * AuthProvider: Quản lý toàn bộ trạng thái đăng nhập
+ */
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
+  // Lấy thông tin user từ localStorage khi load app
   const [user, setUser] = useState(() => {
+    const account_id = localStorage.getItem("account_id");
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
     const avatar = localStorage.getItem("avatar");
     const role = localStorage.getItem("role");
-    return token && username ? { token, username, avatar, role } : null;
+
+    return token && username
+      ? { account_id: Number(account_id), token, username, avatar, role }
+      : null;
   });
 
   const isAuthenticated = !!user?.token;
 
   /**
-   * Đăng nhập (lưu thông tin vào localStorage và state)
+   * login: gọi API login, lưu token + user info vào localStorage và context
+   * @param {Object} credentials { username, password }
    */
   const login = async (credentials) => {
     const res = await loginAPI(credentials);
-    if (res?.token && res?.user) {
-      const token = res.token;
-      const username = res.user.username;
-      const avatar = res.user.avatar || userUnknow;
-      const accountTypeId = res.user.account_type_id;
 
-      // Define role from accountTypeId
+    if (res?.token && res?.user) {
+      const { id: account_id, username, account_type_id, status, avatar } = res.user;
+      const token = res.token;
+
+      if (status === 0) {
+        throw new Error("Tài khoản của bạn đã bị ngừng hoạt động");
+      }
+
+      // map role theo account_type_id
       const roleMap = {
         1: "admin",
         2: "nhân viên",
         3: "khách hàng",
       };
-      const role = roleMap[accountTypeId] || "khách hàng";
+      const role = roleMap[account_type_id] || "khách hàng";
 
-      // Save session
+      const avatarUrl = avatar || userUnknown;
+
+      // Lưu thông tin vào localStorage
+      localStorage.setItem("account_id", account_id);
       localStorage.setItem("token", token);
       localStorage.setItem("username", username);
-      localStorage.setItem("avatar", avatar);
+      localStorage.setItem("avatar", avatarUrl);
       localStorage.setItem("role", role);
 
-      // Update state
-      setUser({ token, username, avatar, role });
+      // Cập nhật state context
+      const userData = { account_id, token, username, avatar: avatarUrl, role };
+      setUser(userData);
 
+      // Đồng bộ giữa các tab
       window.dispatchEvent(new Event("storage"));
 
-      return { token, username, role };
+      return userData;
     } else {
-      throw new Error("Đăng nhập thất bại: dữ liệu không hợp lệ");
+      throw new Error("Dữ liệu phản hồi không hợp lệ khi đăng nhập");
     }
   };
 
   /**
-   * Logout
+   * logout: gọi API logout và xóa token + user info
    */
   const logout = async () => {
     try {
       if (user?.token) await logoutAPI(user.token);
     } catch (err) {
-      console.warn("Lỗi khi gọi API logout:", err);
+      console.warn("Lỗi logout:", err);
     }
 
-    // Delete session
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("avatar");
-    localStorage.removeItem("role");
+    // Xóa toàn bộ localStorage
+    ["account_id", "token", "username", "avatar", "role"].forEach((k) =>
+      localStorage.removeItem(k)
+    );
 
     setUser(null);
-
-    // Navigation to login page 
     navigate("/dang-nhap");
   };
 
   /**
-   * Lắng nghe thay đổi storage (giúp đồng bộ trạng thái login/logout giữa các tab)
+   * Đồng bộ giữa các tab: khi localStorage thay đổi
    */
   useEffect(() => {
     const handleStorage = () => {
+      const account_id = localStorage.getItem("account_id");
       const token = localStorage.getItem("token");
       const username = localStorage.getItem("username");
       const avatar = localStorage.getItem("avatar");
       const role = localStorage.getItem("role");
+
       if (token && username) {
-        setUser({ token, username, avatar, role });
+        setUser({ account_id: Number(account_id), token, username, avatar, role });
       } else {
         setUser(null);
       }
@@ -98,23 +114,39 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Khi có token, có thể setup axios interceptor ở đây (tùy chọn)
-   * để tự động gắn Authorization header cho tất cả request.
+   * Tự động refresh thông tin user từ backend khi có token
    */
+  useEffect(() => {
+    const initUser = async () => {
+      if (user?.token) {
+        try {
+          const res = await getCurrentUser(user.token);
+          const { id: account_id, username, account_type_id, avatar, status } = res;
+          if (status === 0) {
+            logout();
+            return;
+          }
+          const roleMap = { 1: "admin", 2: "nhân viên", 3: "khách hàng" };
+          const role = roleMap[account_type_id] || "khách hàng";
+          const avatarUrl = avatar || userUnknown;
+
+          setUser({ account_id, username, avatar: avatarUrl, role, token: user.token });
+        } catch (err) {
+          console.warn("Không thể refresh user:", err);
+          logout();
+        }
+      }
+    };
+
+    initUser();
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        login,
-        logout,
-        setUser,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Hook tiện lợi
 export const useAuth = () => useContext(AuthContext);
