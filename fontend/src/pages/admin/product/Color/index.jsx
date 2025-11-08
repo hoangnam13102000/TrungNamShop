@@ -3,21 +3,15 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination"; // import component phân trang
 
 export default memo(function ColorManagement() {
-  /** ==========================
-   *  1. FETCH DATA
-   *  ========================== */
-  const colorApi = useCRUDApi("colors"); 
-
+  const colorApi = useCRUDApi("colors");
   const { data: colors = [], isLoading, refetch } = colorApi.useGetAll();
 
-  /** ==========================
-   *  2. CRUD MUTATIONS
-   *  ========================== */
   const createMutation = colorApi.useCreate();
   const updateMutation = colorApi.useUpdate();
   const deleteMutation = colorApi.useDelete();
@@ -31,9 +25,6 @@ export default memo(function ColorManagement() {
     "colors"
   );
 
-  /** ==========================
-   *  3. ADMIN HANDLER
-   *  ========================== */
   const {
     dialog,
     closeDialog,
@@ -41,34 +32,32 @@ export default memo(function ColorManagement() {
     handleDelete: handleDeleteAdmin,
   } = useAdminHandler(crud, refetch);
 
-  /** ==========================
-   *  4. STATE
-   *  ========================== */
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
 
   /** ==========================
-   *  5. FILTER DATA
-   *  ========================== */
+   * PHÂN TRANG
+   * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // số lượng màu trên 1 trang
+
   const filteredItems = useMemo(() => {
     return colors.filter((c) =>
       (c.name || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [colors, search]);
 
-  /** ==========================
-   *  6. HANDLERS
-   *  ========================== */
-  const handleSave = (formData) => {
-    handleSaveAdmin(formData, { name: "name" });
-  };
-  const handleDelete = (item) => {
-    handleDeleteAdmin(item, "name");
-  };
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
-  /** ==========================
-   *  7. UI RENDER
-   *  ========================== */
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, currentPage]);
+
+  const handleSave = (formData) => handleSaveAdmin(formData, { name: "name" });
+  const handleDelete = (item) => handleDeleteAdmin(item, "name");
+
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý màu sắc</h1>
@@ -95,19 +84,29 @@ export default memo(function ColorManagement() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[{ field: "name", label: "Tên màu sắc" }]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[{ field: "name", label: "Tên màu sắc" }]}
+              data={paginatedItems} // dùng dữ liệu đã phân trang
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PHÂN TRANG */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            maxVisible={5} // số trang hiển thị tối đa
           />
-        </div>
+        </>
       )}
 
-      {/* FORM: VIEW */}
+      {/* FORM VIEW */}
       {viewItem && (
         <DynamicForm
           mode="view"
@@ -119,7 +118,7 @@ export default memo(function ColorManagement() {
         />
       )}
 
-      {/* FORM: EDIT / CREATE */}
+      {/* FORM EDIT / CREATE */}
       {crud.openForm && (
         <DynamicForm
           title={
@@ -127,14 +126,7 @@ export default memo(function ColorManagement() {
               ? `Chỉnh sửa màu sắc - ${crud.selectedItem?.name}`
               : "Thêm màu sắc"
           }
-          fields={[
-            {
-              name: "name",
-              label: "Tên màu sắc",
-              type: "text",
-              required: true,
-            },
-          ]}
+          fields={[{ name: "name", label: "Tên màu sắc", type: "text", required: true }]}
           initialData={crud.selectedItem}
           onSave={handleSave}
           onClose={crud.handleCloseForm}

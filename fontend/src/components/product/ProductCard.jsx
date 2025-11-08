@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { getImageUrl } from "../../utils/getImageUrl";
+import { getImageUrl } from "../../utils/helpers/getImageUrl";
 
 const formatPrice = (price) => {
   if (!price) return "0 VNĐ";

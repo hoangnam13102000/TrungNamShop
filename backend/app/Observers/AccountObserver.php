@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Account;
 use App\Models\Customer;
+use App\Models\Employee;
 class AccountObserver
 {
     /**
@@ -11,17 +12,38 @@ class AccountObserver
      */
     public function created(Account $account): void
     {
-        if (!$account->customer) {
-            Customer::create([
-                'account_id'   => $account->id,
-                'full_name'    => null,
-                'address'      => null,
-                'phone_number' => null,
-                'email'        => null,
-                'birth_date'   => null,
-                'gender'       => null,
-                'avatar'       => null,
-            ]);
+        if ($account->account_type_id == 3) {
+            if (!$account->customer) {
+                Customer::create([
+                    'account_id'   => $account->id,
+                    'full_name'    => null,
+                    'address'      => null,
+                    'phone_number' => null,
+                    'email'        => null,
+                    'birth_date'   => null,
+                    'gender'       => null,
+                    'avatar'       => null,
+                ]);
+            }
+        } else {
+            // Tạo employee nếu chưa có
+            if (!$account->employee) {
+                Employee::create([
+                    'account_id'   => $account->id,
+                    'position_id'  => null,
+                    'store_id'     =>1,
+                    'warehouse_id' => 1,
+                    'full_name'    => null,
+                    'phone_number' => null,
+                    'email'        => null,
+                    'address'      => null,
+                    'birth_date'   => null,
+                    'gender'       => null,
+                    'avatar'       => null,
+                    'create_at'=>  $account->created_at,
+                    'is_active'    => true,
+                ]);
+            }
         }
     }
 

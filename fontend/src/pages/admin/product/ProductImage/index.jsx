@@ -3,11 +3,12 @@ import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-ico
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-import { getImageUrl } from "../../../../utils/getImageUrl";
+import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function ProductImageManagement() {
   /** ==========================
@@ -50,6 +51,8 @@ export default memo(function ProductImageManagement() {
    * 4. STATE
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   /** ==========================
    * 5. FILTER DATA
@@ -61,7 +64,16 @@ export default memo(function ProductImageManagement() {
   }, [images, search]);
 
   /** ==========================
-   * 6. HANDLERS
+   * 6. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 7. HANDLERS
    * ========================== */
   const handleSave = async (formData) => {
     await handleSaveAdmin(formData);
@@ -72,7 +84,7 @@ export default memo(function ProductImageManagement() {
   };
 
   /** ==========================
-   * 7. UI RENDER
+   * 8. UI RENDER
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -91,7 +103,10 @@ export default memo(function ProductImageManagement() {
           type="text"
           placeholder="Tìm kiếm sản phẩm..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -100,51 +115,62 @@ export default memo(function ProductImageManagement() {
       {isLoading ? (
         <p className="text-center">Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "product.name", label: "Sản phẩm" },
-              { field: "color.name", label: "Màu sắc" },
-              {
-                field: "image_path",
-                label: "Hình ảnh",
-                render: (value) => {
-                  const imgUrl = getImageUrl(value);
-                  return (
-                    <div className="flex justify-center">
-                      <img
-                        src={imgUrl}
-                        alt="product"
-                        className="w-16 h-16 object-contain rounded border"
-                        onError={(e) => {
-                          if (e.target.src !== placeholder) e.target.src = placeholder;
-                        }}
-                      />
-                    </div>
-                  );
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "product.name", label: "Sản phẩm" },
+                { field: "color.name", label: "Màu sắc" },
+                {
+                  field: "image_path",
+                  label: "Hình ảnh",
+                  render: (value) => {
+                    const imgUrl = getImageUrl(value);
+                    return (
+                      <div className="flex justify-center">
+                        <img
+                          src={imgUrl}
+                          alt="product"
+                          className="w-16 h-16 object-contain rounded border"
+                          onError={(e) => {
+                            if (e.target.src !== placeholder) e.target.src = placeholder;
+                          }}
+                        />
+                      </div>
+                    );
+                  },
                 },
-              },
-              {
-                field: "is_primary",
-                label: "Ảnh chính",
-                render: (v) => (
-                  <div className="flex justify-center">
-                    {v ? (
-                      <FaCheckCircle className="text-green-600 text-xl" />
-                    ) : (
-                      <FaTimesCircle className="text-red-400 text-xl" />
-                    )}
-                  </div>
-                ),
-              },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+                {
+                  field: "is_primary",
+                  label: "Ảnh chính",
+                  render: (v) => (
+                    <div className="flex justify-center">
+                      {v ? (
+                        <FaCheckCircle className="text-green-600 text-xl" />
+                      ) : (
+                        <FaTimesCircle className="text-red-400 text-xl" />
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+              data={paginatedItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM */}
@@ -168,7 +194,6 @@ export default memo(function ProductImageManagement() {
               label: "Màu sắc",
               type: "select",
               options: colorOptions,
-              required: false,
             },
             {
               name: "image",

@@ -3,13 +3,14 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function AdminFrontCameraPage() {
   /** ==========================
-   *  1. FETCH + CRUD API
+   * 1. FETCH + CRUD API
    * ========================== */
   const { useGetAll, useCreate, useUpdate, useDelete } =
     useCRUDApi("front-cameras");
@@ -29,7 +30,7 @@ export default memo(function AdminFrontCameraPage() {
   );
 
   /** ==========================
-   *  2. HANDLER + DIALOG
+   * 2. HANDLER + DIALOG
    * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
@@ -38,7 +39,7 @@ export default memo(function AdminFrontCameraPage() {
   );
 
   /** ==========================
-   *  3. SEARCH & FILTER
+   * 3. SEARCH + FILTER
    * ========================== */
   const [search, setSearch] = useState("");
 
@@ -49,7 +50,20 @@ export default memo(function AdminFrontCameraPage() {
   }, [frontCameras, search]);
 
   /** ==========================
-   *  4. UI
+   * 4. PAGINATION
+   * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 5. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -68,7 +82,10 @@ export default memo(function AdminFrontCameraPage() {
           type="text"
           placeholder="Tìm kiếm theo độ phân giải..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -77,42 +94,43 @@ export default memo(function AdminFrontCameraPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "resolution", label: "Độ phân giải" },
-              { field: "aperture", label: "Khẩu độ" },
-              { field: "video_capability", label: "Video" },
-              { field: "features", label: "Tính năng" },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "resolution", label: "Độ phân giải" },
+                { field: "aperture", label: "Khẩu độ" },
+                { field: "video_capability", label: "Video" },
+                { field: "features", label: "Tính năng" },
+              ]}
+              data={paginatedItems} // dùng dữ liệu phân trang
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM */}
       {crud.openForm && (
         <DynamicForm
-          title={
-            crud.mode === "edit" ? "Sửa camera trước" : "Thêm camera trước"
-          }
+          title={crud.mode === "edit" ? "Sửa camera trước" : "Thêm camera trước"}
           fields={[
-            {
-              name: "resolution",
-              label: "Độ phân giải (MP)",
-              type: "text",
-              required: true,
-            },
+            { name: "resolution", label: "Độ phân giải (MP)", type: "text", required: true },
             { name: "aperture", label: "Khẩu độ (f/)", type: "text" },
-            {
-              name: "video_capability",
-              label: "Video (độ phân giải)",
-              type: "text",
-            },
+            { name: "video_capability", label: "Video (độ phân giải)", type: "text" },
             { name: "features", label: "Tính năng", type: "textarea" },
           ]}
           initialData={crud.selectedItem}

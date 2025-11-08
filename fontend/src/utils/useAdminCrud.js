@@ -73,7 +73,7 @@ export default function useAdminCrud1(api, queryKey) {
    * SAVE (CREATE / UPDATE)
    * ========================== */
   const handleSave = async (formData) => {
-    console.log("🧩 handleSave payload:", formData);
+    console.log(" handleSave payload:", formData);
 
     if (!formData || typeof formData !== "object") {
       console.error("handleSave nhận dữ liệu không hợp lệ:", formData);
@@ -82,7 +82,7 @@ export default function useAdminCrud1(api, queryKey) {
 
     setLoading(true);
     const id = selectedItem?.id;
-    console.log("🔍 selectedItem id:", id);
+    console.log(" selectedItem id:", id);
     try {
       // Clone payload
       let payload = JSON.parse(JSON.stringify(formData));
@@ -125,7 +125,7 @@ export default function useAdminCrud1(api, queryKey) {
           "Data rỗng khi cập nhật"
         );
 
-        console.log("🔄 Gửi update:", { id, data: finalData });
+        console.log(" Gửi update:", { id, data: finalData });
 
         // Tách trường hợp có file và không có file
         if (hasFile) {

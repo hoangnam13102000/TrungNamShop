@@ -3,24 +3,25 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function AdminOperatingSystemPage() {
   /** ==========================
-   *  1. HOOK CRUD API
+   * 1. HOOK CRUD API
    * ========================== */
   const { useGetAll, useCreate, useUpdate, useDelete } =
     useCRUDApi("operating-systems");
 
   /** ==========================
-   *  2. FETCH DATA
+   * 2. FETCH DATA
    * ========================== */
   const { data: operatingSystems = [], isLoading, refetch } = useGetAll();
 
   /** ==========================
-   *  3. CRUD MUTATIONS
+   * 3. CRUD MUTATIONS
    * ========================== */
   const createMutation = useCreate();
   const updateMutation = useUpdate();
@@ -45,7 +46,7 @@ export default memo(function AdminOperatingSystemPage() {
   );
 
   /** ==========================
-   *  4. HANDLER + DIALOG
+   * 4. HANDLER + DIALOG
    * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
@@ -54,7 +55,7 @@ export default memo(function AdminOperatingSystemPage() {
   );
 
   /** ==========================
-   *  5. SEARCH
+   * 5. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
 
@@ -65,7 +66,19 @@ export default memo(function AdminOperatingSystemPage() {
   }, [operatingSystems, search]);
 
   /** ==========================
-   *  6. UI
+   * 6. PAGINATION
+   * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // số item mỗi trang
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 7. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -84,7 +97,10 @@ export default memo(function AdminOperatingSystemPage() {
           type="text"
           placeholder="Tìm kiếm hệ điều hành..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset về trang 1 khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -93,29 +109,39 @@ export default memo(function AdminOperatingSystemPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "name", label: "Hệ điều hành" },
-              { field: "processor", label: "Bộ xử lý" },
-              { field: "cpu_speed", label: "Tốc độ CPU" },
-              { field: "gpu", label: "GPU" },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "name", label: "Hệ điều hành" },
+                { field: "processor", label: "Bộ xử lý" },
+                { field: "cpu_speed", label: "Tốc độ CPU" },
+                { field: "gpu", label: "GPU" },
+              ]}
+              data={paginatedItems} // sử dụng dữ liệu phân trang
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM */}
       {crud.openForm && (
         <DynamicForm
-          title={
-            crud.mode === "edit" ? "Sửa Hệ điều hành" : "Thêm Hệ điều hành"
-          }
+          title={crud.mode === "edit" ? "Sửa Hệ điều hành" : "Thêm Hệ điều hành"}
           fields={[
             { name: "name", label: "Hệ điều hành", type: "text", required: true },
             { name: "processor", label: "Bộ xử lý", type: "text" },

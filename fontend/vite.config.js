@@ -13,9 +13,9 @@ export default defineConfig({
     alias: {
       "@components": path.resolve(__dirname, "src/components"),
       "@banner": path.resolve(__dirname, "src/assets/users/images/banner"),
-      "@products": path.resolve(__dirname, "src/assets/users/images/products"),
-      "@categories": path.resolve(__dirname, "src/assets/users/images/categories"),
-      "@page_user": path.resolve(__dirname, "src/pages/users"),
+      "@products": path.resolve(__dirname, "src/assets/clients/images/products"),
+      "@categories": path.resolve(__dirname, "src/assets/clients/images/categories"),
+      "@page_user": path.resolve(__dirname, "src/pages/clients"),
       "@page_admin": path.resolve(__dirname, "src/pages/admin"),
     },
   },

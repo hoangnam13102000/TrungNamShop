@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { getImageUrl } from "../../utils/getImageUrl";
+import { getImageUrl } from "../../utils/helpers/getImageUrl";
 import { FaCheckCircle, FaTimesCircle, FaTimes } from "react-icons/fa";
 
 const EXCLUDE_FIELDS = [

@@ -3,9 +3,10 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+import Pagination from "../../../../components/common/Pagination"; 
 
 export default memo(function AdminRearCameraPage() {
   /** ==========================
@@ -43,6 +44,8 @@ export default memo(function AdminRearCameraPage() {
    * 4. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const filteredItems = useMemo(() => {
     return rearCameras.filter((c) =>
@@ -51,7 +54,16 @@ export default memo(function AdminRearCameraPage() {
   }, [rearCameras, search]);
 
   /** ==========================
-   * 5. UI
+   * 5. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 6. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -70,7 +82,10 @@ export default memo(function AdminRearCameraPage() {
           type="text"
           placeholder="Tìm kiếm theo độ phân giải..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -79,21 +94,33 @@ export default memo(function AdminRearCameraPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "resolution", label: "Độ phân giải" },
-              { field: "aperture", label: "Khẩu độ" },
-              { field: "video_capability", label: "Video" },
-              { field: "features", label: "Tính năng" },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "resolution", label: "Độ phân giải" },
+                { field: "aperture", label: "Khẩu độ" },
+                { field: "video_capability", label: "Video" },
+                { field: "features", label: "Tính năng" },
+              ]}
+              data={paginatedItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM ADD / EDIT */}

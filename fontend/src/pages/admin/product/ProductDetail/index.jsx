@@ -4,17 +4,17 @@ import AdminListTable from "../../../../components/common/AdminListTable";
 import ProductDetailForm from "../../../../components/formAndDialog/ProductDetailForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import SpecModal from "../../../../components/product/specs/SpecModal";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import { getImageUrl } from "../../../../utils/getImageUrl";
-import { buildSpecs } from "../../../../utils/buildSpecs";
+import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
+import { buildSpecs } from "../../../../utils/helpers/buildSpecs";
 import { getProductDetailFormFields } from "../../../../utils/productDetails/useProductDetailFormFields";
+import Pagination from "../../../../components/common/Pagination"; 
 
 import {
   useProductDetails,
   useCreateProductDetail,
   useUpdateProductDetail,
-  // useDeleteProductDetail,
 } from "../../../../api/product/productDetail";
 
 import {
@@ -29,9 +29,6 @@ import {
   useCommunicationConnectivities,
   useGeneralInformations,
 } from "../../../../api/product/hooks";
-
-// // helper safeEntries
-// const safeEntries = (obj) => (obj ? Object.entries(obj) : []);
 
 export default memo(function AdminProductDetailPage() {
   // --- API data ---
@@ -50,35 +47,52 @@ export default memo(function AdminProductDetailPage() {
   // --- Mutations ---
   const createMutation = useCreateProductDetail();
   const updateMutation = useUpdateProductDetail();
-  // const deleteMutation = useDeleteProductDetail();
 
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
       update: updateMutation.mutateAsync,
-      // delete: deleteMutation.mutateAsync,
     },
     "product-details"
   );
 
-  const { dialog, closeDialog, handleSave } = useAdminHandler(crud, refetch, (item) => item?.product?.name || `Chi tiết #${item?.id}`);
-  const isMutating = createMutation.isLoading || updateMutation.isLoading ;
+  const { dialog, closeDialog, handleSave } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.product?.name || `Chi tiết #${item?.id}`
+  );
+
+  const isMutating = createMutation.isLoading || updateMutation.isLoading;
 
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
 
   // --- Map data cho table ---
-  const mappedItems = useMemo(() => {
-    return details
-      .filter((d) => d.product?.name?.toLowerCase().includes(search.toLowerCase()))
-      .map((d) => ({
-        ...d,
-        product_name: d.product?.name || "-",
-        product_image: getImageUrl(d.product?.primary_image?.image_path),
-        price_label: (d.price ? parseFloat(d.price).toLocaleString("vi-VN") : "0") + " VNĐ",
-        stock_quantity: d.stock_quantity ?? 0,
-      }));
+  const filteredItems = useMemo(() => {
+    return details.filter((d) =>
+      d.product?.name?.toLowerCase().includes(search.toLowerCase())
+    );
   }, [details, search]);
+
+  // --- Pagination ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  const mappedItems = useMemo(() => {
+    return paginatedItems.map((d) => ({
+      ...d,
+      product_name: d.product?.name || "-",
+      product_image: getImageUrl(d.product?.primary_image?.image_path),
+      price_label: (d.price ? parseFloat(d.price).toLocaleString("vi-VN") : "0") + " VNĐ",
+      stock_quantity: d.stock_quantity ?? 0,
+    }));
+  }, [paginatedItems]);
 
   // --- Selected Data cho form edit ---
   const selectedData = useMemo(() => {
@@ -103,22 +117,34 @@ export default memo(function AdminProductDetailPage() {
     return {};
   }, [crud.mode, crud.selectedItem]);
 
-  // --- Form Fields ---
-  const formFields = useMemo(() => 
-  getProductDetailFormFields({
-    products,
-    screens,
-    rearCameras,
-    frontCameras,
-    memories,
-    operatingSystems,
-    batteries,
-    utilities,
-    connectivities,
-    generalInfos,
-  }), 
-  [products, screens, rearCameras, frontCameras, memories, operatingSystems, batteries, utilities, connectivities, generalInfos]
-);
+  const formFields = useMemo(
+    () =>
+      getProductDetailFormFields({
+        products,
+        screens,
+        rearCameras,
+        frontCameras,
+        memories,
+        operatingSystems,
+        batteries,
+        utilities,
+        connectivities,
+        generalInfos,
+      }),
+    [
+      products,
+      screens,
+      rearCameras,
+      frontCameras,
+      memories,
+      operatingSystems,
+      batteries,
+      utilities,
+      connectivities,
+      generalInfos,
+    ]
+  );
+
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">Quản lý Chi Tiết Sản Phẩm</h1>
@@ -135,7 +161,10 @@ export default memo(function AdminProductDetailPage() {
           type="text"
           placeholder="Tìm kiếm theo tên sản phẩm..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset về trang 1 khi search
+          }}
           className="border px-4 py-2 rounded-xl w-full sm:w-80 focus:border-red-500 focus:ring-1 focus:ring-red-500"
         />
       </div>
@@ -143,38 +172,62 @@ export default memo(function AdminProductDetailPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-xl">
-          <AdminListTable
-            columns={[
-              {
-                field: "product_image",
-                label: "Ảnh",
-                render: (value) =>
-                  value ? (
-                    <img src={value} alt="Ảnh sản phẩm" className="w-16 h-16 object-contain rounded-lg" />
-                  ) : (
-                    <span className="text-gray-400 italic">Không có ảnh</span>
-                  ),
-              },
-              { field: "product_name", label: "Sản phẩm" },
-              { field: "price_label", label: "Giá bán" },
-              { field: "stock_quantity", label: "Tồn kho" },
-            ]}
-            data={mappedItems}
-            actions={[
-              { icon: <FaEye />, label: "Xem", onClick: setViewItem },
-              { icon: <FaEdit />, label: "Sửa", onClick: (item) => crud.handleEdit(item) },
-              // { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto bg-white rounded-xl shadow-xl">
+            <AdminListTable
+              columns={[
+                {
+                  field: "product_image",
+                  label: "Ảnh",
+                  render: (value) =>
+                    value ? (
+                      <img
+                        src={value}
+                        alt="Ảnh sản phẩm"
+                        className="w-16 h-16 object-contain rounded-lg"
+                      />
+                    ) : (
+                      <span className="text-gray-400 italic">Không có ảnh</span>
+                    ),
+                },
+                { field: "product_name", label: "Sản phẩm" },
+                { field: "price_label", label: "Giá bán" },
+                { field: "stock_quantity", label: "Tồn kho" },
+              ]}
+              data={mappedItems}
+              actions={[
+                { icon: <FaEye />, label: "Xem", onClick: setViewItem },
+                { icon: <FaEdit />, label: "Sửa", onClick: (item) => crud.handleEdit(item) },
+              ]}
+            />
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
-      {viewItem && <SpecModal specs={buildSpecs(viewItem)} isOpen={!!viewItem} onClose={() => setViewItem(null)} />}
+      {viewItem && (
+        <SpecModal
+          specs={buildSpecs(viewItem)}
+          isOpen={!!viewItem}
+          onClose={() => setViewItem(null)}
+        />
+      )}
 
       {crud.openForm && (
         <ProductDetailForm
-          title={crud.mode === "edit" ? "Sửa chi tiết sản phẩm" : "Thêm chi tiết sản phẩm mới"}
+          title={
+            crud.mode === "edit"
+              ? "Sửa chi tiết sản phẩm"
+              : "Thêm chi tiết sản phẩm mới"
+          }
           fieldGroups={formFields}
           initialData={selectedData}
           onSave={handleSave}

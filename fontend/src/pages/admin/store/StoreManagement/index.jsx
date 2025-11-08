@@ -3,18 +3,17 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import Pagination from "../../../../components/common/Pagination";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const StoreManagement = () => {
   /** ==========================
-   * 1. FETCH DATA & CRUD API
+   * FETCH DATA & CRUD API
    * ========================== */
   const storeAPI = useCRUDApi("stores"); 
-
-  const { data: stores = [], isLoading, isError, refetch } =
-    storeAPI.useGetAll();
+  const { data: stores = [], isLoading, isError, refetch } = storeAPI.useGetAll();
   const create = storeAPI.useCreate();
   const update = storeAPI.useUpdate();
   const remove = storeAPI.useDelete();
@@ -29,7 +28,7 @@ const StoreManagement = () => {
   );
 
   /** ==========================
-   * 2. HANDLER + DIALOG
+   * HANDLER + DIALOG
    * ========================== */
   const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
     crud,
@@ -38,17 +37,27 @@ const StoreManagement = () => {
   );
 
   /** ==========================
-   * 3. SEARCH & FILTER
+   * SEARCH & PAGINATION
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const filteredItems = useMemo(() => {
     return stores.filter((s) =>
       (s.name || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [stores, search]);
 
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
   /** ==========================
-   * 4. UI
+   * UI
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
@@ -76,7 +85,10 @@ const StoreManagement = () => {
           type="text"
           placeholder="Tìm kiếm cửa hàng..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset trang khi search
+          }}
           className="border border-gray-300 rounded-lg px-3 py-2 w-full sm:w-72 focus:ring-2 focus:ring-red-500"
         />
       </div>
@@ -89,30 +101,30 @@ const StoreManagement = () => {
           { field: "email", label: "Email" },
           { field: "phone", label: "Số điện thoại" },
         ]}
-        data={filteredItems}
+        data={paginatedItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
           { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
         ]}
       />
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          maxVisible={5}
+        />
+      )}
+
       {/* Form Add / Edit */}
       {crud.openForm && (
         <DynamicForm
           title={crud.mode === "edit" ? "Sửa cửa hàng" : "Thêm cửa hàng"}
           fields={[
-            {
-              name: "name",
-              label: "Tên cửa hàng",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "address",
-              label: "Địa chỉ",
-              type: "textarea",
-              required: true,
-            },
+            { name: "name", label: "Tên cửa hàng", type: "text", required: true },
+            { name: "address", label: "Địa chỉ", type: "textarea", required: true },
             { name: "email", label: "Email", type: "email" },
             { name: "phone", label: "Số điện thoại", type: "text" },
             { name: "google_map", label: "Link Google Map", type: "text" },

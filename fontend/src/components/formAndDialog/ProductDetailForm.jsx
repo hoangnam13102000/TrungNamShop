@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Dropdown from "../dropdown/DropDown";
 import DynamicDialog from "./DynamicDialog";
 import placeholder from "../../assets/admin/logoicon1.jpg";
-import { getImageUrl } from "../../utils/getImageUrl";
-import { validateGeneral } from "../../utils/validate";
+import { getImageUrl } from "../../utils/helpers/getImageUrl";
+import { validateGeneral } from "../../utils/forms/validate";
 
 export default function DynamicForm({
   title,

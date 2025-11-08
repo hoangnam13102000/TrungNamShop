@@ -27,16 +27,23 @@ export const ROUTERS = {
         REVIEW:`${ADMIN_PATH}/quan-ly-danh-gia`,
        
         //----------------Users---------------------------
-        EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,
-        POSITION:`${ADMIN_PATH}/quan-ly-chuc-vu`,
-        CUSTOMERMANAGEMENTL:`${ADMIN_PATH}/quan-ly-khach-hang`,
+         CUSTOMERMANAGEMENTL:`${ADMIN_PATH}/quan-ly-khach-hang`,
         MEMBERLEVEL:`${ADMIN_PATH}/quan-ly-bac-thanh-vien`,
         
+        
+        //----------------Employees---------------------------
+       
+        EMPLOYEEMANAGMENT:`${ADMIN_PATH}/quan-ly-nhan-vien`,
+        POSITION:`${ADMIN_PATH}/quan-ly-chuc-vu`,
+        REWARD:`${ADMIN_PATH}/quan-ly-thuong`,
+        SALARYCOEFFICIENT:`${ADMIN_PATH}/quan-ly-he-so-luong`,
+        ALLOWANCE:`${ADMIN_PATH}/quan-ly-phu-cap`,
+        ATTENDANCE:`${ADMIN_PATH}/quan-ly-cham-cong`,
 
         //---------------Account------------------------
         ACOUNT:`${ADMIN_PATH}/quan-ly-tai-khoan`,
         ACCOUNTTYPE:`${ADMIN_PATH}/quan-ly-loai-tai-khoan`,
-        REWARD:`${ADMIN_PATH}/quan-ly-thuong`,
+        
     },
 
     USER: {

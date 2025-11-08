@@ -9,4 +9,12 @@ class Position extends Model
 {
     use HasFactory,SoftDeletes;
     protected $guarded=[];
+
+    /**
+     * Relation: (Employee)
+     */
+    public function employees()
+    {
+        return $this->hasMany(Employee::class, 'position_id');
+    }
 }

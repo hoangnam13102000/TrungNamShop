@@ -3,8 +3,9 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 const AccountList = () => {
   /** ==========================
@@ -16,19 +17,11 @@ const AccountList = () => {
   const updateMutation = accountAPI.useUpdate();
   const deleteMutation = accountAPI.useDelete();
 
-  const accountTypeAPI = useCRUDApi("account-types");
-  const { data: accountTypes = [] } = accountTypeAPI.useGetAll();
-
   const accountLevelAPI = useCRUDApi("account-leveling");
   const { data: accountLevels = [] } = accountLevelAPI.useGetAll();
 
-  const accountTypeOptions = useMemo(
-    () => accountTypes.map(t => ({ value: t.id, label: t.account_type_name })),
-    [accountTypes]
-  );
-
   const accountLevelOptions = useMemo(
-    () => accountLevels.map(l => ({ value: l.id, label: l.name })),
+    () => accountLevels.map((l) => ({ value: l.id, label: l.name })),
     [accountLevels]
   );
 
@@ -58,25 +51,36 @@ const AccountList = () => {
   }, []);
 
   const closeDialog = useCallback(() => {
-    setDialog(prev => ({ ...prev, open: false }));
+    setDialog((prev) => ({ ...prev, open: false }));
   }, []);
 
   /** ==========================
    * 3. Filter data
    * ========================== */
   const filteredItems = useMemo(() => {
-    return accounts.filter(acc =>
+    return accounts.filter((acc) =>
       (acc.username || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [accounts, search]);
 
   /** ==========================
-   * 4. Handlers
+   * 4. Pagination
+   * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredItems]);
+
+  /** ==========================
+   * 5. Handlers
    * ========================== */
   const handleSave = async (formData) => {
     const payload = {
       ...formData,
-      account_type_id: formData.account_type_id?.value || formData.account_type_id,
       account_level_id: formData.account_level_id?.value || formData.account_level_id,
     };
 
@@ -125,7 +129,7 @@ const AccountList = () => {
   };
 
   /** ==========================
-   * 5. UI
+   * 6. UI
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
@@ -168,28 +172,85 @@ const AccountList = () => {
             field: "status",
             label: "Trạng thái",
             render: (val) => (
-              <span className={`px-2 py-1 rounded-full text-sm ${val === 1 ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"}`}>
+              <span
+                className={`px-2 py-1 rounded-full text-sm ${
+                  val === 1
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
                 {val === 1 ? "Hoạt động" : "Ngừng hoạt động"}
               </span>
             ),
           },
         ]}
-        data={filteredItems}
+        data={currentItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
           { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
         ]}
       />
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          maxVisible={5}
+        />
+      )}
+
       {crud.openForm && (
         <DynamicForm
-          title={crud.mode === "edit" ? `Chỉnh sửa: ${crud.selectedItem?.username}` : "Thêm tài khoản"}
+          title={
+            crud.mode === "edit"
+              ? `Chỉnh sửa: ${crud.selectedItem?.username}`
+              : "Thêm tài khoản"
+          }
           fields={[
-            { name: "username", label: "Tên tài khoản", type: "text", required: true, disabled: !!crud.selectedItem },
-            ...(!crud.selectedItem ? [{ name: "password", label: "Mật khẩu", type: "password", required: true }] : []),
-            { name: "account_type_id", label: "Loại tài khoản", type: "select", options: accountTypeOptions, required: true, value: crud.selectedItem?.account_type?.id },
-            { name: "account_level_id", label: "Cấp độ thành viên", type: "select", options: accountLevelOptions, required: true, value: crud.selectedItem?.account_level?.id },
-            { name: "status", label: "Trạng thái", type: "select", options: [{ value: 1, label: "Hoạt động" }, { value: 0, label: "Ngừng hoạt động" }], required: true },
+            {
+              name: "username",
+              label: "Tên tài khoản",
+              type: "text",
+              required: true,
+              disabled: !!crud.selectedItem,
+            },
+            ...(!crud.selectedItem
+              ? [
+                  {
+                    name: "password",
+                    label: "Mật khẩu",
+                    type: "password",
+                    minLength: 6,
+                    required: true,
+                  },
+                ]
+              : []),
+            {
+              name: "account_type_name",
+              label: "Loại tài khoản",
+              type: "text",
+              disabled: true,
+              value: crud.selectedItem?.account_type?.account_type_name || "—",
+            },
+            {
+              name: "account_level_id",
+              label: "Cấp độ thành viên",
+              type: "select",
+              options: accountLevelOptions,
+              required: true,
+            },
+            {
+              name: "status",
+              label: "Trạng thái",
+              type: "select",
+              options: [
+                { value: 1, label: "Hoạt động" },
+                { value: 0, label: "Ngừng hoạt động" },
+              ],
+              required: true,
+            },
           ]}
           initialData={crud.selectedItem}
           onSave={handleSave}
@@ -204,7 +265,7 @@ const AccountList = () => {
         message={dialog.message}
         onClose={closeDialog}
         onConfirm={async () => {
-          setDialog(prev => ({ ...prev, open: false }));
+          setDialog((prev) => ({ ...prev, open: false }));
           if (dialog.onConfirm) await dialog.onConfirm();
         }}
       />

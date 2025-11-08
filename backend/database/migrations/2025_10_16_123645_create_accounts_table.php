@@ -38,7 +38,7 @@ return new class extends Migration
                   ->onDelete('cascade');
         });
          DB::table('accounts')->insert([
-        'account_type_id' => 3,
+        'account_type_id' => 1,
         'account_level_id' => 1,
         'username' => 'admin',
         'password' => Hash::make('123456'),

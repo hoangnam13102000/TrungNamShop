@@ -27,7 +27,10 @@ use App\Http\Controllers\GeneralInformationController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\ProductDetailController;
 use App\Http\Controllers\ReviewController;
-
+use App\Http\Controllers\SalaryCoefficientController;
+use App\Http\Controllers\AllowanceController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\EmployeeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,8 +82,20 @@ Route::prefix('admin')->group(function () {
     // ------------------ Customer ------------------
     Route::apiResource('customers', CustomerController::class);
 
+    // ------------------ Employee ------------------
+    Route::apiResource('employees', EmployeeController::class);
+
     // ------------------ Reward ------------------
     Route::resource('rewards', RewardController::class);
+
+    // ------------------SalaryCoefficient ------------------
+    Route::apiResource('salary-coefficients', SalaryCoefficientController::class);
+
+    // ------------------Allowance ------------------
+    Route::apiResource('allowances', AllowanceController::class);
+    
+    // ------------------Attendance ------------------
+    Route::apiResource('attendances', AttendanceController::class);
 
     // ------------------ Position ------------------
     Route::resource('positions', PositionController::class);

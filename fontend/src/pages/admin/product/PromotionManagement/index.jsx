@@ -3,16 +3,16 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function PromotionManagement() {
   /** ==========================
    * 1. FETCH DATA
    * ========================== */
-  const promotionApi = useCRUDApi("promotions"); // 
-
+  const promotionApi = useCRUDApi("promotions"); 
   const { data: promotions = [], isLoading, refetch } = promotionApi.useGetAll();
 
   const createMutation = promotionApi.useCreate();
@@ -44,6 +44,8 @@ export default memo(function PromotionManagement() {
    * 4. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const filteredItems = useMemo(() => {
     return promotions.filter((p) =>
@@ -52,7 +54,16 @@ export default memo(function PromotionManagement() {
   }, [promotions, search]);
 
   /** ==========================
-   * 5. UI
+   * 5. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 6. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -71,7 +82,10 @@ export default memo(function PromotionManagement() {
           type="text"
           placeholder="Tìm kiếm khuyến mãi..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -80,21 +94,33 @@ export default memo(function PromotionManagement() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "name", label: "Tên khuyến mãi" },
-              { field: "start_date", label: "Ngày bắt đầu" },
-              { field: "end_date", label: "Ngày kết thúc" },
-              { field: "description", label: "Mô tả" },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "name", label: "Tên khuyến mãi" },
+                { field: "start_date", label: "Ngày bắt đầu" },
+                { field: "end_date", label: "Ngày kết thúc" },
+                { field: "description", label: "Mô tả" },
+              ]}
+              data={paginatedItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM ADD / EDIT */}

@@ -3,16 +3,16 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
-
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function BrandManagement() {
   /** ==========================
-   *  1. CRUDApi
-   *  ========================== */
+   * 1. CRUDApi
+   * ========================== */
   const brandAPI = useCRUDApi("brands");
   const { data: brands = [], isLoading, refetch } = brandAPI.useGetAll();
   const createMutation = brandAPI.useCreate();
@@ -20,8 +20,8 @@ export default memo(function BrandManagement() {
   const deleteMutation = brandAPI.useDelete();
 
   /** ==========================
-   *  2. CRUD LOGIC
-   *  ========================== */
+   * 2. CRUD LOGIC
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -35,29 +35,38 @@ export default memo(function BrandManagement() {
     useAdminHandler(crud, refetch);
 
   /** ==========================
-   *  3. STATE
-   *  ========================== */
+   * 3. STATE
+   * ========================== */
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   /** ==========================
-   *  4. FILTER DATA
-   *  ========================== */
+   * 4. FILTER DATA
+   * ========================== */
   const filteredItems = useMemo(() => {
     return brands.filter((b) =>
       (b.name || "").toLowerCase().includes(search.toLowerCase().trim())
     );
   }, [brands, search]);
 
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredItems]);
+
   /** ==========================
-   *  5. HANDLERS
-   *  ========================== */
+   * 5. HANDLERS
+   * ========================== */
   const handleSave = (formData) => handleSaveAdmin(formData, { name: "name" });
   const handleDelete = (item) => handleDeleteAdmin(item, "name");
 
   /** ==========================
-   *  6. UI RENDER
-   *  ========================== */
+   * 6. UI RENDER
+   * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">Quản lý thương hiệu</h1>
@@ -75,7 +84,10 @@ export default memo(function BrandManagement() {
           type="text"
           placeholder="Tìm kiếm thương hiệu..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -84,30 +96,42 @@ export default memo(function BrandManagement() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "name", label: "Tên thương hiệu" },
-              {
-                field: "image",
-                label: "Hình ảnh",
-                render: (value) => (
-                  <img
-                    src={value || placeholder}
-                    alt="brand"
-                    className="w-16 h-16 object-contain rounded"
-                    onError={(e) => (e.target.src = placeholder)}
-                  />
-                ),
-              },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "name", label: "Tên thương hiệu" },
+                {
+                  field: "image",
+                  label: "Hình ảnh",
+                  render: (value) => (
+                    <img
+                      src={value || placeholder}
+                      alt="brand"
+                      className="w-16 h-16 object-contain rounded"
+                      onError={(e) => (e.target.src = placeholder)}
+                    />
+                  ),
+                },
+              ]}
+              data={currentItems} // chỉ hiển thị trang hiện tại
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM VIEW */}

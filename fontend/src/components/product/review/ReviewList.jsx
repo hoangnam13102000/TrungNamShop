@@ -1,31 +1,63 @@
-// ReviewList.jsx
+import { useState, useMemo, useEffect, useRef } from "react";
 import { FaStar, FaRegStar } from "react-icons/fa";
+import Pagination from "../../common/Pagination"; 
 
-const ReviewList = ({ reviews }) => (
-  <div className="space-y-4">
-    {reviews.length === 0 ? (
-      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-        <p className="text-gray-500 text-lg">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
-      </div>
-    ) : (
-      reviews.map((r) => (
-        <div key={r.id} className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <h4 className="font-semibold text-gray-900">{r.name || "Người dùng"}</h4>
-              <p className="text-sm text-gray-500">{r.date || new Date().toLocaleDateString()}</p>
-            </div>
-            <div className="flex gap-1">
-              {[...Array(5)].map((_, i) =>
-                i < Number(r.stars) ? <FaStar key={i} className="text-yellow-400" size={14} /> : <FaRegStar key={i} className="text-gray-300" size={14} />
-              )}
-            </div>
-          </div>
-          <p className="text-gray-700">{r.content}</p>
+const ReviewList = ({ reviews, itemsPerPage = 3 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const containerRef = useRef(null);
+
+  const totalPages = Math.ceil(reviews.length / itemsPerPage);
+
+  const currentReviews = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return reviews.slice(start, start + itemsPerPage);
+  }, [currentPage, reviews, itemsPerPage]);
+
+  // Cuộn lên đầu khi đổi trang
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [currentPage]);
+
+  return (
+    <div ref={containerRef} className="space-y-4">
+      {currentReviews.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <p className="text-gray-500 text-lg">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
         </div>
-      ))
-    )}
-  </div>
-);
+      ) : (
+        currentReviews.map((r) => (
+          <div key={r.id} className="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h4 className="font-semibold text-gray-900">{r.name || "Người dùng"}</h4>
+                <p className="text-sm text-gray-500">{r.date || new Date().toLocaleDateString()}</p>
+              </div>
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) =>
+                  i < Number(r.stars)
+                    ? <FaStar key={i} className="text-yellow-400" size={14} />
+                    : <FaRegStar key={i} className="text-gray-300" size={14} />
+                )}
+              </div>
+            </div>
+            <p className="text-gray-700">{r.content}</p>
+          </div>
+        ))
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          maxVisible={5}
+        />
+      )}
+    </div>
+  );
+};
 
 export default ReviewList;

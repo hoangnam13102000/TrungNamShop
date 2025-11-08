@@ -1,17 +1,18 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import ScrollToTop from "./routers/navigation";
-import { ProtectedAdminRoute } from "./routers/auth/ProtectedRoute"; // ✅ dùng đúng ProtectedAdminRoute
+import ScrollToTop from "./routers/Navigation";
+import { ProtectedAdminRoute } from "./routers/auth/ProtectedRoute"; 
 
 // ADMIN PATH
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
 import DashBoard from "@page_admin/DashBoard";
 
+
 //----------------------ACCOUNT-------------------------------------
 import AccountList from "@page_admin/account/AccountList";
 import AccountTypeList from "@page_admin/account/AccountType";
 import MemberLevelList from "@page_admin/customer/MemberLevelList";
-import Reward from "./pages/admin/employee/Reward";
+
 
 //----------------------PRODUCT-------------------------------------
 import ProductManagement from "@page_admin/product/ProductManagement";
@@ -32,24 +33,36 @@ import GeneralInfomation from "./pages/admin/product/GeneralInfomation";
 import Utility from "./pages/admin/product/Utility";
 import Review from "./pages/admin/product/Review";
 
-//----------------------USERS-------------------------------------
-import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
+//----------------------AUTHS-------------------------------------
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+
+//----------------------CUSTOMER-------------------------------------
+
 import CustomerManagement from "@page_admin/customer/CustomerManagement";
 import StoreManagement from "@page_admin/store/StoreManagement";
 import WarehouseManagement from "@page_admin/store/WarehouseManagement";
-import PositionManagement from "./pages/admin/employee/Position";
 
-//----------------------USER PAGES-------------------------------------
+
+//----------------------EMPLOYEES-------------------------------------
+import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
+import Reward from "./pages/admin/employee/Reward";
+import PositionManagement from "./pages/admin/employee/Position";
+import SalaryCoefficient from "./pages/admin/employee/SalaryCoefficient";
+import AllowanceManagement from "./pages/admin/employee/AllowanceManagement";
+import AttendanceManagement from "./pages/admin/employee/AttendanceManagement";
+
+//----------------------CLient-------------------------------------
 import MasterAdLayout from "@page_admin/theme/MasterAdLayout";
 import Homepage from "@page_user/HomePage";
 import ProfilePage from "@page_user/ProfilePage";
 import AboutPage from "@page_user/IntroPage";
 import FeedbackPage from "@page_user/ContactPage";
-import Login from "@page_user/Login";
 import ProductList from "@page_user/product/ProductList";
 import ProductsDetails from "@page_user/product/ProductsDetails";
-import Register from "@page_user/Register";
-import ForgotPassword from "@page_user/ForgotPassword";
+
+
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
@@ -80,6 +93,9 @@ const adminRouter = [
   { path: ROUTERS.ADMIN.EMPLOYEEMANAGMENT, element: <EmployeeManagement /> },
   { path: ROUTERS.ADMIN.ACOUNT, element: <AccountList /> },
   { path: ROUTERS.ADMIN.POSITION, element: <PositionManagement /> },
+  { path: ROUTERS.ADMIN.SALARYCOEFFICIENT, element: <SalaryCoefficient /> },
+  { path: ROUTERS.ADMIN.ALLOWANCE, element: <AllowanceManagement /> }, 
+  { path: ROUTERS.ADMIN.ATTENDANCE, element: <AttendanceManagement /> },
   { path: ROUTERS.ADMIN.REWARD, element: <Reward /> },
   { path: ROUTERS.ADMIN.CUSTOMERMANAGEMENTL, element: <CustomerManagement /> },
   { path: ROUTERS.ADMIN.MEMBERLEVEL, element: <MemberLevelList /> },

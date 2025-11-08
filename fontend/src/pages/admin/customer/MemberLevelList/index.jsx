@@ -3,16 +3,16 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination"; 
 
 const MemberLevelingList = () => {
   /** ==========================
    * 1. CRUDApi
    * ========================== */
   const memberLevelAPI = useCRUDApi("account-leveling");
-
   const { data: levels = [], isLoading, refetch } = memberLevelAPI.useGetAll();
   const createMutation = memberLevelAPI.useCreate();
   const updateMutation = memberLevelAPI.useUpdate();
@@ -36,10 +36,15 @@ const MemberLevelingList = () => {
   const { dialog, showDialog, closeDialog, handleSave, handleDelete } =
     useAdminHandler(crud, refetch);
 
+  /** ==========================
+   * 4. STATE
+   * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   /** ==========================
-   * 4. FILTER DATA & FORMAT
+   * 5. FILTER DATA & FORMAT
    * ========================== */
   const filteredItems = useMemo(() => {
     return levels
@@ -53,7 +58,16 @@ const MemberLevelingList = () => {
   }, [levels, search]);
 
   /** ==========================
-   * 5. CUSTOM HANDLERS
+   * 6. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredItems]);
+
+  /** ==========================
+   * 7. CUSTOM HANDLERS
    * ========================== */
   const onSave = async (formData) => {
     if (crud.selectedItem?.id === 1) {
@@ -78,7 +92,7 @@ const MemberLevelingList = () => {
   };
 
   /** ==========================
-   * 6. UI
+   * 8. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -96,7 +110,10 @@ const MemberLevelingList = () => {
           type="text"
           placeholder="Tìm kiếm bậc thành viên..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -104,27 +121,39 @@ const MemberLevelingList = () => {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <AdminListTable
-          columns={[
-            { field: "name", label: "Tên bậc thành viên" },
-            { field: "limit", label: "Hạn mức (point)" },
-          ]}
-          data={filteredItems}
-          actions={[
-            {
-              icon: <FaEdit />,
-              label: "Sửa",
-              onClick: crud.handleEdit,
-              disabled: (row) => row.id === 1,
-            },
-            {
-              icon: <FaTrash />,
-              label: "Xóa",
-              onClick: onDelete,
-              disabled: (row) => row.id === 1,
-            },
-          ]}
-        />
+        <>
+          <AdminListTable
+            columns={[
+              { field: "name", label: "Tên bậc thành viên" },
+              { field: "limit", label: "Hạn mức (point)" },
+            ]}
+            data={currentItems} // dữ liệu trang hiện tại
+            actions={[
+              {
+                icon: <FaEdit />,
+                label: "Sửa",
+                onClick: crud.handleEdit,
+                disabled: (row) => row.id === 1,
+              },
+              {
+                icon: <FaTrash />,
+                label: "Xóa",
+                onClick: onDelete,
+                disabled: (row) => row.id === 1,
+              },
+            ]}
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {crud.openForm && (

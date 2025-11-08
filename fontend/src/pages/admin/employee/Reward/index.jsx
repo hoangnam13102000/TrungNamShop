@@ -4,8 +4,9 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import Pagination from "../../../../components/common/Pagination";
 
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
@@ -14,9 +15,8 @@ const RewardManagement = () => {
    * 1. FETCH DATA & CRUD API
    * ========================== */
   const rewardAPI = useCRUDApi("rewards");
+  const { data: rewards = [], isLoading, isError, refetch } = rewardAPI.useGetAll();
 
-  const { data: rewards = [], isLoading, isError, refetch } =
-    rewardAPI.useGetAll();
   const create = rewardAPI.useCreate();
   const update = rewardAPI.useUpdate();
   const remove = rewardAPI.useDelete();
@@ -33,24 +33,29 @@ const RewardManagement = () => {
   /** ==========================
    * 2. HANDLER
    * ========================== */
-  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
-    crud,
-    refetch
-  );
+  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(crud, refetch);
 
   /** ==========================
-   * 3. SEARCH
+   * 3. SEARCH & PAGINATION
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase();
+  const filteredItems = useMemo(() => {
+    const term = search.toLowerCase().trim();
     return rewards.filter(
       (r) =>
         r.reward_name?.toLowerCase().includes(term) ||
         String(r.reward_money ?? "").includes(term)
     );
   }, [rewards, search]);
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredItems]);
 
   /** ==========================
    * 4. UI
@@ -76,11 +81,16 @@ const RewardManagement = () => {
         >
           <FaPlus /> Thêm thưởng
         </button>
+
         <input
+          type="text"
+          placeholder="Tìm kiếm theo tên hoặc số tiền..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm kiếm..."
-          className="border rounded-lg px-3 py-2 w-full sm:w-72 focus:ring-2 focus:ring-red-500"
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
 
@@ -91,15 +101,26 @@ const RewardManagement = () => {
           {
             field: "reward_money",
             label: "Số tiền (VNĐ)",
-            render: (v) => Number(v ?? 0).toLocaleString("vi-VN") + " VNĐ",
+            render: (v) =>
+              v ? Number(v).toLocaleString("vi-VN") + " VNĐ" : "—",
           },
         ]}
-        data={filtered}
+        data={currentItems}
         actions={[
           { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
           { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
         ]}
       />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          maxVisible={5}
+        />
+      )}
 
       {/* Form */}
       {crud.openForm && (
@@ -121,7 +142,7 @@ const RewardManagement = () => {
             },
           ]}
           initialData={crud.selectedItem}
-          onSave={(data) => handleSave(data, "reward_name", "reward_money")}
+          onSave={handleSave}
           onClose={crud.handleCloseForm}
         />
       )}

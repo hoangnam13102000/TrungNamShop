@@ -9,21 +9,16 @@ import {
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
+import Pagination from "../../../../components/common/Pagination"; 
 
 export default memo(function AdminCommunicationConnectivityPage() {
-  /** ==========================
-   * 1. FETCH DATA
-   * ========================== */
   const connectivityApi = useCRUDApi("communication-connectivities"); 
   const { data: connectivities = [], isLoading, refetch } =
     connectivityApi.useGetAll();
 
-  /** ==========================
-   * 2. CRUD MUTATIONS
-   * ========================== */
   const createMutation = connectivityApi.useCreate();
   const updateMutation = connectivityApi.useUpdate();
   const deleteMutation = connectivityApi.useDelete();
@@ -37,18 +32,12 @@ export default memo(function AdminCommunicationConnectivityPage() {
     "communication-connectivities"
   );
 
-  /** ==========================
-   * 3. HANDLER + DIALOG
-   * ========================== */
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
     refetch,
     (item) => item?.mobile_network || "Không rõ"
   );
 
-  /** ==========================
-   * 4. SEARCH & MAP DATA
-   * ========================== */
   const [search, setSearch] = useState("");
 
   const filteredItems = useMemo(
@@ -73,14 +62,11 @@ export default memo(function AdminCommunicationConnectivityPage() {
     [filteredItems]
   );
 
-  /** ==========================
-   * 5. INITIAL DATA FOR FORM
-   * ========================== */
   const initialData = useMemo(() => {
     if (!crud.selectedItem) return {};
     return {
       ...crud.selectedItem,
-      nfc: crud.selectedItem.nfc ? "true" : "false", // string để select nhận diện
+      nfc: crud.selectedItem.nfc ? "true" : "false",
       mobile_network: crud.selectedItem.mobile_network || "",
       sim_slot: crud.selectedItem.sim_slot || "",
       gps: crud.selectedItem.gps || "",
@@ -88,8 +74,18 @@ export default memo(function AdminCommunicationConnectivityPage() {
   }, [crud.selectedItem]);
 
   /** ==========================
-   * 6. UI
+   * PHÂN TRANG
    * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // số item trên 1 trang
+  const totalPages = Math.ceil(mappedItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return mappedItems.slice(start, end);
+  }, [mappedItems, currentPage]);
+
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-semibold mb-6">
@@ -109,7 +105,10 @@ export default memo(function AdminCommunicationConnectivityPage() {
           type="text"
           placeholder="Tìm kiếm theo mạng..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset về trang 1 khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -118,33 +117,43 @@ export default memo(function AdminCommunicationConnectivityPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              {
-                field: "nfc",
-                label: "Công nghệ NFC",
-                render: (value) => (
-                  <div className="flex justify-center">
-                    {value ? (
-                      <FaCheckCircle className="text-green-500 text-lg" />
-                    ) : (
-                      <FaTimesCircle className="text-red-500 text-lg" />
-                    )}
-                  </div>
-                ),
-              },
-              { field: "mobile_network", label: "Hỗ trợ mạng" },
-              { field: "sim_slot", label: "Sim" },
-              { field: "gps", label: "GPS" },
-            ]}
-            data={mappedItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                {
+                  field: "nfc",
+                  label: "Công nghệ NFC",
+                  render: (value) => (
+                    <div className="flex justify-center">
+                      {value ? (
+                        <FaCheckCircle className="text-green-500 text-lg" />
+                      ) : (
+                        <FaTimesCircle className="text-red-500 text-lg" />
+                      )}
+                    </div>
+                  ),
+                },
+                { field: "mobile_network", label: "Hỗ trợ mạng" },
+                { field: "sim_slot", label: "Sim" },
+                { field: "gps", label: "GPS" },
+              ]}
+              data={paginatedItems} // dữ liệu đã phân trang
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PHÂN TRANG */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            maxVisible={5}
           />
-        </div>
+        </>
       )}
 
       {/* FORM */}
@@ -171,7 +180,7 @@ export default memo(function AdminCommunicationConnectivityPage() {
           onSave={(data) =>
             handleSave({
               ...data,
-              nfc: data.nfc === "true", // convert string về boolean trước khi gửi
+              nfc: data.nfc === "true",
               mobile_network: data.mobile_network || "",
               sim_slot: data.sim_slot || "",
               gps: data.gps || "",

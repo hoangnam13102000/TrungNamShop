@@ -79,7 +79,10 @@ const AdminSidebar = ({
       dropdown: [
         { label: "Quản lý nhân viên", path: "/quan-tri/quan-ly-nhan-vien" },
         { label: "Quản lý chức vụ", path: "/quan-tri/quan-ly-chuc-vu" },
+        { label: "Quản lý hệ số lương", path: "/quan-tri/quan-ly-he-so-luong" },
+        { label: "Quản lý phụ cấp", path: "/quan-tri/quan-ly-phu-cap" },
         { label: "Quản lý thưởng", path: "/quan-tri/quan-ly-thuong" },
+        { label: "Quản lý chấm công", path: "/quan-tri/quan-ly-cham-cong" },
       ],
     },
     {

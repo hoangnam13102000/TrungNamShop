@@ -2,13 +2,14 @@ import { memo, useMemo, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination"; 
 
 export default memo(function AdminReviewPage() {
   /** ==========================
-   *  1. API HOOKS
+   * 1. API HOOKS
    * ========================== */
   const { useGetAll, useUpdate, useDelete } = useCRUDApi("reviews");
 
@@ -17,7 +18,7 @@ export default memo(function AdminReviewPage() {
   const deleteMutation = useDelete();
 
   /** ==========================
-   *  2. CRUD HANDLER
+   * 2. CRUD HANDLER
    * ========================== */
   const crud = useAdminCrud(
     {
@@ -34,9 +35,11 @@ export default memo(function AdminReviewPage() {
   );
 
   /** ==========================
-   *  3. SEARCH & FILTER
+   * 3. SEARCH & FILTER
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // số dòng hiển thị mỗi trang
 
   const filteredItems = useMemo(() => {
     return reviews.filter((r) =>
@@ -45,7 +48,16 @@ export default memo(function AdminReviewPage() {
   }, [reviews, search]);
 
   /** ==========================
-   *  4. UI
+   * 4. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * 5. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -57,7 +69,10 @@ export default memo(function AdminReviewPage() {
           type="text"
           placeholder="Tìm kiếm theo nội dung..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset trang khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -66,21 +81,33 @@ export default memo(function AdminReviewPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "name", label: "Tên tài khoản" },
-              { field: "content", label: "Nội dung" },
-              { field: "stars", label: "Số sao" },
-              { field: "date", label: "Ngày đánh giá" },
-            ]}
-            data={filteredItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "name", label: "Tên tài khoản" },
+                { field: "content", label: "Nội dung" },
+                { field: "stars", label: "Số sao" },
+                { field: "date", label: "Ngày đánh giá" },
+              ]}
+              data={paginatedItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* DIALOG */}

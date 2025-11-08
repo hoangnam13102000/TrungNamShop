@@ -3,9 +3,10 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination"; 
 
 const AccountTypeList = () => {
   const protectedNames = ["Admin", "Nhân viên", "Khách hàng"];
@@ -92,7 +93,19 @@ const AccountTypeList = () => {
   );
 
   /** ==========================
-   * 6. Loading / Error
+   * 6. Pagination
+   * ========================== */
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // số loại tài khoản mỗi trang
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [currentPage, filteredItems]);
+
+  /** ==========================
+   * 7. Loading / Error
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
@@ -104,7 +117,7 @@ const AccountTypeList = () => {
     );
 
   /** ==========================
-   * 7. Render
+   * 8. Render
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -123,7 +136,10 @@ const AccountTypeList = () => {
           type="text"
           placeholder="Tìm kiếm loại tài khoản..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset về trang 1 khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -131,7 +147,7 @@ const AccountTypeList = () => {
       {/* Table */}
       <AdminListTable
         columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
-        data={filteredItems}
+        data={currentItems} // chỉ hiển thị dữ liệu trang hiện tại
         actions={[
           {
             icon: <FaEdit />,
@@ -155,6 +171,16 @@ const AccountTypeList = () => {
           },
         ]}
       />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          maxVisible={5}
+        />
+      )}
 
       {/* Form Add / Edit */}
       {crud.openForm && (

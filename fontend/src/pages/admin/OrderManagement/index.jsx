@@ -1,7 +1,7 @@
 import { FaEye, FaSyncAlt } from "react-icons/fa";
 import AdminListTable from "../../../components/common/AdminListTable";
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
-import useAdminCrud from "../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../utils/hooks/useAdminCrud1";
 
 const initialOrders = [
   {

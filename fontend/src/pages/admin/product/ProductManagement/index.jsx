@@ -3,9 +3,10 @@ import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import AdminListTable from "../../../../components/common/AdminListTable";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import useAdminCrud from "../../../../utils/useAdminCrud1";
+import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import Pagination from "../../../../components/common/Pagination";
 
 export default memo(function AdminProductPage() {
   /** ==========================
@@ -46,6 +47,8 @@ export default memo(function AdminProductPage() {
    * 4. SEARCH & MAP DATA
    * ========================== */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const filteredItems = useMemo(() => {
     return products.filter((p) =>
@@ -62,7 +65,16 @@ export default memo(function AdminProductPage() {
   }, [filteredItems]);
 
   /** ==========================
-   * 5. UI
+   * 5. PAGINATION
+   * ========================== */
+  const totalPages = Math.ceil(mappedItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return mappedItems.slice(start, start + itemsPerPage);
+  }, [mappedItems, currentPage]);
+
+  /** ==========================
+   * 6. UI
    * ========================== */
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
@@ -81,7 +93,10 @@ export default memo(function AdminProductPage() {
           type="text"
           placeholder="Tìm kiếm sản phẩm..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset page khi search
+          }}
           className="border rounded-lg px-3 py-2 w-full sm:w-72"
         />
       </div>
@@ -90,35 +105,47 @@ export default memo(function AdminProductPage() {
       {isLoading ? (
         <p>Đang tải dữ liệu...</p>
       ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "name", label: "Tên sản phẩm" },
-              { field: "brand_name", label: "Thương hiệu" },
-              { field: "description", label: "Mô tả" },
-              {
-                field: "status_val",
-                label: "Trạng thái",
-                render: (val) => (
-                  <span
-                    className={`px-2 py-1 rounded-full text-sm ${
-                      val === 1
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {val === 1 ? "Đang bán" : "Ngừng bán"}
-                  </span>
-                ),
-              },
-            ]}
-            data={mappedItems}
-            actions={[
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-              { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-            ]}
-          />
-        </div>
+        <>
+          <div className="overflow-x-auto">
+            <AdminListTable
+              columns={[
+                { field: "name", label: "Tên sản phẩm" },
+                { field: "brand_name", label: "Thương hiệu" },
+                { field: "description", label: "Mô tả" },
+                {
+                  field: "status_val",
+                  label: "Trạng thái",
+                  render: (val) => (
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        val === 1
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {val === 1 ? "Đang bán" : "Ngừng bán"}
+                    </span>
+                  ),
+                },
+              ]}
+              data={paginatedItems}
+              actions={[
+                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+              ]}
+            />
+          </div>
+
+          {/* PAGINATION */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              maxVisible={5}
+            />
+          )}
+        </>
       )}
 
       {/* FORM */}
