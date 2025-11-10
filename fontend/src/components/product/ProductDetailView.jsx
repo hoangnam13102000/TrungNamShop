@@ -64,15 +64,15 @@ const FIELD_LABELS = {
 };
 
 const CATEGORY_ICONS = {
-  screen: "📱",
-  rear_camera: "📷",
-  front_camera: "🤳",
-  memory: "💾",
-  operating_system: "⚙️",
-  battery_charging: "🔋",
-  communication_connectivity: "📡",
-  general_information: "ℹ️",
-  utility: "✨",
+  screen: "",
+  rear_camera: "",
+  front_camera: "",
+  memory: "",
+  operating_system: "",
+  battery_charging: "",
+  communication_connectivity: "",
+  general_information: "",
+  utility: "",
 };
 
 const renderValue = (key, value) => {

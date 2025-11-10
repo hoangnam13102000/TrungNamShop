@@ -13,16 +13,16 @@ class AccountLevelSeeder extends Seeder
      */
     public function run(): void
     {
-         $levels = [
-            ['id' => 1, 'name' => 'Thành viên'],
-         ];
-         foreach ($levels as $level) {
-            AccountLevel::updateOrCreate(
-                ['id' => $level['id']],
-                ['name' => $level['name'],
-                'updated_at' => Carbon::now(),
-                'created_at' => Carbon::now(),]
-            );
-        }
+        //  $levels = [
+        //     ['id' => 1, 'name' => 'Thành viên'],
+        //  ];
+        //  foreach ($levels as $level) {
+        //     AccountLevel::updateOrCreate(
+        //         ['id' => $level['id']],
+        //         ['name' => $level['name'],
+        //         'updated_at' => Carbon::now(),
+        //         'created_at' => Carbon::now(),]
+        //     );
+        // }
     }
 }
