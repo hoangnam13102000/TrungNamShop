@@ -45,7 +45,7 @@ class EmployeeController extends Controller
     {
 
         $validated = $request->validate([
-            'account_id' => 'nullable|exists:accounts,id',
+            'account_id' => 'required|exists:accounts,id',
             'position_id' => 'nullable|exists:positions,id',
             'store_id' => 'nullable|exists:stores,id',
             'warehouse_id' => 'nullable|exists:warehouses,id',
@@ -108,7 +108,7 @@ class EmployeeController extends Controller
 
         // Validation
         $validated = $request->validate([
-            'account_id'   => 'nullable|exists:accounts,id',
+            'account_id'   => 'sometimes|exists:accounts,id',
             'position_id'  => 'nullable|exists:positions,id',
             'store_id'     => 'nullable|exists:stores,id',
             'warehouse_id' => 'nullable|exists:warehouses,id',

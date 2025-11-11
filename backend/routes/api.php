@@ -26,6 +26,8 @@ use App\Http\Controllers\BatteryChargingController;
 use App\Http\Controllers\GeneralInformationController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\ProductDetailController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SalaryCoefficientController;
 use App\Http\Controllers\AllowanceController;
@@ -141,6 +143,12 @@ Route::prefix('admin')->group(function () {
 
     // ------------------Product Detail ------------------
     Route::apiResource('product-details', ProductDetailController::class);
+
+    // ------------------Orders ------------------
+    Route::apiResource('orders', OrderController::class);
+    
+    // ------------------Discount ------------------
+    Route::apiResource('discounts', DiscountController::class);
 
     // ------------------Reviews ------------------
     Route::apiResource('reviews', ReviewController::class);

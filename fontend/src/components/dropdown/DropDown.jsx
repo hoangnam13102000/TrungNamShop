@@ -15,6 +15,7 @@ const Dropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  /** 🔹 Đóng menu khi click ra ngoài */
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -22,33 +23,44 @@ const Dropdown = ({
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔹 selectedOption so khớp kiểu string
+  /** 🔹 Tìm option được chọn — ép kiểu string để tránh bug */
   const selectedOption = options.find(
     (opt) => String(opt.value) === String(value)
   );
 
+  /** 🔹 Khi chọn option */
   const handleSelect = (option) => {
     if (disabled) return;
     setIsOpen(false);
     onSelect?.(option);
   };
 
+  /** 🔹 Toggle dropdown */
   const toggleDropdown = () => {
     if (disabled) return;
     setIsOpen((prev) => !prev);
   };
 
   return (
-    <div ref={dropdownRef} className={`relative ${className || "w-full"}`}>
+    <div
+      ref={dropdownRef}
+      className={`relative ${className || "w-full"}`}
+    >
+      {/* BUTTON */}
       <button
         type="button"
         onClick={toggleDropdown}
         disabled={disabled}
         className={`bg-white border border-gray-300 px-4 py-2 text-left shadow-sm flex justify-between items-center w-full
-          ${disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "hover:border-blue-400"} ${buttonClassName}`}
+          ${
+            disabled
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : "hover:border-blue-400"
+          } ${buttonClassName}`}
       >
         <span className="truncate">
           {selectedOption?.label || placeholder || label}
@@ -58,6 +70,7 @@ const Dropdown = ({
         </span>
       </button>
 
+      {/* MENU */}
       {isOpen && !disabled && (
         <ul
           className={`absolute left-0 z-50 bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-auto w-full ${listClassName}`}

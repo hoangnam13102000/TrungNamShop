@@ -17,12 +17,22 @@ const AccountList = () => {
   const updateMutation = accountAPI.useUpdate();
   const deleteMutation = accountAPI.useDelete();
 
+  // Lấy account levels
   const accountLevelAPI = useCRUDApi("account-leveling");
   const { data: accountLevels = [] } = accountLevelAPI.useGetAll();
 
   const accountLevelOptions = useMemo(
     () => accountLevels.map((l) => ({ value: l.id, label: l.name })),
     [accountLevels]
+  );
+
+  // Lấy account types
+  const accountTypeAPI = useCRUDApi("account-types");
+  const { data: accountTypes = [] } = accountTypeAPI.useGetAll();
+
+  const accountTypeOptions = useMemo(
+    () => accountTypes.map((t) => ({ value: t.id, label: t.account_type_name })),
+    [accountTypes]
   );
 
   /** ==========================
@@ -82,6 +92,7 @@ const AccountList = () => {
     const payload = {
       ...formData,
       account_level_id: formData.account_level_id?.value || formData.account_level_id,
+      account_type_id: formData.account_type_id?.value || formData.account_type_id,
     };
 
     showDialog(
@@ -228,11 +239,11 @@ const AccountList = () => {
                 ]
               : []),
             {
-              name: "account_type_name",
+              name: "account_type_id",
               label: "Loại tài khoản",
-              type: "text",
-              disabled: true,
-              value: crud.selectedItem?.account_type?.account_type_name || "—",
+              type: "select",
+              options: accountTypeOptions,
+              required: true,
             },
             {
               name: "account_level_id",

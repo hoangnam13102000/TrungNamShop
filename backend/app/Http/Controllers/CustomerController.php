@@ -81,7 +81,7 @@ class CustomerController extends Controller
 
         // Validate tất cả trường, avatar nullable
         $validated = $request->validate([
-            'account_id'   => 'required|exists:accounts,id',
+            'account_id'   => 'sometimes|exists:accounts,id',
             'full_name'    => 'nullable|string|max:255',
             'address'      => 'nullable|string|max:255',
             'phone_number' => 'nullable|string|max:20',

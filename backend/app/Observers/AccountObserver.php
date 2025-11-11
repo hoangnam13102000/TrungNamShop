@@ -31,8 +31,8 @@ class AccountObserver
                 Employee::create([
                     'account_id'   => $account->id,
                     'position_id'  => null,
-                    'store_id'     =>1,
-                    'warehouse_id' => 1,
+                    'store_id'     =>null,
+                    'warehouse_id' => null,
                     'full_name'    => null,
                     'phone_number' => null,
                     'email'        => null,
@@ -40,7 +40,7 @@ class AccountObserver
                     'birth_date'   => null,
                     'gender'       => null,
                     'avatar'       => null,
-                    'create_at'=>  $account->created_at,
+                    'created_at'=>  $account->created_at,
                     'is_active'    => true,
                 ]);
             }
