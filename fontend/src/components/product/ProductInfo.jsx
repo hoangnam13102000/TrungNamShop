@@ -1,7 +1,6 @@
 import { memo } from "react";
 
-const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
-  // Lấy 4 nhóm thông số đầu tiên làm "Thông số nổi bật"
+const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs, onAddToCart }) => {
   const previewSpecs = specs.slice(0, 4);
 
   return (
@@ -37,11 +36,9 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {previewSpecs.map((spec, idx) => {
-              // Tìm dòng đầu tiên có value hợp lệ
               const firstValid = spec.details.find(
                 (d) => d.value && d.value !== "-"
               );
-
               return (
                 <div
                   key={idx}
@@ -66,6 +63,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
       {/* 🛒 Nút thêm vào giỏ hàng */}
       {showAddToCart && (
         <button
+          onClick={onAddToCart} // GỌI HÀM THÊM GIỎ HÀNG Ở ĐÂY
           className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 
                      text-white px-6 py-3 rounded-xl hover:shadow-lg 
                      transition-all font-semibold"
@@ -74,7 +72,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs }) => {
         </button>
       )}
 
-      {/* 🔍 Nút xem toàn bộ thông số kỹ thuật */}
+      {/* Nút xem toàn bộ thông số kỹ thuật */}
       {specs.length > 0 && (
         <button
           onClick={onShowSpecs}

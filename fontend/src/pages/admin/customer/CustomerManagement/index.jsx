@@ -1,137 +1,123 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { FaEdit, FaEye, FaUser, FaPhone, FaEnvelope, FaTransgender, FaBirthdayCake, FaMapMarkerAlt } from "react-icons/fa";
-import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
-import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import CommonViewDialog from "../../../../components/users/CommonViewDialog";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import placeholder from "../../../../assets/admin/logoicon1.jpg";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import AdminLayoutPage from "../../../../components/common/Layout";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import CommonViewDialog from "../../../../components/users/CommonViewDialog";
 import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
-import Pagination from "../../../../components/common/Pagination";
+import placeholder from "../../../../assets/admin/logoicon1.jpg";
 
-export default memo(function CustomerManagement() {
-  /** ========================== 1. FETCH DATA ========================== */
-  const { useGetAll: useGetCustomers, useUpdate: useUpdateCustomer } = useCRUDApi("customers");
-  const { data: customers = [], isLoading: loadingCustomers, refetch: refetchCustomers } = useGetCustomers();
-  const updateMutation = useUpdateCustomer();
+const CustomerManagement = () => {
+  const customerAPI = useCRUDApi("customers");
+  const { data: customers = [], isLoading, isError, refetch } = customerAPI.useGetAll();
+  const create = customerAPI.useCreate();
+  const update = customerAPI.useUpdate();
 
-  /** ========================== 2. CRUD ========================== */
+  // CRUD logic
   const crud = useAdminCrud(
     {
-      update: async (id, fd) => await updateMutation.mutateAsync({ id, data: fd }),
+      create: create.mutateAsync,
+      update: async (id, data) => update.mutateAsync({ id, data }),
     },
     "customers"
   );
 
-  const { dialog, closeDialog, handleSave: handleSaveAdmin } = useAdminHandler(crud, refetchCustomers);
+  // Dialog + Save handler
+  const { dialog, handleSave, closeDialog } = useAdminHandler(crud, refetch, (item) => item?.full_name || "Không tên");
 
-  /** ========================== 3. STATE ========================== */
+  // Search & pagination
   const [search, setSearch] = useState("");
-  const [viewItem, setViewItem] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewItem, setViewItem] = useState(null);
   const itemsPerPage = 5;
 
-  /** ========================== 4. FILTER & PAGINATION ========================== */
-  const filteredItems = useMemo(() => {
-    return customers.filter((c) =>
-      (c.full_name || "").toLowerCase().includes(search.toLowerCase().trim())
-    );
-  }, [customers, search]);
+  const filteredItems = useMemo(
+    () => customers.filter((c) => (c.full_name || "").toLowerCase().includes(search.toLowerCase().trim())),
+    [customers, search]
+  );
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const currentItems = useMemo(() => {
+
+  const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredItems]);
+  }, [filteredItems, currentPage]);
 
-  /** ========================== 5. HANDLE SAVE ========================== */
-  const handleSave = async (formData) => {
-    await handleSaveAdmin(formData);
-  };
+  // Table columns and actions
+  const tableColumns = [
+    { field: "account.username", label: "Username" },
+    { field: "full_name", label: "Họ tên" },
+    { field: "phone_number", label: "SĐT" },
+    { field: "email", label: "Email" },
+    {
+      field: "birth_date",
+      label: "Ngày sinh",
+      render: (v) => (v ? new Date(v).toLocaleDateString() : "—"),
+    },
+    {
+      field: "avatar",
+      label: "Ảnh đại diện",
+      render: (value, row) => {
+        const imgUrl = getImageUrl(row.avatar) || placeholder;
+        return <img src={imgUrl} alt="avatar" className="w-16 h-16 object-cover rounded-full border" onError={(e) => (e.target.src = placeholder)} />;
+      },
+    },
+  ];
 
-  /** ========================== 6. UI ========================== */
+  const tableActions = [
+    { icon: <FaEye />, label: "Xem", onClick: setViewItem },
+    { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+  ];
+
+  // Form fields
+  const formFields = [
+    { name: "account.username", label: "Username", type: "text", disabled: true },
+    { name: "full_name", label: "Họ tên", type: "text", required: true },
+    { name: "address", label: "Địa chỉ", type: "text" },
+    { name: "phone_number", label: "SĐT", type: "text" },
+    { name: "email", label: "Email", type: "email" },
+    { name: "birth_date", label: "Ngày sinh", type: "date" },
+    { name: "gender", label: "Giới tính", type: "select", options: [{ label: "Nam", value: "male" }, { label: "Nữ", value: "female" }] },
+    { name: "avatar", label: "Ảnh đại diện", type: "file" },
+  ];
+
+  if (isLoading) return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
+  if (isError) return <div className="p-6 text-center text-red-500">Có lỗi xảy ra khi tải dữ liệu khách hàng.</div>;
+
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6 text-center">Quản lý khách hàng</h1>
+    <>
+      <AdminLayoutPage
+        title="Khách hàng"
+        description="Quản lý thông tin khách hàng"
+        searchValue={search}
+        onSearchChange={(e) => {
+          setSearch(e.target.value);
+          setCurrentPage(1);
+        }}
+        onAdd={crud.handleAdd}
+        tableColumns={tableColumns}
+        tableData={paginatedItems}
+        tableActions={tableActions}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        formModal={{
+          open: crud.openForm,
+          title: crud.mode === "edit" ? "Sửa khách hàng" : "Thêm khách hàng",
+          fields: formFields,
+          initialData: crud.selectedItem,
+          errors: crud.errors,
+        }}
+        onFormSave={handleSave}
+        onFormClose={crud.handleCloseForm}
+      />
 
-      {/* SEARCH */}
-      <div className="flex justify-end mb-6">
-        <input
-          type="text"
-          placeholder="Tìm kiếm khách hàng..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* TABLE */}
-      {loadingCustomers ? (
-        <p className="text-center">Đang tải dữ liệu...</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <AdminListTable
-            columns={[
-              { field: "account.username", label: "Username" },
-              { field: "full_name", label: "Họ tên" },
-              { field: "phone_number", label: "SĐT" },
-              { field: "email", label: "Email" },
-              {
-                field: "birth_date",
-                label: "Ngày sinh",
-                render: (v) => (v ? new Date(v).toLocaleDateString() : "—"),
-              },
-              {
-                field: "created_at",
-                label: "Ngày tạo",
-                render: (v) => (v ? new Date(v).toLocaleDateString() : "—"),
-              },
-              {
-                field: "avatar",
-                label: "Ảnh đại diện",
-                render: (value, row) => {
-                  const imgUrl = getImageUrl(row.avatar) || placeholder;
-                  return (
-                    <div className="flex justify-center">
-                      <img
-                        src={imgUrl}
-                        alt="avatar"
-                        className="w-16 h-16 object-cover rounded-full border"
-                        onError={(e) => (e.target.src = placeholder)}
-                      />
-                    </div>
-                  );
-                },
-              },
-            ]}
-            data={currentItems}
-            actions={[
-              { icon: <FaEye />, label: "Xem", onClick: setViewItem },
-              { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-            ]}
-          />
-        </div>
-      )}
-
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          maxVisible={5}
-        />
-      )}
-
-      {/* VIEW DIALOG */}
+      {/* View dialog */}
       {viewItem && (
         <CommonViewDialog
-          title={`Chi tiết khách hàng`}
+          title="Chi tiết khách hàng"
           open={!!viewItem}
           onClose={() => setViewItem(null)}
           data={[
@@ -148,38 +134,7 @@ export default memo(function CustomerManagement() {
         />
       )}
 
-      {/* EDIT FORM */}
-      {crud.openForm && (
-        <DynamicForm
-          title={`Chỉnh sửa khách hàng - ${crud.selectedItem?.full_name}`}
-          fields={[
-            { name: "account.username", label: "Username", type: "text", disabled: true },
-            { name: "full_name", label: "Họ tên", type: "text", required: true },
-            { name: "address", label: "Địa chỉ", type: "text" },
-            { name: "phone_number", label: "SĐT", type: "text" },
-            { name: "email", label: "Email", type: "email" },
-            { name: "birth_date", label: "Ngày sinh", type: "date" },
-            { name: "gender", label: "Giới tính", type: "select", options: [
-                { label: "Nam", value: "male" },
-                { label: "Nữ", value: "female" },
-              ]
-            },
-            { name: "avatar", label: "Ảnh đại diện", type: "file" },
-          ]}
-          initialData={{
-            ...crud.selectedItem,
-            "account.username": crud.selectedItem.account?.username || "",
-            avatar: crud.selectedItem.avatar ? getImageUrl(crud.selectedItem.avatar) : null,
-            birth_date: crud.selectedItem.birth_date || null,
-          }}
-          onSave={handleSave}
-          onClose={crud.handleCloseForm}
-          mode={crud.mode}
-          className="w-full max-w-lg mx-auto"
-        />
-      )}
-
-      {/* CONFIRM DIALOG */}
+      {/* Dialog confirm / success / error */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
@@ -187,7 +142,13 @@ export default memo(function CustomerManagement() {
         message={dialog.message}
         onClose={closeDialog}
         onConfirm={dialog.onConfirm}
+        confirmText={dialog.confirmText}
+        cancelText={dialog.cancelText}
+        closeText={dialog.closeText}
+        customButtons={dialog.customButtons}
       />
-    </div>
+    </>
   );
-});
+};
+
+export default memo(CustomerManagement);

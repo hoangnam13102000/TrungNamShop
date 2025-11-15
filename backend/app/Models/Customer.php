@@ -10,6 +10,15 @@ class Customer extends Model
 {
     use HasFactory,SoftDeletes;
     protected $guarded=[];
+
+     /** ===========================
+     * Relationships
+     * =========================== */
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
     public function account()
     {
         return $this->belongsTo(Account::class);

@@ -11,4 +11,13 @@ class Store extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+     /** ===========================
+     * Relationships
+     * =========================== */
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

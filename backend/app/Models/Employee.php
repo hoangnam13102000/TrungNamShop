@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
     protected $table = 'employees';
-    protected $guarded=[];
+    protected $guarded = [];
 
-    
+
     /**
      * Relation: tài khoản (Account)
      */
@@ -59,7 +59,7 @@ class Employee extends Model
     public function rewards()
     {
         return $this->belongsToMany(Reward::class, 'employee_reward', 'employee_id', 'reward_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -68,7 +68,7 @@ class Employee extends Model
     public function allowances()
     {
         return $this->belongsToMany(Allowance::class, 'employee_allowance', 'employee_id', 'allowance_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -77,8 +77,11 @@ class Employee extends Model
     public function salaryCoefficients()
     {
         return $this->belongsToMany(SalaryCoefficient::class, 'employee_salary_coefficient', 'employee_id', 'salary_coefficient_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
-  
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

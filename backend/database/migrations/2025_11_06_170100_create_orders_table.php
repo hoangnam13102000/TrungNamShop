@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id(); // order_id
-            $table->string('order_code', 50)->unique(); 
+            $table->string('order_code', 50)->unique();
 
             // Foreign keys
-            $table->unsignedBigInteger('customer_id'); 
+            $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('employee_id')->nullable();
-            $table->unsignedBigInteger('discount_id')->nullable(); 
-            $table->unsignedBigInteger('store_id')->nullable(); 
+            $table->unsignedBigInteger('discount_id')->nullable();
+            $table->unsignedBigInteger('store_id')->nullable();
 
             // Recipient info
             $table->string('recipient_name', 191);
@@ -28,12 +28,21 @@ return new class extends Migration
 
             // Other info
             $table->text('note')->nullable();
-            $table->enum('delivery_method', ['pickup', 'delivery'])->default('delivery'); // phương thức nhận hàng
-            $table->enum('payment_method', ['cash', 'paypal', 'bank_transfer', 'momo'])->default('cash'); // phương thức thanh toán
+            $table->enum('delivery_method', ['pickup', 'delivery'])->default('delivery');
+
+            // Payment info: thêm 'vnpay' vào enum
+            $table->enum('payment_method', ['cash', 'paypal', 'bank_transfer', 'momo', 'vnpay'])
+                  ->default('cash');
+            $table->decimal('final_amount', 15, 2)->default(0)->comment('Tổng tiền cuối cùng sau giảm giá');
+
+            // Payment integration (PayPal, Momo, VNPay...)
+            $table->string('payment_gateway')->nullable()->comment('paypal, momo, vnpay, stripe...');
+            $table->string('transaction_id')->nullable()->comment('Mã giao dịch trả về từ cổng thanh toán');
+            $table->json('payment_response')->nullable()->comment('Phản hồi chi tiết từ cổng thanh toán');
 
             // Dates
-            $table->dateTime('delivery_date')->nullable(); 
-            $table->dateTime('order_date')->useCurrent(); 
+            $table->dateTime('delivery_date')->nullable();
+            $table->dateTime('order_date')->useCurrent();
 
             // Status
             $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');

@@ -7,19 +7,29 @@ export default function useAdminHandler(crud, refetch, getItemName) {
     title: "",
     message: "",
     onConfirm: null,
+    onCancel: null,
+    confirmText: "Xác nhận",
+    cancelText: "Hủy",
+    closeText: "Đóng",
+    customButtons: null,
   });
 
-  const showDialog = useCallback((mode, title, message, onConfirm = null) => {
-    setDialog({ open: true, mode, title, message, onConfirm });
+  const showDialog = useCallback((mode, title, message, onConfirm = null, onCancel = null) => {
+    setDialog((prev) => ({
+      ...prev,
+      open: true,
+      mode,
+      title,
+      message,
+      onConfirm,
+      onCancel,
+    }));
   }, []);
 
   const closeDialog = useCallback(() => {
     setDialog((prev) => ({ ...prev, open: false }));
   }, []);
 
-  /** ========================
-   *  SAVE HANDLER
-   * ======================== */
   const handleSave = async (formData, plainData = {}) => {
     const name = getItemName?.(formData) || formData?.name || "Không tên";
 
@@ -37,19 +47,22 @@ export default function useAdminHandler(crud, refetch, getItemName) {
           showDialog(
             "success",
             "Thành công",
-            crud.mode === "edit" ? "Cập nhật thành công!" : "Thêm mới thành công!"
+            crud.mode === "edit"
+              ? `Cập nhật "${name}" thành công!`
+              : `Thêm mới "${name}" thành công!`
           );
+          setTimeout(() => closeDialog(), 2000);
         } catch (err) {
           console.error("Save error:", err);
           showDialog("error", "Lỗi", "Không thể lưu dữ liệu!");
         }
+      },
+      () => {
+        closeDialog();
       }
     );
   };
 
-  /** ========================
-   *  DELETE HANDLER
-   * ======================== */
   const handleDelete = async (item) => {
     const name = getItemName?.(item) || item?.name || "Không tên";
 
@@ -62,20 +75,18 @@ export default function useAdminHandler(crud, refetch, getItemName) {
         try {
           await crud.handleDelete(item.id);
           await refetch();
-          showDialog("success", "Thành công", "Đã xoá thành công!");
+          showDialog("success", "Thành công", `Đã xoá "${name}" thành công!`);
+          setTimeout(() => closeDialog(), 2000);
         } catch (err) {
           console.error("Delete error:", err);
           showDialog("error", "Lỗi", "Không thể xoá dữ liệu!");
         }
+      },
+      () => {
+        closeDialog();
       }
     );
   };
 
-  return {
-    dialog,
-    showDialog,
-    closeDialog,
-    handleSave,
-    handleDelete,
-  };
+  return { dialog, showDialog, closeDialog, handleSave, handleDelete };
 }

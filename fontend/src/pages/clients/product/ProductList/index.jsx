@@ -1,7 +1,7 @@
 import { memo, useState, useMemo, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import ProductCard from "../../../../components/product/ProductCard";
-import Dropdown from "../../../../components/dropdown/DropDown";
+import Dropdown from "../../../../components/UI/dropdown/DropDown";
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";

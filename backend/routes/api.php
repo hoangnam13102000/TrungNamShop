@@ -33,7 +33,8 @@ use App\Http\Controllers\SalaryCoefficientController;
 use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
-
+use App\Http\Controllers\OrderDetailController;
+use App\Http\Controllers\PaymentController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -59,6 +60,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanc
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// ------------------ Momo Payment ------------------
+Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
+Route::post('/momo/notify', [PaymentController::class, 'momoNotify']);
 
 // Group Router for Admin
 Route::prefix('admin')->group(function () {
@@ -146,6 +151,9 @@ Route::prefix('admin')->group(function () {
 
     // ------------------Orders ------------------
     Route::apiResource('orders', OrderController::class);
+
+     // ------------------Order-Details ------------------
+    Route::apiResource('order-details', OrderDetailController::class);
     
     // ------------------Discount ------------------
     Route::apiResource('discounts', DiscountController::class);

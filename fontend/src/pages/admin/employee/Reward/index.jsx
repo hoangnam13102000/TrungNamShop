@@ -1,26 +1,23 @@
 import { memo, useState, useMemo } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 
-import AdminListTable from "../../../../components/common/AdminListTable";
+import AdminLayoutPage from "../../../../components/common/Layout";
 import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
-import Pagination from "../../../../components/common/Pagination";
 
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 const RewardManagement = () => {
-  /** ==========================
-   * 1. FETCH DATA & CRUD API
-   * ========================== */
+  /** 1. FETCH DATA & CRUD API */
   const rewardAPI = useCRUDApi("rewards");
   const { data: rewards = [], isLoading, isError, refetch } = rewardAPI.useGetAll();
-
   const create = rewardAPI.useCreate();
   const update = rewardAPI.useUpdate();
   const remove = rewardAPI.useDelete();
 
+  /** 2. CRUD HOOK */
   const crud = useAdminCrud(
     {
       create: create.mutateAsync,
@@ -30,19 +27,14 @@ const RewardManagement = () => {
     "rewards"
   );
 
-  /** ==========================
-   * 2. HANDLER
-   * ========================== */
+  /** 3. HANDLER */
   const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(crud, refetch);
 
-  /** ==========================
-   * 3. SEARCH & PAGINATION
-   * ========================== */
+  /** 4. SEARCH */
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
-  const filteredItems = useMemo(() => {
+  /** 5. FILTER DATA */
+  const filteredRewards = useMemo(() => {
     const term = search.toLowerCase().trim();
     return rewards.filter(
       (r) =>
@@ -51,103 +43,60 @@ const RewardManagement = () => {
     );
   }, [rewards, search]);
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredItems.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredItems]);
+  /** 6. TABLE CONFIG */
+  const tableColumns = [
+    { field: "reward_name", label: "Tên thưởng" },
+    {
+      field: "reward_money",
+      label: "Số tiền (VNĐ)",
+      render: (v) => (v ? Number(v).toLocaleString("vi-VN") + " VNĐ" : "—"),
+    },
+  ];
 
-  /** ==========================
-   * 4. UI
-   * ========================== */
-  if (isLoading)
-    return <div className="p-6 text-center">Đang tải dữ liệu...</div>;
-  if (isError)
-    return (
-      <div className="p-6 text-center text-red-500">
-        Lỗi tải dữ liệu thưởng!
-      </div>
-    );
+  const tableActions = [
+    { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+    { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
+  ];
+
+  /** 7. FORM FIELDS */
+  const formFields = [
+    { name: "reward_name", label: "Tên thưởng", type: "text", required: true },
+    { name: "reward_money", label: "Số tiền (VNĐ)", type: "number", required: true, min: 0 },
+  ];
+
+  if (isLoading) return <div className="p-6 text-center text-gray-600">Đang tải dữ liệu...</div>;
+  if (isError) return <div className="p-6 text-center text-red-500">Lỗi tải dữ liệu thưởng!</div>;
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Quản lý thưởng</h1>
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 mb-6">
-        <button
-          onClick={crud.handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition w-full sm:w-auto"
-        >
-          <FaPlus /> Thêm thưởng
-        </button>
-
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên hoặc số tiền..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* Table */}
-      <AdminListTable
-        columns={[
-          { field: "reward_name", label: "Tên thưởng" },
-          {
-            field: "reward_money",
-            label: "Số tiền (VNĐ)",
-            render: (v) =>
-              v ? Number(v).toLocaleString("vi-VN") + " VNĐ" : "—",
-          },
-        ]}
-        data={currentItems}
-        actions={[
-          { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-          { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
-        ]}
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <AdminLayoutPage
+        title="Quản lý thưởng"
+        description="Quản lý các loại thưởng và số tiền"
+        searchValue={search}
+        onSearchChange={(e) => setSearch(e.target.value)}
+        onAdd={crud.handleAdd}
+        tableColumns={tableColumns}
+        tableData={filteredRewards}
+        tableActions={tableActions}
+        // Không có phân trang
       />
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          maxVisible={5}
-        />
-      )}
-
-      {/* Form */}
+      {/* FORM MODAL */}
       {crud.openForm && (
-        <DynamicForm
-          title={crud.mode === "edit" ? "Sửa thưởng" : "Thêm thưởng mới"}
-          fields={[
-            {
-              name: "reward_name",
-              label: "Tên thưởng",
-              type: "text",
-              required: true,
-            },
-            {
-              name: "reward_money",
-              label: "Số tiền (VNĐ)",
-              type: "number",
-              required: true,
-              min: 0,
-            },
-          ]}
-          initialData={crud.selectedItem}
-          onSave={handleSave}
-          onClose={crud.handleCloseForm}
-        />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-start pt-4 sm:pt-8 md:pt-10 z-50 overflow-y-auto p-3 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-2xl sm:max-w-3xl my-4">
+            <DynamicForm
+              title={crud.mode === "edit" ? "Sửa thưởng" : "Thêm thưởng mới"}
+              fields={formFields}
+              initialData={crud.selectedItem || {}}
+              onSave={handleSave}
+              onClose={crud.handleCloseForm}
+            />
+          </div>
+        </div>
       )}
 
-      {/* Dialog */}
+      {/* DIALOG */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
@@ -155,6 +104,10 @@ const RewardManagement = () => {
         message={dialog.message}
         onClose={closeDialog}
         onConfirm={dialog.onConfirm}
+        confirmText={dialog.confirmText}
+        cancelText={dialog.cancelText}
+        closeText={dialog.closeText}
+        customButtons={dialog.customButtons}
       />
     </div>
   );

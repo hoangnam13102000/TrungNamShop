@@ -9,7 +9,7 @@ import {
 
 export default function DynamicDialog({
   open,
-  mode = "confirm", // confirm | alert | success | warning | error
+  mode = "confirm",
   title,
   message,
   onClose,
@@ -17,11 +17,10 @@ export default function DynamicDialog({
   confirmText = "Xác nhận",
   cancelText = "Hủy",
   closeText = "Đóng",
-  customButtons, // [{ text, onClick, className }]
+  customButtons,
 }) {
   if (!open) return null;
 
-  // Icon
   const iconMap = {
     success: <FaCheckCircle className="text-green-500 w-10 h-10" />,
     warning: <FaExclamationTriangle className="text-yellow-500 w-10 h-10" />,
@@ -33,38 +32,22 @@ export default function DynamicDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm text-center">
-        {/* --- Icon --- */}
-        <div className="flex justify-center mb-3">
-          {iconMap[mode] || iconMap["alert"]}
-        </div>
+        <div className="flex justify-center mb-3">{iconMap[mode]}</div>
+        {title && <h2 className="text-lg font-semibold mb-2 text-gray-800">{title}</h2>}
+        {message && <div className="text-gray-600 mb-6 whitespace-pre-line">{message}</div>}
 
-        {/* --- Title --- */}
-        {title && (
-          <h2 className="text-lg font-semibold mb-2 text-gray-800">{title}</h2>
-        )}
-
-        {/* --- Message --- */}
-        {message && (
-          <div className="text-gray-600 mb-6 whitespace-pre-line">{message}</div>
-        )}
-
-        {/* --- Action Button --- */}
         <div className="flex justify-center gap-3">
           {customButtons ? (
             customButtons.map((btn, i) => (
               <button
                 key={i}
                 onClick={btn.onClick}
-                className={`px-4 py-2 rounded-lg transition ${
-                  btn.className || "bg-gray-200 hover:bg-gray-300"
-                }`}
+                className={`px-4 py-2 rounded-lg transition ${btn.className || "bg-gray-200 hover:bg-gray-300"}`}
               >
                 {btn.text}
               </button>
             ))
-          ) : mode === "alert" ||
-            mode === "success" ||
-            mode === "error" ? (
+          ) : mode === "alert" || mode === "success" || mode === "error" ? (
             <button
               onClick={onClose}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
@@ -80,9 +63,8 @@ export default function DynamicDialog({
                 {cancelText}
               </button>
               <button
-                onClick={() => {
-                  if (onConfirm) onConfirm();
-                  onClose();
+                onClick={async () => {
+                  if (onConfirm) await onConfirm();
                 }}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
               >

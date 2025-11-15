@@ -10,6 +10,7 @@ import ReviewList from "../../../../components/product/review/ReviewList";
 import { useProductDetailById } from "../../../../api/product/productDetail";
 import { useAuth } from "../../../../context/AuthContext";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -20,26 +21,76 @@ const ProductDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [showSpecModal, setShowSpecModal] = useState(false);
 
-  /** ===========================
-   * Fetch reviews
-   * =========================== */
+  // ===========================
+  // Giỏ hàng
+  // ===========================
+  const [cartItems, setCartItems] = useState([]);
+  const [dialog, setDialog] = useState({
+    open: false,
+    mode: "success",
+    title: "",
+    message: "",
+  });
+
+  const loadCart = () => {
+    const stored = JSON.parse(localStorage.getItem("cart")) || [];
+    setCartItems(stored);
+  };
+
+  useEffect(() => loadCart(), []);
+
+  useEffect(() => {
+    const handleCartUpdated = () => loadCart();
+    window.addEventListener("cartUpdated", handleCartUpdated);
+    return () => window.removeEventListener("cartUpdated", handleCartUpdated);
+  }, []);
+
+  const handleAddToCart = (product) => {
+    const existing = cartItems.find((item) => item.id === product.id);
+    let updated;
+    if (existing) {
+      updated = cartItems.map((item) =>
+        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+      );
+    } else {
+      updated = [...cartItems, { ...product, quantity: 1 }];
+    }
+    setCartItems(updated);
+    localStorage.setItem("cart", JSON.stringify(updated));
+    window.dispatchEvent(new Event("cartUpdated"));
+
+    // Mở dialog thông báo
+    setDialog({
+      open: true,
+      mode: "success",
+      title: "Thêm vào giỏ hàng",
+      message: `Sản phẩm "${product.name}" đã được thêm vào giỏ hàng.`,
+    });
+  };
+
+  // ===========================
+  // Fetch reviews
+  // ===========================
   const reviewsApi = useCRUDApi("reviews");
-  const getReviews = reviewsApi.useGetAll(); // Lấy toàn bộ, filter client-side
+  const getReviews = reviewsApi.useGetAll();
 
   const createReview = reviewsApi.useCreate({
     onSuccess: (newReview) => {
-      // Chỉ add nếu review đúng productId
       if (Number(newReview.product_id) === productId) {
         setReviews((prev) => [newReview, ...prev]);
       }
     },
     onError: (err) => {
       console.error("Gửi review thất bại:", err);
-      alert("Gửi đánh giá thất bại, vui lòng thử lại.");
+      setDialog({
+        open: true,
+        mode: "error",
+        title: "Lỗi",
+        message: "Gửi đánh giá thất bại, vui lòng thử lại.",
+      });
     },
   });
 
-  // Filter reviews theo productId khi load
   useEffect(() => {
     if (getReviews.data) {
       const filtered = getReviews.data.filter(
@@ -49,19 +100,28 @@ const ProductDetail = () => {
     }
   }, [getReviews.data, productId]);
 
-  /** ===========================
-   * Loading/Error
-   * =========================== */
+  // ===========================
+  // Loading / Error
+  // ===========================
   if (isLoading) return <p className="text-center mt-8">Đang tải dữ liệu...</p>;
-  if (error) return <p className="text-center mt-8 text-red-500">Lỗi: {error.message}</p>;
-  if (!data) return <p className="text-center mt-8 text-gray-600">Không tìm thấy sản phẩm.</p>;
+  if (error)
+    return (
+      <p className="text-center mt-8 text-red-500">Lỗi: {error.message}</p>
+    );
+  if (!data)
+    return (
+      <p className="text-center mt-8 text-gray-600">
+        Không tìm thấy sản phẩm.
+      </p>
+    );
 
   const product = data.product || data;
-  const images = data.images?.length > 0
-    ? data.images
-    : product.primary_image
-    ? [product.primary_image]
-    : ["/placeholder.png"];
+  const images =
+    data.images?.length > 0
+      ? data.images
+      : product.primary_image
+      ? [product.primary_image]
+      : ["/placeholder.png"];
 
   // Spec data
   const specs = [];
@@ -99,6 +159,14 @@ const ProductDetail = () => {
           specs={specs}
           showAddToCart={true}
           onShowSpecs={() => setShowSpecModal(true)}
+          onAddToCart={() =>
+            handleAddToCart({
+              id: product.id,
+              name: product.name,
+              image: product.primary_image || "/placeholder.png",
+              price: product.newPrice || product.price || 0,
+            })
+          }
         />
       </div>
 
@@ -128,6 +196,15 @@ const ProductDetail = () => {
       <div className="mt-12">
         <ReviewList reviews={reviews} />
       </div>
+
+      {/* 🟢 Dynamic Dialog */}
+      <DynamicDialog
+        open={dialog.open}
+        mode={dialog.mode}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={() => setDialog((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 };

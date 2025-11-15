@@ -1,28 +1,22 @@
 import { memo, useState, useMemo } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
-import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
-import Pagination from "../../../../components/common/Pagination"; 
+import AdminLayoutPage from "../../../../components/common/Layout";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 
-const AccountTypeList = () => {
+const AccountTypeManagement = () => {
   const protectedNames = ["Admin", "Nhân viên", "Khách hàng"];
 
-  /** ==========================
-   * 1. CRUDApi
-   * ========================== */
+  /** 1. FETCH DATA */
   const accountTypeAPI = useCRUDApi("account-types");
   const { data: accountTypes = [], isLoading, refetch } = accountTypeAPI.useGetAll();
   const createMutation = accountTypeAPI.useCreate();
   const updateMutation = accountTypeAPI.useUpdate();
   const deleteMutation = accountTypeAPI.useDelete();
 
-  /** ==========================
-   * 2. CRUD logic
-   * ========================== */
+  /** 2. CRUD */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -39,186 +33,97 @@ const AccountTypeList = () => {
     protectedNames
   );
 
-  /** ==========================
-   * 3. Dialog protected-case
-   * ========================== */
-  const [protectedDialog, setProtectedDialog] = useState({
-    open: false,
-    title: "",
-    message: "",
-  });
-
-  const openProtectedDialog = (title, message) =>
-    setProtectedDialog({ open: true, title, message });
-  const closeProtectedDialog = () =>
-    setProtectedDialog({ open: false, title: "", message: "" });
-
-  /** ==========================
-   * 4. Click handlers: check protectedNames
-   * ========================== */
-  const handleEditClick = (row) => {
-    if (protectedNames.includes(row.account_type_name)) {
-      openProtectedDialog(
-        "Không thể sửa",
-        `Loại tài khoản "${row.account_type_name}" là hệ thống và không được phép sửa.`
-      );
-      return;
-    }
-    crud.handleEdit(row);
-  };
-
-  const handleDeleteClick = (row) => {
-    if (protectedNames.includes(row.account_type_name)) {
-      openProtectedDialog(
-        "Không thể xóa",
-        `Loại tài khoản "${row.account_type_name}" là hệ thống và không được phép xóa.`
-      );
-      return;
-    }
-    handleDelete(row);
-  };
-
-  /** ==========================
-   * 5. Search & filter
-   * ========================== */
+  /** 3. STATE SEARCH + PAGINATION */
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  /** 4. FILTER & PAGINATION */
   const filteredItems = useMemo(
-    () =>
-      accountTypes.filter((a) =>
-        (a.account_type_name || "")
-          .toLowerCase()
-          .includes(search.toLowerCase().trim())
-      ),
+    () => accountTypes.filter((a) =>
+      (a.account_type_name || "").toLowerCase().includes(search.toLowerCase().trim())
+    ),
     [accountTypes, search]
   );
 
-  /** ==========================
-   * 6. Pagination
-   * ========================== */
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // số loại tài khoản mỗi trang
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
-  }, [currentPage, filteredItems]);
+  }, [filteredItems, currentPage]);
 
-  /** ==========================
-   * 7. Loading / Error
-   * ========================== */
-  if (isLoading)
-    return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (createMutation.isError || updateMutation.isError || deleteMutation.isError)
-    return (
-      <div className="p-6 text-center text-red-500">
-        Có lỗi xảy ra khi tải dữ liệu loại tài khoản.
-      </div>
-    );
+  /** 5. TABLE CONFIG */
+  const tableColumns = [{ field: "account_type_name", label: "Tên loại tài khoản" }];
 
-  /** ==========================
-   * 8. Render
-   * ========================== */
+  const tableActions = [
+    {
+      icon: <FaEdit />,
+      label: "Sửa",
+      onClick: crud.handleEdit,
+      disabled: (row) => protectedNames.includes(row.account_type_name),
+      tooltip: (row) =>
+        protectedNames.includes(row.account_type_name)
+          ? "Loại tài khoản hệ thống - không thể sửa"
+          : "Sửa loại tài khoản",
+    },
+    {
+      icon: <FaTrash />,
+      label: "Xóa",
+      onClick: handleDelete,
+      disabled: (row) => protectedNames.includes(row.account_type_name),
+      tooltip: (row) =>
+        protectedNames.includes(row.account_type_name)
+          ? "Loại tài khoản hệ thống - không thể xóa"
+          : "Xóa loại tài khoản",
+    },
+  ];
+
+  /** 6. FORM CONFIG */
+  const formFields = [
+    { name: "account_type_name", label: "Tên loại tài khoản", type: "text", required: true },
+  ];
+
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Quản lý loại tài khoản</h1>
-
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <button
-          onClick={crud.handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
-        >
-          <FaPlus /> Thêm loại tài khoản
-        </button>
-
-        <input
-          type="text"
-          placeholder="Tìm kiếm loại tài khoản..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1); // reset về trang 1 khi search
-          }}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* Table */}
-      <AdminListTable
-        columns={[{ field: "account_type_name", label: "Tên loại tài khoản" }]}
-        data={currentItems} // chỉ hiển thị dữ liệu trang hiện tại
-        actions={[
-          {
-            icon: <FaEdit />,
-            label: "Sửa",
-            onClick: handleEditClick,
-            disabled: (row) => protectedNames.includes(row.account_type_name),
-            tooltip: (row) =>
-              protectedNames.includes(row.account_type_name)
-                ? "Loại tài khoản hệ thống - không thể sửa"
-                : "Sửa loại tài khoản",
-          },
-          {
-            icon: <FaTrash />,
-            label: "Xóa",
-            onClick: handleDeleteClick,
-            disabled: (row) => protectedNames.includes(row.account_type_name),
-            tooltip: (row) =>
-              protectedNames.includes(row.account_type_name)
-                ? "Loại tài khoản hệ thống - không thể xóa"
-                : "Xóa loại tài khoản",
-          },
-        ]}
+    <>
+      <AdminLayoutPage
+        title="Loại tài khoản"
+        description="Quản lý các loại tài khoản trong hệ thống"
+        searchValue={search}
+        onSearchChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+        onAdd={crud.handleAdd}
+        tableColumns={tableColumns}
+        tableData={currentItems}
+        tableActions={tableActions}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        formModal={{
+          open: crud.openForm,
+          title: crud.mode === "edit"
+            ? `Sửa loại tài khoản - ${crud.selectedItem?.account_type_name}`
+            : "Thêm loại tài khoản",
+          fields: formFields,
+          initialData: crud.selectedItem,
+          errors: crud.errors,
+        }}
+        onFormSave={handleSave}           // giữ logic save
+        onFormClose={crud.handleCloseForm} // nút Hủy form modal
       />
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          maxVisible={5}
-        />
-      )}
-
-      {/* Form Add / Edit */}
-      {crud.openForm && (
-        <DynamicForm
-          title={
-            crud.mode === "edit"
-              ? `Sửa loại tài khoản - ${crud.selectedItem?.account_type_name}`
-              : "Thêm loại tài khoản"
-          }
-          fields={[
-            { name: "account_type_name", label: "Tên loại tài khoản", type: "text", required: true },
-          ]}
-          initialData={crud.selectedItem}
-          onSave={handleSave}
-          onClose={crud.handleCloseForm}
-        />
-      )}
-
-      {/* Dialog confirm */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
         title={dialog.title}
         message={dialog.message}
-        onConfirm={dialog.onConfirm}
-        onClose={closeDialog}
+        onClose={closeDialog}         
+        onConfirm={dialog.onConfirm}  
+        confirmText={dialog.confirmText}
+        cancelText={dialog.cancelText}
+        closeText={dialog.closeText}
+        customButtons={dialog.customButtons}
       />
-
-      {/* Dialog protected */}
-      <DynamicDialog
-        open={protectedDialog.open}
-        mode="info"
-        title={protectedDialog.title}
-        message={protectedDialog.message}
-        onClose={closeProtectedDialog}
-      />
-    </div>
+    </>
   );
 };
 
-export default memo(AccountTypeList);
+export default memo(AccountTypeManagement);

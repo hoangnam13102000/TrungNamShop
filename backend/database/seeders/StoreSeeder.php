@@ -23,12 +23,12 @@ class StoreSeeder extends Seeder
     //         'google_map'=>null,
     //     ]);
         
-    //     Store::create([
-    //         'name'=> 'Cửa hàng 65',
-    //         'address'=> 'Đường số 7, Hiệp Bình Phước, Q.Thủ Đức, TP.HCM',
-    //         'email'=>'support@TechPhone.com',
-    //         'phone'=>'18008106',
-    //         'google_map'=>'https://maps.app.goo.gl/eW977Vfkqsn65Mnt9',
-    //     ]);
+        Store::create([
+            'name'=> 'Cửa hàng 65',
+            'address'=> 'Đường số 7, Hiệp Bình Phước, Q.Thủ Đức, TP.HCM',
+            'email'=>'support@TechPhone.com',
+            'phone'=>'18008106',
+            'google_map'=>'https://maps.app.goo.gl/eW977Vfkqsn65Mnt9',
+        ]);
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Dropdown from "../../components/dropdown/DropDown";
+import Dropdown from "../UI/dropdown/DropDown";
 import DynamicDialog from "./DynamicDialog";
 import placeholder from "../../assets/admin/logoicon1.jpg";
 import { getImageUrl } from "../../utils/helpers/getImageUrl";

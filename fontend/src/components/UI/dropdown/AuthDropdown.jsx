@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FaChevronDown, FaSignOutAlt } from "react-icons/fa";
-import defaultAvatar from "../../assets/users/images/user/user.png";
-import { getImageUrl } from "../../utils/helpers/getImageUrl"; 
+import defaultAvatar from "../../../assets/users/images/user/user.png";
+import { getImageUrl } from "../../../utils/helpers/getImageUrl"; 
 
 const AuthDropdown = ({
   isLoggedIn,

@@ -26,17 +26,27 @@ class Order extends Model
         'order_date',
         'payment_status',
         'order_status',
+        'final_amount',
+        'payment_gateway',
+        'transaction_id',
+        'payment_response',
     ];
 
-    protected $dates = [
-        'delivery_date',
-        'order_date',
-        'created_at',
-        'updated_at',
-        'deleted_at',
+    // Cast các cột datetime để toDateTimeString() luôn hợp lệ
+    protected $casts = [
+        'delivery_date' => 'datetime',
+        'order_date' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     // Relationships
+
+    public function details()
+    {
+        return $this->hasMany(OrderDetail::class, 'order_id');
+    }
     public function customer()
     {
         return $this->belongsTo(Customer::class);

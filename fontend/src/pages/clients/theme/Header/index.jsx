@@ -1,10 +1,9 @@
 import { memo, useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import AuthDropdown from "../../../../components/dropdown/AuthDropdown";
-import Dropdown from "../../../../components/dropdown/DropDown";
+import AuthDropdown from "../../../../components/UI/dropdown/AuthDropdown";
+import Dropdown from "../../../../components/UI/dropdown/DropDown";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
-// import defaultAvatar from "../../../../assets/users/images/user/user.png";
 import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
 import {
   FaFacebookSquare,
@@ -28,7 +27,7 @@ const SOCIAL_LINKS = [
 ];
 
 const Header = () => {
-  const [cartCount] = useState(3);
+  const [cartCount, setCartCount] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -54,16 +53,7 @@ const Header = () => {
   const { data: brandsData = [], isLoading: isBrandsLoading } = brandAPI.useGetAll();
 
   const { data: customersData = [], isLoading: isCustomersLoading } = customerAPI.useGetAll();
-  // Tìm customer hiện tại theo account_id
   const customer = customersData.find(c => c.account_id == accountId);
-
-  // Debug log
-  // useEffect(() => {
-  //   console.log("customersData:", customersData);
-  //   console.log("accountId:", accountId);
-  //   console.log("Customer found:", customer);
-  //   console.log("Avatar URL:", getImageUrl(customer?.avatar));
-  // }, [customersData, customer]);
 
   // Reset selected category khi chuyển trang
   useEffect(() => setSelectedCategory(null), [location.pathname]);
@@ -76,6 +66,30 @@ const Header = () => {
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Load cart count + realtime update
+  useEffect(() => {
+    const loadCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      setCartCount(totalQuantity);
+    };
+
+    loadCartCount();
+
+    const handleStorageChange = (e) => {
+      if (e.key === "cart") loadCartCount();
+    };
+    const handleCartUpdated = () => loadCartCount();
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("cartUpdated", handleCartUpdated);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("cartUpdated", handleCartUpdated);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -105,32 +119,17 @@ const Header = () => {
                   <span className="text-xs opacity-80">Đang tải thông tin cửa hàng...</span>
                 ) : mainStore ? (
                   <>
-                    <a
-                      href={`tel:${mainStore.phone}`}
-                      className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
-                    >
+                    <a href={`tel:${mainStore.phone}`} className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
                       <FaPhoneAlt />
                       <span>{mainStore.phone}</span>
                     </a>
-                    <a
-                      href="/lien-he"
-                      className="hidden lg:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
-                    >
+                    <a href="/lien-he" className="hidden lg:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
                       <FaEnvelope />
                       <span>{mainStore.email}</span>
                     </a>
-                    <a
-                      href={mainStore.google_map || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hidden md:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
-                    >
+                    <a href={mainStore.google_map || "#"} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
                       <FaMapMarkerAlt />
-                      <span>
-                        {mainStore.name
-                          ? `${mainStore.name} - ${mainStore.address}`
-                          : mainStore.address}
-                      </span>
+                      <span>{mainStore.name ? `${mainStore.name} - ${mainStore.address}` : mainStore.address}</span>
                     </a>
                   </>
                 ) : (
@@ -141,24 +140,17 @@ const Header = () => {
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <div className="hidden sm:flex items-center gap-1.5">
                   {SOCIAL_LINKS.map((social, i) => (
-                    <a
-                      key={i}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 bg-white/20 rounded-lg"
-                    >
+                    <a key={i} href={social.url} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-white/20 rounded-lg">
                       <social.icon className="text-white text-sm" />
                     </a>
                   ))}
                 </div>
 
-                {/* Auth Dropdown */}
                 {!isCustomersLoading && (
                   <AuthDropdown
                     isLoggedIn={isLoggedIn}
                     username={username}
-                    avatar={getImageUrl(customer?.avatar)} // avatar từ customer
+                    avatar={getImageUrl(customer?.avatar)}
                     onLogout={handleLogout}
                     onNavigate={navigate}
                     menuItems={[
@@ -176,14 +168,9 @@ const Header = () => {
         <div className="bg-white shadow">
           <div className="container mx-auto px-3 sm:px-4">
             <div className="flex items-center justify-between py-2 sm:py-3 gap-2 sm:gap-4">
-              {/* Logo */}
               <Link to="/" className="flex items-center flex-shrink-0 justify-center">
                 <div className="w-24 sm:w-28 md:w-32 lg:w-36 flex justify-center">
-                  <img
-                    src="/logo.png"
-                    alt="TechPhone"
-                    className="h-12 sm:h-14 md:h-16 lg:h-20 object-contain"
-                  />
+                  <img src="logo.png" alt="TechPhone" className="h-12 sm:h-14 md:h-16 lg:h-20 object-contain" />
                 </div>
               </Link>
 
@@ -200,11 +187,7 @@ const Header = () => {
                     }}
                     className="min-w-[180px] border-r border-red-400"
                   />
-                  <input
-                    type="text"
-                    placeholder="Tìm kiếm sản phẩm..."
-                    className="flex-1 px-4 text-sm outline-none h-full min-w-0"
-                  />
+                  <input type="text" placeholder="Tìm kiếm sản phẩm..." className="flex-1 px-4 text-sm outline-none h-full min-w-0" />
                   <button className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
                     <FaSearch size={16} />
                   </button>
@@ -213,17 +196,11 @@ const Header = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                <button
-                  onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-                  className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
-                >
+                <button onClick={() => setMobileSearchOpen(!mobileSearchOpen)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
                   <FaSearch className="text-base sm:text-lg" />
                 </button>
 
-                <Link
-                  to="/gio-hang"
-                  className="relative p-2 text-gray-600 hover:text-red-600 transition"
-                >
+                <Link to="/gio-hang" className="relative p-2 text-gray-600 hover:text-red-600 transition">
                   <FaShoppingCart className="text-lg sm:text-xl" />
                   {cartCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
@@ -232,10 +209,7 @@ const Header = () => {
                   )}
                 </Link>
 
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
-                >
+                <button onClick={() => setShowMenu(!showMenu)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
                   {showMenu ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
                 </button>
               </div>
@@ -265,7 +239,6 @@ const Header = () => {
       </header>
 
       <div className="pt-[120px]" />
-
       {showBanner && <HomeBanner />}
     </>
   );

@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { useCRUDApi } from "../../api/hooks/useCRUDApi";
 import { getImageUrl } from "../../utils/helpers/getImageUrl";
 import placeholder from "../../assets/admin/logoicon1.jpg";
+import { useAuth } from "../../context/AuthContext";
 
 /**
- * Hook quản lý toàn bộ logic của trang Profile
+ * Hook quản lý logic trang Profile
  */
 export function useProfileLogic() {
+  const { user } = useAuth();
+  const accountId = user?.account_id;
+
   const { useGetAll, useUpdate } = useCRUDApi("customers");
   const { data: customers = [], isLoading, refetch } = useGetAll();
   const updateMutation = useUpdate();
@@ -16,21 +20,23 @@ export function useProfileLogic() {
   const [dialog, setDialog] = useState({ open: false });
   const [profileData, setProfileData] = useState(null);
 
-  /** Load Data user */
+  /** Lọc customer đúng account_id */
   useEffect(() => {
-    if (customers.length > 0) {
-      const customer = customers[0];
-      setProfileData({
-        ...customer,
-        avatarPreview: customer.avatar
-          ? getImageUrl(customer.avatar)
-          : placeholder,
-        avatarFile: null, 
-      });
+    if (customers.length > 0 && accountId) {
+      const customer = customers.find(c => c.account_id === accountId);
+      if (customer) {
+        setProfileData({
+          ...customer,
+          avatarPreview: customer.avatar
+            ? getImageUrl(customer.avatar)
+            : placeholder,
+          avatarFile: null,
+        });
+      }
     }
-  }, [customers]);
+  }, [customers, accountId]);
 
-  /** Config Form Field */
+  /** Cấu hình form fields */
   const fields = [
     { name: "full_name", label: "Họ và tên", type: "text", required: true },
     { name: "email", label: "Email", type: "email" },
@@ -53,7 +59,7 @@ export function useProfileLogic() {
     },
   ];
 
-  /** Save */
+  /** Xử lý save form */
   const handleSave = async (data) => {
     if (!profileData) return;
 
@@ -69,11 +75,6 @@ export function useProfileLogic() {
     }
     formData.append("account_id", profileData.account_id);
 
-    console.log("FormData gửi lên:");
-    for (let pair of formData.entries()) {
-      console.log(pair[0], ":", pair[1]);
-    }
-
     setDialog({
       open: true,
       mode: "confirm",
@@ -86,14 +87,12 @@ export function useProfileLogic() {
             data: formData,
           });
 
-          console.log("Kết quả update:", updated);
-
           setProfileData({
             ...updated,
             avatarPreview: updated.avatar
               ? getImageUrl(updated.avatar)
               : placeholder,
-            avatar: null,
+            avatarFile: null,
           });
 
           setIsEditing(false);
@@ -107,7 +106,7 @@ export function useProfileLogic() {
             onClose: () => setDialog({ open: false }),
           });
         } catch (error) {
-          console.error(" Lỗi cập nhật:", error);
+          console.error("Lỗi cập nhật:", error);
           setDialog({
             open: true,
             mode: "error",

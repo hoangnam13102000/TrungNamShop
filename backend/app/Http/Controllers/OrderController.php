@@ -30,6 +30,7 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        // Validate dữ liệu
         $validated = $request->validate([
             'order_code' => 'required|string|max:50|unique:orders,order_code',
             'customer_id' => 'required|exists:customers,id',
@@ -41,17 +42,47 @@ class OrderController extends Controller
             'recipient_phone' => 'required|string|max:20',
             'note' => 'nullable|string',
             'delivery_method' => 'required|in:pickup,delivery',
-            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo',
+            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo,vnpay',
             'delivery_date' => 'nullable|date',
             'order_date' => 'nullable|date',
             'payment_status' => 'required|in:unpaid,paid,refunded',
             'order_status' => 'required|in:pending,processing,shipping,completed,cancelled',
+            'final_amount' => 'required|numeric|min:0',
+            'items' => 'required|array|min:1',
+            'items.*.product_detail_id' => 'nullable|exists:product_details,id',
+            'items.*.product_name' => 'required|string|max:191',
+            'items.*.detail_info' => 'nullable|string|max:255',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.price_at_order' => 'required|numeric|min:0',
+            'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
+        // Nếu là thanh toán VNPay, lưu payment_gateway
+        if ($validated['payment_method'] === 'vnpay') {
+            $validated['payment_gateway'] = 'vnpay';
+        }
+
+        // Tạo Order
         $order = Order::create($validated);
 
-        return new OrderResource($order);
+        // Tạo OrderDetails
+        foreach ($validated['items'] as $item) {
+            $order->details()->create([
+                'product_detail_id' => $item['product_detail_id'] ?? null,
+                'product_name' => $item['product_name'],
+                'detail_info' => $item['detail_info'] ?? null,
+                'quantity' => $item['quantity'],
+                'price_at_order' => $item['price_at_order'],
+                'subtotal' => $item['subtotal'],
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Đơn hàng tạo thành công',
+            'order' => $order->load('details')
+        ]);
     }
+
 
     /**
      * Display the specified resource.
@@ -65,14 +96,6 @@ class OrderController extends Controller
         }
 
         return new OrderResource($order);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**
@@ -97,12 +120,17 @@ class OrderController extends Controller
             'recipient_phone' => 'required|string|max:20',
             'note' => 'nullable|string',
             'delivery_method' => 'required|in:pickup,delivery',
-            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo',
+            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo,vnpay',
             'delivery_date' => 'nullable|date',
             'order_date' => 'nullable|date',
             'payment_status' => 'required|in:unpaid,paid,refunded',
             'order_status' => 'required|in:pending,processing,shipping,completed,cancelled',
         ]);
+
+        // Nếu thanh toán VNPay, lưu payment_gateway
+        if ($validated['payment_method'] === 'vnpay') {
+            $validated['payment_gateway'] = 'vnpay';
+        }
 
         $order->update($validated);
 
@@ -124,45 +152,4 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Order deleted successfully!']);
     }
-
-    /**
-     * Display soft-deleted orders.
-     */
-    // public function trashed()
-    // {
-    //     $trashed = Order::onlyTrashed()->with(['customer', 'employee', 'discount', 'store'])->get();
-    //     return OrderResource::collection($trashed);
-    // }
-
-    // /**
-    //  * Restore a soft-deleted order.
-    //  */
-    // public function restore(string $id)
-    // {
-    //     $order = Order::onlyTrashed()->find($id);
-
-    //     if (!$order) {
-    //         return response()->json(['message' => 'Order not found in trash'], 404);
-    //     }
-
-    //     $order->restore();
-
-    //     return new OrderResource($order);
-    // }
-
-    // /**
-    //  * Permanently delete a soft-deleted order.
-    //  */
-    // public function forceDelete(string $id)
-    // {
-    //     $order = Order::onlyTrashed()->find($id);
-
-    //     if (!$order) {
-    //         return response()->json(['message' => 'Order not found in trash'], 404);
-    //     }
-
-    //     $order->forceDelete();
-
-    //     return response()->json(['message' => 'Order permanently deleted!']);
-    // }
 }

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Screen;
 use App\Models\User;
+use App\Models\Warehouse;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -29,6 +30,8 @@ class DatabaseSeeder extends Seeder
         $this->call(UtilitySeeder::class);
         $this->call(AllowancesTableSeeder::class);
         $this->call(RewardsTableSeeder::class);
+        $this->call(WarehouseSeeder::class);
+
 
 
 

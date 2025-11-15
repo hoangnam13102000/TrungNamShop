@@ -12,6 +12,43 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Chuẩn hóa và trim enum
+        $deliveryMethod = $this->delivery_method ? trim($this->delivery_method) : null;
+        $paymentMethod = $this->payment_method ? trim($this->payment_method) : null;
+        $orderStatus = $this->order_status ? trim($this->order_status) : null;
+        $paymentStatus = $this->payment_status ? trim($this->payment_status) : null;
+
+        // Map label
+        $deliveryMethodLabel = match($deliveryMethod) {
+            'pickup' => 'Nhận tại cửa hàng',
+            'delivery' => 'Giao tận nơi',
+            default => '—'
+        };
+
+        $paymentMethodLabel = match($paymentMethod) {
+            'cash' => 'Tiền mặt',
+            'paypal' => 'Paypal',
+            'bank_transfer' => 'Chuyển khoản',
+            'momo' => 'Ví Momo',
+            default => '—'
+        };
+
+        $orderStatusLabel = match($orderStatus) {
+            'pending' => 'Đang chờ',
+            'processing' => 'Đang xử lý',
+            'shipping' => 'Đang giao',
+            'completed' => 'Hoàn thành',
+            'cancelled' => 'Đã hủy',
+            default => '—'
+        };
+
+        $paymentStatusLabel = match($paymentStatus) {
+            'unpaid' => 'Chưa thanh toán',
+            'paid' => 'Đã thanh toán',
+            'refunded' => 'Hoàn tiền',
+            default => '—'
+        };
+
         return [
             'id' => $this->id,
             'order_code' => $this->order_code,
@@ -53,16 +90,24 @@ class OrderResource extends JsonResource
 
             // Other info
             'note' => $this->note,
-            'delivery_method' => $this->delivery_method,
-            'payment_method' => $this->payment_method,
+            'final_amount' => $this->final_amount,
+            'payment_gateway' => $this->payment_gateway,
+            'transaction_id' => $this->transaction_id,
+            'payment_response' => $this->payment_response ? json_decode($this->payment_response) : null,
 
-            // Dates
-            'delivery_date' => $this->delivery_date ? $this->delivery_date->toDateTimeString() : null,
-            'order_date' => $this->order_date ? $this->order_date->toDateTimeString() : null,
+            // Enum + Label
+            'delivery_method' => $deliveryMethod,
+            'delivery_method_label' => $deliveryMethodLabel,
+            'payment_method' => $paymentMethod,
+            'payment_method_label' => $paymentMethodLabel,
+            'order_status' => $orderStatus,
+            'order_status_label' => $orderStatusLabel,
+            'payment_status' => $paymentStatus,
+            'payment_status_label' => $paymentStatusLabel,
 
-            // Status
-            'payment_status' => $this->payment_status,
-            'order_status' => $this->order_status,
+            // Dates (format Y-m-d để dùng cho input type="date")
+            'delivery_date' => $this->delivery_date ? $this->delivery_date->format('Y-m-d') : null,
+            'order_date' => $this->order_date ? $this->order_date->format('Y-m-d') : null,
 
             // Timestamps
             'created_at' => $this->created_at->toDateTimeString(),
