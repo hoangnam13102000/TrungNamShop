@@ -1,6 +1,12 @@
 import React, { memo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaArrowLeft, FaCreditCard, FaBox, FaTruck, FaWallet } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaCreditCard,
+  FaBox,
+  FaTruck,
+  FaWallet,
+} from "react-icons/fa";
 import BreadCrumb from "../theme/BreadCrumb";
 import { getImageUrl } from "../../../utils/helpers/getImageUrl";
 import { validateGeneral } from "../../../utils/forms/validate";
@@ -9,8 +15,13 @@ import { useCustomerInfo } from "../../../utils/hooks/useCustomerInfo";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 
 const Payment = () => {
-  const [cartItems] = useState(JSON.parse(localStorage.getItem("cart")) || []);
-  const { customerInfo, setCustomerInfo, customerId, loading: customerLoading } = useCustomerInfo();
+  const [cartItems,setCartItems] = useState(JSON.parse(localStorage.getItem("cart")) || []);
+  const {
+    customerInfo,
+    setCustomerInfo,
+    customerId,
+    loading: customerLoading,
+  } = useCustomerInfo();
   const [errors, setErrors] = useState({});
   const [dialog, setDialog] = useState({
     open: false,
@@ -29,7 +40,8 @@ const Payment = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const getTotal = () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const getTotal = () =>
+    cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const getCartItemImage = (item) => {
     if (!item) return null;
@@ -37,10 +49,13 @@ const Payment = () => {
       if (typeof item.image === "string") return item.image;
       if (typeof item.image === "object") {
         if (Array.isArray(item.image)) return item.image[0]?.image_path || null;
-        return item.image.image_path || item.image.url || item.image.path || null;
+        return (
+          item.image.image_path || item.image.url || item.image.path || null
+        );
       }
     }
-    if (item.primary_image) return item.primary_image.image_path || item.primary_image.url || null;
+    if (item.primary_image)
+      return item.primary_image.image_path || item.primary_image.url || null;
     return null;
   };
 
@@ -51,10 +66,20 @@ const Payment = () => {
   const handlePayment = async () => {
     const rules = {
       name: { required: true, message: "Vui lòng nhập họ và tên" },
-      phone: { required: true, type: "phone", message: "Số điện thoại không hợp lệ" },
+      phone: {
+        required: true,
+        type: "phone",
+        message: "Số điện thoại không hợp lệ",
+      },
       address: { required: true, message: "Vui lòng nhập địa chỉ nhận hàng" },
-      delivery_method: { required: true, message: "Vui lòng chọn phương thức giao hàng" },
-      payment_method: { required: true, message: "Vui lòng chọn phương thức thanh toán" },
+      delivery_method: {
+        required: true,
+        message: "Vui lòng chọn phương thức giao hàng",
+      },
+      payment_method: {
+        required: true,
+        message: "Vui lòng chọn phương thức thanh toán",
+      },
     };
 
     const validationErrors = validateGeneral(customerInfo, rules);
@@ -129,18 +154,19 @@ const Payment = () => {
             message: "MoMo phản hồi không hợp lệ.",
           });
         }
-        return;
       }
+
 
       // Cash
       if (customerInfo.payment_method === "cash") {
         setDialog({
           open: true,
-          mode: "alert",
+          mode: "confirm",
           title: "Thành công",
           message: "Đặt hàng thành công!",
-          onClose: () => {
+          onConfirm: () => {
             localStorage.removeItem("cart");
+            setCartItems([]);
             window.location.href = "/gio-hang";
           },
         });
@@ -207,49 +233,75 @@ const Payment = () => {
               <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 p-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Họ và tên</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Họ và tên
+                    </label>
                     <input
                       name="name"
                       placeholder="Nhập họ và tên"
                       value={customerInfo.name}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
-                        errors.name ? "border-red-400 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                        errors.name
+                          ? "border-red-400 bg-red-50 focus:border-red-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                     />
-                    {errors.name && <p className="text-red-600 text-sm mt-1">⚠ {errors.name}</p>}
+                    {errors.name && (
+                      <p className="text-red-600 text-sm mt-1">
+                         {errors.name}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Số điện thoại
+                    </label>
                     <input
                       name="phone"
                       placeholder="0912345678"
                       value={customerInfo.phone}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
-                        errors.phone ? "border-red-400 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                        errors.phone
+                          ? "border-red-400 bg-red-50 focus:border-red-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                     />
-                    {errors.phone && <p className="text-red-600 text-sm mt-1">⚠ {errors.phone}</p>}
+                    {errors.phone && (
+                      <p className="text-red-600 text-sm mt-1">
+                        ⚠ {errors.phone}
+                      </p>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ nhận hàng</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Địa chỉ nhận hàng
+                    </label>
                     <input
                       name="address"
                       placeholder="Nhập địa chỉ"
                       value={customerInfo.address}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
-                        errors.address ? "border-red-400 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                        errors.address
+                          ? "border-red-400 bg-red-50 focus:border-red-500"
+                          : "border-gray-200 focus:border-blue-500"
                       }`}
                     />
-                    {errors.address && <p className="text-red-600 text-sm mt-1">⚠ {errors.address}</p>}
+                    {errors.address && (
+                      <p className="text-red-600 text-sm mt-1">
+                        ⚠ {errors.address}
+                      </p>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Ghi chú (tuỳ chọn)</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Ghi chú (tuỳ chọn)
+                    </label>
                     <input
                       name="note"
                       placeholder="Nhập ghi chú"
@@ -272,14 +324,20 @@ const Payment = () => {
                           value={customerInfo.delivery_method || ""}
                           onChange={handleInputChange}
                           className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors cursor-pointer ${
-                            errors.delivery_method ? "border-red-400 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                            errors.delivery_method
+                              ? "border-red-400 bg-red-50 focus:border-red-500"
+                              : "border-gray-200 focus:border-blue-500"
                           }`}
                         >
                           <option value="">Phương thức giao hàng</option>
                           <option value="delivery">Giao hàng tận nơi</option>
                           <option value="pickup">Nhận tại cửa hàng</option>
                         </select>
-                        {errors.delivery_method && <p className="text-red-600 text-sm mt-1">⚠ {errors.delivery_method}</p>}
+                        {errors.delivery_method && (
+                          <p className="text-red-600 text-sm mt-1">
+                             {errors.delivery_method}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -292,14 +350,20 @@ const Payment = () => {
                           value={customerInfo.payment_method || ""}
                           onChange={handleInputChange}
                           className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors cursor-pointer ${
-                            errors.payment_method ? "border-red-400 bg-red-50 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
+                            errors.payment_method
+                              ? "border-red-400 bg-red-50 focus:border-red-500"
+                              : "border-gray-200 focus:border-blue-500"
                           }`}
                         >
                           <option value="">Phương thức thanh toán</option>
                           <option value="momo">MoMo</option>
                           <option value="cash">Thanh toán khi nhận hàng</option>
                         </select>
-                        {errors.payment_method && <p className="text-red-600 text-sm mt-1">⚠ {errors.payment_method}</p>}
+                        {errors.payment_method && (
+                          <p className="text-red-600 text-sm mt-1">
+                             {errors.payment_method}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -314,13 +378,27 @@ const Payment = () => {
                 </h3>
                 <div className="space-y-3">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:shadow-md transition-all duration-300">
-                      <img src={getImageUrl(getCartItemImage(item))} alt={item.name} className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200" />
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl hover:shadow-md transition-all duration-300"
+                    >
+                      <img
+                        src={getImageUrl(getCartItemImage(item))}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
+                      />
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{item.name}</p>
-                        <p className="text-sm text-gray-600">{item.quantity} × {Number(item.price).toLocaleString()}₫</p>
+                        <p className="font-semibold text-gray-900">
+                          {item.name}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {item.quantity} ×{" "}
+                          {Number(item.price).toLocaleString()}₫
+                        </p>
                       </div>
-                      <span className="font-bold text-red-600 text-lg">{(item.price * item.quantity).toLocaleString()}₫</span>
+                      <span className="font-bold text-red-600 text-lg">
+                        {(item.price * item.quantity).toLocaleString()}₫
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -339,15 +417,21 @@ const Payment = () => {
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 p-8 sticky top-8 h-fit">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Tóm tắt đơn hàng</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                  Tóm tắt đơn hàng
+                </h2>
                 <div className="space-y-3 mb-6 pb-6 border-b-2 border-gray-200">
                   <div className="flex justify-between text-gray-700">
                     <span>Tạm tính:</span>
-                    <span className="font-semibold">{getTotal().toLocaleString()}₫</span>
+                    <span className="font-semibold">
+                      {getTotal().toLocaleString()}₫
+                    </span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Phí vận chuyển:</span>
-                    <span className="font-semibold text-green-600">Miễn phí</span>
+                    <span className="font-semibold text-green-600">
+                      Miễn phí
+                    </span>
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Giảm giá:</span>
@@ -358,7 +442,9 @@ const Payment = () => {
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-xl mb-6 border-2 border-red-100">
                   <div className="flex justify-between items-center gap-2">
                     <span className="font-bold text-gray-900">Tổng cộng:</span>
-                    <span className="text-2xl sm:text-3xl font-bold text-red-600">{getTotal().toLocaleString()}₫</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-red-600">
+                      {getTotal().toLocaleString()}₫
+                    </span>
                   </div>
                 </div>
 
@@ -371,7 +457,7 @@ const Payment = () => {
                 </button>
 
                 <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200 text-center text-xs text-gray-600">
-                  ✓ Giao dịch được bảo mật 100%
+                   Giao dịch được bảo mật 100%
                 </div>
               </div>
             </div>

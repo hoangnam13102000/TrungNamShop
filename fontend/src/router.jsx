@@ -66,6 +66,7 @@ import ProductsDetails from "@page_user/product/ProductsDetails";
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
+import MomoReturn from "./pages/clients/Payment/momoReturn";
 import ProductImage from "./pages/admin/product/ProductImage";
 import NotFound from "./pages/404";
 
@@ -117,6 +118,7 @@ const userRouter = [
   { path: ROUTERS.USER.CONTACT, element: <FeedbackPage /> },
   { path: ROUTERS.USER.CART, element: <Cart /> },
   { path: ROUTERS.USER.PAYMENT, element: <Payment /> },
+  { path: ROUTERS.USER.MOMORETURN, element: <MomoReturn /> },
   { path: ROUTERS.USER.NOTFOUND, element: <NotFound /> },
 ];
 
