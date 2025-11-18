@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Models\Discount;
 use App\Http\Resources\OrderResource;
 
 class OrderController extends Controller
@@ -13,7 +14,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['customer', 'employee', 'discount', 'store'])->get();
+        $orders = Order::with(['customer', 'employee', 'discount', 'store', 'details'])->get();
         return OrderResource::collection($orders);
     }
 
@@ -30,7 +31,6 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate dữ liệu
         $validated = $request->validate([
             'order_code' => 'required|string|max:50|unique:orders,order_code',
             'customer_id' => 'required|exists:customers,id',
@@ -47,23 +47,39 @@ class OrderController extends Controller
             'order_date' => 'nullable|date',
             'payment_status' => 'required|in:unpaid,paid,refunded',
             'order_status' => 'required|in:pending,processing,shipping,completed,cancelled',
-            'final_amount' => 'required|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.product_detail_id' => 'nullable|exists:product_details,id',
             'items.*.product_name' => 'required|string|max:191',
             'items.*.detail_info' => 'nullable|string|max:255',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.price_at_order' => 'required|numeric|min:0',
-            'items.*.subtotal' => 'required|numeric|min:0',
         ]);
 
-        // Nếu là thanh toán VNPay, lưu payment_gateway
+        // Tính subtotal từ items
+        $subtotal = collect($validated['items'])->sum(function ($item) {
+            return $item['price_at_order'] * $item['quantity'];
+        });
+
+        // Tính giảm giá nếu có
+        $discountAmount = 0;
+        if (!empty($validated['discount_id'])) {
+            $discount = Discount::find($validated['discount_id']);
+            if ($discount) {
+                $discountAmount = ($subtotal * $discount->percentage) / 100;
+            }
+        }
+
+        $finalAmount = $subtotal - $discountAmount;
+
+        // Nếu thanh toán VNPay, lưu payment_gateway
         if ($validated['payment_method'] === 'vnpay') {
             $validated['payment_gateway'] = 'vnpay';
         }
 
-        // Tạo Order
-        $order = Order::create($validated);
+        // Tạo order
+        $order = Order::create(array_merge($validated, [
+            'final_amount' => $finalAmount,
+        ]));
 
         // Tạo OrderDetails
         foreach ($validated['items'] as $item) {
@@ -73,23 +89,22 @@ class OrderController extends Controller
                 'detail_info' => $item['detail_info'] ?? null,
                 'quantity' => $item['quantity'],
                 'price_at_order' => $item['price_at_order'],
-                'subtotal' => $item['subtotal'],
+                'subtotal' => $item['price_at_order'] * $item['quantity'],
             ]);
         }
 
         return response()->json([
             'message' => 'Đơn hàng tạo thành công',
-            'order' => $order->load('details')
-        ]);
+            'order' => $order->load('details', 'discount')
+        ], 201);
     }
-
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        $order = Order::with(['customer', 'employee', 'discount', 'store'])->find($id);
+        $order = Order::with(['customer', 'employee', 'discount', 'store', 'details'])->find($id);
 
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
@@ -134,7 +149,23 @@ class OrderController extends Controller
 
         $order->update($validated);
 
-        return new OrderResource($order);
+        // Tính lại final_amount nếu discount thay đổi
+        $subtotal = $order->details->sum(function ($detail) {
+            return $detail->subtotal;
+        });
+
+        $discountAmount = 0;
+        if (!empty($order->discount_id)) {
+            $discount = Discount::find($order->discount_id);
+            if ($discount) {
+                $discountAmount = ($subtotal * $discount->percentage) / 100;
+            }
+        }
+
+        $order->final_amount = $subtotal - $discountAmount;
+        $order->save();
+
+        return new OrderResource($order->load('details', 'discount'));
     }
 
     /**

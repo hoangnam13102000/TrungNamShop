@@ -25,6 +25,10 @@ class Discount extends Model
         'updated_at',
         'deleted_at',
     ];
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+    ];
 
     // Relationship with orders
     public function orders()

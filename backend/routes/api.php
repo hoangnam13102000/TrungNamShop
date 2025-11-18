@@ -66,6 +66,8 @@ Route::get('/user', function (Request $request) {
 Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
 Route::post('/momo/notify', [PaymentController::class, 'momoNotify']);
 
+Route::get('/discounts/validate', [DiscountController::class, 'validateDiscount']);
+
 // Group Router for Admin
 Route::prefix('admin')->group(function () {
 
@@ -158,7 +160,6 @@ Route::prefix('admin')->group(function () {
     
     // ------------------Discount ------------------
     Route::apiResource('discounts', DiscountController::class);
-
     // ------------------Reviews ------------------
     Route::apiResource('reviews', ReviewController::class);
 });

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Discount;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
 
 class DiscountController extends Controller
 {
@@ -108,6 +110,67 @@ class DiscountController extends Controller
         $discount->delete();
 
         return response()->json(['message' => 'Discount deleted successfully!']);
+    }
+
+     /**
+     * Validate discount code
+     */
+    public function validateDiscount(Request $request)
+    {
+        // Validate input
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Mã giảm giá không hợp lệ'
+            ], 400);
+        }
+
+        $code = $request->input('code');
+        
+        // Tìm mã giảm giá
+        $discount = Discount::where('code', $code)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$discount) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Mã giảm giá không tồn tại hoặc đã bị vô hiệu hóa'
+            ], 404);
+        }
+
+        $now = Carbon::now();
+
+        // Kiểm tra thời gian hiệu lực
+        if ($discount->start_date && $now->lt($discount->start_date)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Mã giảm giá chưa có hiệu lực. Hiệu lực từ: ' . $discount->start_date->format('d/m/Y H:i')
+            ], 400);
+        }
+
+        if ($discount->end_date && $now->gt($discount->end_date)) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Mã giảm giá đã hết hạn. Hết hạn: ' . $discount->end_date->format('d/m/Y H:i')
+            ], 400);
+        }
+
+        return response()->json([
+            'valid' => true,
+            'discount' => [
+                'id' => $discount->id,
+                'code' => $discount->code,
+                'percentage' => (float) $discount->percentage,
+                'start_date' => $discount->start_date?->format('Y-m-d H:i:s'),
+                'end_date' => $discount->end_date?->format('Y-m-d H:i:s'),
+            ],
+            'message' => 'Áp dụng mã giảm giá thành công!'
+        ]);
     }
 
     // /**

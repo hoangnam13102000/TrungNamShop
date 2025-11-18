@@ -1,12 +1,12 @@
 import { memo, useState, useCallback, useMemo, useEffect } from "react";
-import { FaEdit, FaEye } from "react-icons/fa";
+import { FaEdit, FaReceipt } from "react-icons/fa";
 import AdminListTable from "../../../components/common/AdminListTable";
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 import useAdminCrud from "../../../utils/hooks/useAdminCrud1";
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import Pagination from "../../../components/common/Pagination";
-import OrderDetailModal from "../../admin/order/OderDetails";
+import InvoiceModal from "../../../components/order/InvoiceModal";
 
 /* Helper: Chuẩn hóa initialData */
 const formatInitialData = (item) => {
@@ -43,7 +43,6 @@ const OrderManagement = () => {
   const updateMutation = orderAPI.useUpdate();
   const deleteMutation = orderAPI.useDelete();
 
-  // Sử dụng hook useGetAll cho order details ở cấp component
   const { data: allOrderDetails = [], refetch: refetchAllOrderDetails } = orderDetailAPI.useGetAll();
 
   const crud = useAdminCrud(
@@ -65,61 +64,40 @@ const OrderManagement = () => {
   const discountOptions = addPlaceholder(mapOptions(discounts, "code"), "Chưa có mã giảm giá");
   const storeOptions = addPlaceholder(mapOptions(stores, "name"), "Chưa có cửa hàng nào");
 
-  const [detailModal, setDetailModal] = useState({ open: false, order: null });
-  const [orderDetails, setOrderDetails] = useState([]);
-  const [loadingDetails, setLoadingDetails] = useState(false);
+  // Invoice Modal States
+  const [invoiceModal, setInvoiceModal] = useState({ open: false, order: null });
+  const [invoiceOrderDetails, setInvoiceOrderDetails] = useState([]);
+  const [loadingInvoiceDetails, setLoadingInvoiceDetails] = useState(false);
 
-  // Sửa lỗi: Không gọi hook bên trong hàm callback
-  const fetchOrderDetails = useCallback(async (orderId) => {
-    if (!orderId) return;
-    
-    try {
-      setLoadingDetails(true);
-      
-      // Cách 1: Filter từ dữ liệu đã có
-      if (allOrderDetails && Array.isArray(allOrderDetails)) {
-        const filteredDetails = allOrderDetails.filter(detail => 
-          detail.order_id === orderId
-        );
-        setOrderDetails(filteredDetails);
-      } else {
-        // Cách 2: Gọi API trực tiếp nếu không có dữ liệu
-        try {
+  // Fetch order details for Invoice Modal
+  const fetchInvoiceOrderDetails = useCallback(
+    async (orderId) => {
+      if (!orderId) return;
+      try {
+        setLoadingInvoiceDetails(true);
+        if (allOrderDetails && Array.isArray(allOrderDetails)) {
+          const filteredDetails = allOrderDetails.filter((detail) => detail.order_id === orderId);
+          setInvoiceOrderDetails(filteredDetails);
+        } else {
           const response = await fetch(`/api/order-details?order_id=${orderId}`);
           if (response.ok) {
             const data = await response.json();
-            setOrderDetails(Array.isArray(data) ? data : []);
-          } else {
-            setOrderDetails([]);
-          }
-        } catch (fallbackError) {
-          console.error("Fallback API error:", fallbackError);
-          setOrderDetails([]);
+            setInvoiceOrderDetails(Array.isArray(data) ? data : []);
+          } else setInvoiceOrderDetails([]);
         }
+      } catch (err) {
+        console.error("Lỗi load chi tiết đơn hóa đơn:", err);
+        setInvoiceOrderDetails([]);
+      } finally {
+        setLoadingInvoiceDetails(false);
       }
-    } catch (err) {
-      console.error("Lỗi load chi tiết đơn:", err);
-      setOrderDetails([]);
-    } finally {
-      setLoadingDetails(false);
-    }
-  }, [allOrderDetails]); // Thêm allOrderDetails vào dependency
+    },
+    [allOrderDetails]
+  );
 
-  // Sửa lỗi: Tách biệt state và effect
-  const showDetailModal = useCallback((order) => {
-    setDetailModal({ open: true, order });
-  }, []);
-
-  // Sử dụng useEffect để fetch details khi modal mở hoặc order thay đổi
-  useEffect(() => {
-    if (detailModal.open && detailModal.order) {
-      fetchOrderDetails(detailModal.order.id);
-    }
-  }, [detailModal.open, detailModal.order, fetchOrderDetails]);
-
-  const closeDetailModal = useCallback(() => {
-    setDetailModal({ open: false, order: null });
-    setOrderDetails([]);
+  const closeInvoiceModal = useCallback(() => {
+    setInvoiceModal({ open: false, order: null });
+    setInvoiceOrderDetails([]);
   }, []);
 
   const [search, setSearch] = useState("");
@@ -128,6 +106,7 @@ const OrderManagement = () => {
   const showDialog = useCallback((mode, title, message, onConfirm = null) => {
     setDialog({ open: true, mode, title, message, onConfirm });
   }, []);
+
   const closeDialog = useCallback(() => setDialog((prev) => ({ ...prev, open: false })), []);
 
   const filteredItems = useMemo(() => {
@@ -148,35 +127,34 @@ const OrderManagement = () => {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [currentPage, filteredItems]);
 
-  const handleSave = useCallback(async (formData) => {
-    showDialog(
-      "confirm",
-      crud.selectedItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
-      crud.selectedItem
-        ? `Bạn có chắc muốn cập nhật đơn "${formData.order_code}" không?`
-        : `Bạn có chắc muốn thêm đơn "${formData.order_code}" không?`,
-      async () => {
-        try {
-          await crud.handleSave(formData);
-          await refetch();
-          crud.handleCloseForm();
-          showDialog(
-            "success",
-            "Thành công",
-            crud.selectedItem ? "Đơn hàng đã được cập nhật!" : "Đơn hàng đã được thêm!"
-          );
-        } catch (err) {
-          console.error(err);
-          showDialog("error", "Lỗi", "Không thể lưu đơn hàng!");
+  const handleSave = useCallback(
+    async (formData) => {
+      showDialog(
+        "confirm",
+        crud.selectedItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
+        crud.selectedItem
+          ? `Bạn có chắc muốn cập nhật đơn "${formData.order_code}" không?`
+          : `Bạn có chắc muốn thêm đơn "${formData.order_code}" không?`,
+        async () => {
+          try {
+            await crud.handleSave(formData);
+            await refetch();
+            crud.handleCloseForm();
+            showDialog(
+              "success",
+              "Thành công",
+              crud.selectedItem ? "Đơn hàng đã được cập nhật!" : "Đơn hàng đã được thêm!"
+            );
+          } catch (err) {
+            console.error(err);
+            showDialog("error", "Lỗi", "Không thể lưu đơn hàng!");
+          }
         }
-      }
-    );
-  }, [crud, refetch, showDialog]);
+      );
+    },
+    [crud, refetch, showDialog]
+  );
 
-  const updateDetail = orderDetailAPI.useUpdate();
-  const deleteDetail = orderDetailAPI.useDelete();
-
-  // Refetch all order details khi component mount
   useEffect(() => {
     refetchAllOrderDetails();
   }, [refetchAllOrderDetails]);
@@ -185,13 +163,11 @@ const OrderManagement = () => {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      {/* HEADER */}
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý đơn hàng</h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-1">Quản lý và theo dõi các đơn hàng</p>
       </div>
 
-      {/* SEARCH */}
       <div className="mb-4 md:mb-6 bg-white p-3 sm:p-4 rounded-lg shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <input
@@ -210,7 +186,6 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* TABLE */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {currentItems.length === 0 ? (
           <div className="p-6 sm:p-8 text-center text-gray-500">
@@ -232,8 +207,15 @@ const OrderManagement = () => {
                 ]}
                 data={currentItems}
                 actions={[
-                  { icon: <FaEye />, label: "Chi tiết", onClick: showDetailModal },
                   { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+                  {
+                    icon: <FaReceipt />,
+                    label: "Xem hóa đơn",
+                    onClick: (order) => {
+                      setInvoiceModal({ open: true, order });
+                      fetchInvoiceOrderDetails(order.id);
+                    },
+                  },
                 ]}
               />
             </div>
@@ -247,7 +229,6 @@ const OrderManagement = () => {
         )}
       </div>
 
-      {/* FORM MODAL */}
       {crud.openForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-start pt-4 sm:pt-8 md:pt-10 z-50 overflow-y-auto p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-2xl sm:max-w-3xl my-4">
@@ -262,28 +243,48 @@ const OrderManagement = () => {
                 { name: "recipient_name", label: "Người nhận", type: "text", required: true },
                 { name: "recipient_phone", label: "SĐT", type: "text", required: true },
                 { name: "recipient_address", label: "Địa chỉ", type: "text", required: true },
-                { name: "delivery_method", label: "Phương thức vận chuyển", type: "select", options: [
-                  { value: "pickup", label: "Nhận tại cửa hàng" },
-                  { value: "delivery", label: "Giao tận nơi" },
-                ]},
-                { name: "payment_method", label: "Phương thức thanh toán", type: "select", options: [
-                  { value: "cash", label: "Tiền mặt" },
-                  { value: "paypal", label: "Paypal" },
-                  { value: "bank_transfer", label: "Chuyển khoản" },
-                  { value: "momo", label: "Ví Momo" },
-                ]},
-                { name: "payment_status", label: "Trạng thái thanh toán", type: "select", options: [
-                  { value: "unpaid", label: "Chưa thanh toán" },
-                  { value: "paid", label: "Đã thanh toán" },
-                  { value: "refunded", label: "Hoàn tiền" },
-                ]},
-                { name: "order_status", label: "Trạng thái đơn", type: "select", options: [
-                  { value: "pending", label: "Đang chờ" },
-                  { value: "processing", label: "Đang xử lý" },
-                  { value: "shipping", label: "Đang giao" },
-                  { value: "completed", label: "Hoàn thành" },
-                  { value: "cancelled", label: "Đã hủy" },
-                ]},
+                {
+                  name: "delivery_method",
+                  label: "Phương thức vận chuyển",
+                  type: "select",
+                  options: [
+                    { value: "pickup", label: "Nhận tại cửa hàng" },
+                    { value: "delivery", label: "Giao tận nơi" },
+                  ],
+                },
+                {
+                  name: "payment_method",
+                  label: "Phương thức thanh toán",
+                  type: "select",
+                  options: [
+                    { value: "cash", label: "Tiền mặt" },
+                    { value: "paypal", label: "Paypal" },
+                    { value: "bank_transfer", label: "Chuyển khoản" },
+                    { value: "momo", label: "Ví Momo" },
+                  ],
+                },
+                {
+                  name: "payment_status",
+                  label: "Trạng thái thanh toán",
+                  type: "select",
+                  options: [
+                    { value: "unpaid", label: "Chưa thanh toán" },
+                    { value: "paid", label: "Đã thanh toán" },
+                    { value: "refunded", label: "Hoàn tiền" },
+                  ],
+                },
+                {
+                  name: "order_status",
+                  label: "Trạng thái đơn",
+                  type: "select",
+                  options: [
+                    { value: "pending", label: "Đang chờ" },
+                    { value: "processing", label: "Đang xử lý" },
+                    { value: "shipping", label: "Đang giao" },
+                    { value: "completed", label: "Hoàn thành" },
+                    { value: "cancelled", label: "Đã hủy" },
+                  ],
+                },
                 { name: "note", label: "Ghi chú", type: "textarea" },
                 { name: "delivery_date", label: "Ngày giao", type: "date" },
                 { name: "order_date", label: "Ngày đặt", type: "date" },
@@ -296,7 +297,6 @@ const OrderManagement = () => {
         </div>
       )}
 
-      {/* DIALOG */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}
@@ -306,17 +306,11 @@ const OrderManagement = () => {
         onConfirm={dialog.onConfirm}
       />
 
-      {/* MODAL CHI TIẾT ĐƠN */}
-      <OrderDetailModal
-        open={detailModal.open}
-        order={detailModal.order}
-        orderDetails={orderDetails}
-        loadingDetails={loadingDetails}
-        updateDetail={updateDetail}
-        deleteDetail={deleteDetail}
-        refetchDetails={() => fetchOrderDetails(detailModal.order?.id)}
-        onClose={closeDetailModal}
-        showDialog={showDialog}
+      <InvoiceModal
+        open={invoiceModal.open}
+        order={invoiceModal.order}
+        orderDetails={invoiceOrderDetails}
+        onClose={closeInvoiceModal}
       />
     </div>
   );
