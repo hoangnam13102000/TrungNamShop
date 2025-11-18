@@ -1,4 +1,4 @@
-import { FiEdit2, FiShoppingCart } from "react-icons/fi";
+import { FiEdit2, FiShoppingCart, FiLock } from "react-icons/fi";
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 import { useProfileLogic } from "../../../utils/profile/useProfileLogic";
@@ -7,14 +7,16 @@ export default function Profile() {
   const {
     isEditing,
     setIsEditing,
-    showHistory,
+    isChangingPassword,
+    setIsChangingPassword,
     setShowHistory,
     dialog,
-    setDialog,
     profileData,
     isLoading,
     fields,
+    passwordFields,
     handleSave,
+    handleChangePassword,
   } = useProfileLogic();
 
   if (isLoading || !profileData) {
@@ -61,20 +63,28 @@ export default function Profile() {
                 >
                   <FiShoppingCart size={18} /> Lịch sử mua hàng
                 </button>
-                {!isEditing && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold shadow-sm"
-                  >
-                    <FiEdit2 size={18} /> Chỉnh sửa
-                  </button>
+                {!isEditing && !isChangingPassword && (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-200 font-semibold shadow-sm"
+                    >
+                      <FiEdit2 size={18} /> Chỉnh sửa
+                    </button>
+                    <button
+                      onClick={() => setIsChangingPassword(true)}
+                      className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold shadow-sm"
+                    >
+                      <FiLock size={18} /> Đổi mật khẩu
+                    </button>
+                  </>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Form */}
+        {/* Form chỉnh sửa thông tin */}
         {isEditing && (
           <div className="bg-white rounded-2xl shadow-md p-8 md:p-10 mb-8">
             <DynamicForm
@@ -87,8 +97,25 @@ export default function Profile() {
           </div>
         )}
 
+        {/* Form đổi mật khẩu */}
+        {isChangingPassword && (
+          <div className="bg-white rounded-2xl shadow-md p-8 md:p-10 mb-8">
+            <DynamicForm
+              title="Đổi mật khẩu"
+              fields={passwordFields}
+              initialData={{
+                current_password: "",
+                new_password: "",
+                confirm_password: ""
+              }}
+              onSave={handleChangePassword}
+              onClose={() => setIsChangingPassword(false)}
+            />
+          </div>
+        )}
+
         {/* Thông tin hiển thị */}
-        {!isEditing && (
+        {!isEditing && !isChangingPassword && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {fields
               .filter((f) => f.name !== "avatar")

@@ -282,7 +282,7 @@ export default function DynamicForm({
                     </div>
                   ))
                 : allFields.map((field) => (
-                    <div key={field.name}>{/* fallback đơn giản */}</div>
+                    <div key={field.name}>{/* fallback simple */}</div>
                   ))}
 
               {/* BUTTONS */}

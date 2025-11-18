@@ -48,7 +48,7 @@ const AuthDropdown = ({
     );
   }
 
-  // ✅ Dùng hàm getImageUrl
+  // Dùng hàm getImageUrl
   const resolvedAvatar = getImageUrl(avatar) || defaultAvatar;
 
   const handleLogout = () => {

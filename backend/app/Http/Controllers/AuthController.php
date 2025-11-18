@@ -128,4 +128,36 @@ class AuthController extends Controller
             'status' => $user->status,
         ]);
     }
+
+    /**
+     * CHANGE PASSWORD
+     * POST /api/auth/change-password
+     */
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6|confirmed', // new_password_confirmation
+        ]);
+
+        $user = $request->user(); // hoặc Auth::user()
+
+        // Kiểm tra mật khẩu hiện tại
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mật khẩu hiện tại không đúng'
+            ], 400);
+        }
+
+        // Cập nhật mật khẩu mới (mutator tự hash)
+        $user->password = $request->new_password;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đổi mật khẩu thành công'
+        ]);
+    }
 }

@@ -43,6 +43,9 @@ const OrderManagement = () => {
   const updateMutation = orderAPI.useUpdate();
   const deleteMutation = orderAPI.useDelete();
 
+  // Sử dụng hook useGetAll cho order details ở cấp component
+  const { data: allOrderDetails = [], refetch: refetchAllOrderDetails } = orderDetailAPI.useGetAll();
+
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -66,23 +69,58 @@ const OrderManagement = () => {
   const [orderDetails, setOrderDetails] = useState([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  const showDetailModal = async (order) => {
-    setDetailModal({ open: true, order });
-    if (!order) return;
-
-    setLoadingDetails(true);
+  // Sửa lỗi: Không gọi hook bên trong hàm callback
+  const fetchOrderDetails = useCallback(async (orderId) => {
+    if (!orderId) return;
+    
     try {
-      const data = await orderDetailAPI.getAll({ params: { order_id: order.id } });
-      setOrderDetails(data || []);
+      setLoadingDetails(true);
+      
+      // Cách 1: Filter từ dữ liệu đã có
+      if (allOrderDetails && Array.isArray(allOrderDetails)) {
+        const filteredDetails = allOrderDetails.filter(detail => 
+          detail.order_id === orderId
+        );
+        setOrderDetails(filteredDetails);
+      } else {
+        // Cách 2: Gọi API trực tiếp nếu không có dữ liệu
+        try {
+          const response = await fetch(`/api/order-details?order_id=${orderId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setOrderDetails(Array.isArray(data) ? data : []);
+          } else {
+            setOrderDetails([]);
+          }
+        } catch (fallbackError) {
+          console.error("Fallback API error:", fallbackError);
+          setOrderDetails([]);
+        }
+      }
     } catch (err) {
       console.error("Lỗi load chi tiết đơn:", err);
       setOrderDetails([]);
     } finally {
       setLoadingDetails(false);
     }
-  };
+  }, [allOrderDetails]); // Thêm allOrderDetails vào dependency
 
-  const closeDetailModal = () => setDetailModal({ open: false, order: null });
+  // Sửa lỗi: Tách biệt state và effect
+  const showDetailModal = useCallback((order) => {
+    setDetailModal({ open: true, order });
+  }, []);
+
+  // Sử dụng useEffect để fetch details khi modal mở hoặc order thay đổi
+  useEffect(() => {
+    if (detailModal.open && detailModal.order) {
+      fetchOrderDetails(detailModal.order.id);
+    }
+  }, [detailModal.open, detailModal.order, fetchOrderDetails]);
+
+  const closeDetailModal = useCallback(() => {
+    setDetailModal({ open: false, order: null });
+    setOrderDetails([]);
+  }, []);
 
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState({ open: false, mode: "alert", title: "", message: "", onConfirm: null });
@@ -110,7 +148,7 @@ const OrderManagement = () => {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [currentPage, filteredItems]);
 
-  const handleSave = async (formData) => {
+  const handleSave = useCallback(async (formData) => {
     showDialog(
       "confirm",
       crud.selectedItem ? "Xác nhận cập nhật" : "Xác nhận thêm mới",
@@ -133,10 +171,15 @@ const OrderManagement = () => {
         }
       }
     );
-  };
+  }, [crud, refetch, showDialog]);
 
   const updateDetail = orderDetailAPI.useUpdate();
   const deleteDetail = orderDetailAPI.useDelete();
+
+  // Refetch all order details khi component mount
+  useEffect(() => {
+    refetchAllOrderDetails();
+  }, [refetchAllOrderDetails]);
 
   if (isLoading) return <div className="p-4 md:p-8 text-center text-gray-600">Đang tải...</div>;
 
@@ -148,7 +191,7 @@ const OrderManagement = () => {
         <p className="text-xs sm:text-sm text-gray-500 mt-1">Quản lý và theo dõi các đơn hàng</p>
       </div>
 
-      {/* SEARCH SECTION */}
+      {/* SEARCH */}
       <div className="mb-4 md:mb-6 bg-white p-3 sm:p-4 rounded-lg shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <input
@@ -167,7 +210,7 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* TABLE SECTION */}
+      {/* TABLE */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {currentItems.length === 0 ? (
           <div className="p-6 sm:p-8 text-center text-gray-500">
@@ -195,15 +238,9 @@ const OrderManagement = () => {
               />
             </div>
 
-            {/* PAGINATION */}
             {totalPages > 1 && (
               <div className="px-3 sm:px-4 md:px-6 py-4 border-t border-gray-200 bg-gray-50">
-                <Pagination 
-                  currentPage={currentPage} 
-                  totalPages={totalPages} 
-                  onPageChange={setCurrentPage} 
-                  maxVisible={5} 
-                />
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} maxVisible={5} />
               </div>
             )}
           </>
@@ -277,12 +314,7 @@ const OrderManagement = () => {
         loadingDetails={loadingDetails}
         updateDetail={updateDetail}
         deleteDetail={deleteDetail}
-        refetchDetails={async () => {
-          if (detailModal.order) {
-            const data = await orderDetailAPI.getAll({ params: { order_id: detailModal.order.id } });
-            setOrderDetails(data || []);
-          }
-        }}
+        refetchDetails={() => fetchOrderDetails(detailModal.order?.id)}
         onClose={closeDetailModal}
         showDialog={showDialog}
       />

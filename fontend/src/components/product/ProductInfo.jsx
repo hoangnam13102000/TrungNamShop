@@ -5,7 +5,6 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs, onAddToC
 
   return (
     <div className="space-y-6">
-      {/*  Tên + Mã sản phẩm + Mô tả */}
       <div>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
           {product.name}
@@ -60,10 +59,10 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs, onAddToC
         </div>
       )}
 
-      {/* 🛒 Nút thêm vào giỏ hàng */}
+      {/*  Into Cart */}
       {showAddToCart && (
         <button
-          onClick={onAddToCart} // GỌI HÀM THÊM GIỎ HÀNG Ở ĐÂY
+          onClick={onAddToCart} 
           className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-700 
                      text-white px-6 py-3 rounded-xl hover:shadow-lg 
                      transition-all font-semibold"
@@ -72,7 +71,7 @@ const ProductInfo = ({ product, specs = [], showAddToCart, onShowSpecs, onAddToC
         </button>
       )}
 
-      {/* Nút xem toàn bộ thông số kỹ thuật */}
+      {/* View Productdetail */}
       {specs.length > 0 && (
         <button
           onClick={onShowSpecs}

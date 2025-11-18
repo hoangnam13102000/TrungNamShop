@@ -1,25 +1,54 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import display from "@banner/Forgot-password.png";
-import { validateGeneral } from "../../../utils/forms/validate"; // import validate general
+import { validateGeneral } from "../../../utils/forms/validate";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const errors = validateGeneral({ email }, { email: { required: true, type: "email" } });
+    // Validate email
+    const errors = validateGeneral(
+      { email },
+      { email: { required: true, type: "email" } }
+    );
     if (Object.keys(errors).length > 0) {
       setError(errors.email);
+      setSuccess("");
       return;
     }
 
-    console.log("Email gửi reset:", email);
-    alert("Liên kết đặt lại mật khẩu đã được gửi!");
-    setEmail("");
-    setError("");
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/forgot-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSuccess(result.message || "Liên kết đặt lại mật khẩu đã được gửi!");
+        setError("");
+        setEmail("");
+      } else {
+        setError(result.message || "Không thể gửi liên kết, vui lòng thử lại.");
+        setSuccess("");
+      }
+    } catch (err) {
+      console.error("Lỗi gửi email reset:", err);
+      setError("Có lỗi xảy ra, vui lòng thử lại.");
+      setSuccess("");
+    }
   };
 
   return (
@@ -50,10 +79,13 @@ function ForgotPassword() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
-                error ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:ring-red-400"
+                error
+                  ? "border-red-500 focus:ring-red-400"
+                  : "border-gray-300 focus:ring-red-400"
               }`}
             />
             {error && <p className="text-red-500 text-sm">{error}</p>}
+            {success && <p className="text-green-500 text-sm">{success}</p>}
 
             <button
               type="submit"

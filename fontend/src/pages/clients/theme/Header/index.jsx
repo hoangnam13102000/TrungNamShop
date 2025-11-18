@@ -1,9 +1,10 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/UI/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/UI/dropdown/DropDown";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
 import HomeBanner from "@page_user/theme/Header/Banner.jsx";
+import CartPreview from "../../../../components/UI/cart/CartPreview";
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
 import {
   FaFacebookSquare,
@@ -28,9 +29,11 @@ const SOCIAL_LINKS = [
 
 const Header = () => {
   const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showCartPreview, setShowCartPreview] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,27 +41,29 @@ const Header = () => {
 
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [username, setUsername] = useState(localStorage.getItem("username") || "User");
-
-  // Lấy account_id từ localStorage
   const accountId = localStorage.getItem("account_id");
 
-  // APIs
   const storeAPI = useCRUDApi("stores");
   const brandAPI = useCRUDApi("brands");
   const customerAPI = useCRUDApi("customers");
+  const employeeAPI = useCRUDApi("employees");
 
   const { data: stores = [], isLoading: isStoresLoading } = storeAPI.useGetAll();
   const mainStore = stores[0];
 
   const { data: brandsData = [], isLoading: isBrandsLoading } = brandAPI.useGetAll();
-
   const { data: customersData = [], isLoading: isCustomersLoading } = customerAPI.useGetAll();
-  const customer = customersData.find(c => c.account_id == accountId);
+  const { data: employeesData = [], isLoading: isEmployeesLoading } = employeeAPI.useGetAll();
 
-  // Reset selected category khi chuyển trang
+  const isProfileLoading = isCustomersLoading || isEmployeesLoading;
+
+  const profile = customersData.find(c => c.account_id == accountId)
+               || employeesData.find(e => e.account_id == accountId);
+
+  const cartRef = useRef();
+
   useEffect(() => setSelectedCategory(null), [location.pathname]);
 
-  // Cập nhật login khi localStorage thay đổi
   useEffect(() => {
     const handleStorageChange = () => {
       setIsLoggedIn(!!localStorage.getItem("token"));
@@ -68,20 +73,20 @@ const Header = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // Load cart count + realtime update
   useEffect(() => {
-    const loadCartCount = () => {
+    const loadCart = () => {
       const cart = JSON.parse(localStorage.getItem("cart")) || [];
       const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
       setCartCount(totalQuantity);
+      setCartItems(cart);
     };
 
-    loadCartCount();
+    loadCart();
 
     const handleStorageChange = (e) => {
-      if (e.key === "cart") loadCartCount();
+      if (e.key === "cart") loadCart();
     };
-    const handleCartUpdated = () => loadCartCount();
+    const handleCartUpdated = () => loadCart();
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("cartUpdated", handleCartUpdated);
@@ -92,6 +97,21 @@ const Header = () => {
     };
   }, []);
 
+  // Click ngoài để đóng cart preview
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (cartRef.current && !cartRef.current.contains(e.target)) {
+        setShowCartPreview(false);
+      }
+    };
+    if (showCartPreview) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCartPreview]);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
@@ -101,7 +121,6 @@ const Header = () => {
     navigate("/");
   };
 
-  // Dropdown brand
   const dropdownOptions = brandsData.map((brand) => ({
     label: brand.name,
     value: brand.id,
@@ -146,11 +165,11 @@ const Header = () => {
                   ))}
                 </div>
 
-                {!isCustomersLoading && (
+                {!isProfileLoading && (
                   <AuthDropdown
                     isLoggedIn={isLoggedIn}
                     username={username}
-                    avatar={getImageUrl(customer?.avatar)}
+                    avatar={getImageUrl(profile?.avatar)}
                     onLogout={handleLogout}
                     onNavigate={navigate}
                     menuItems={[
@@ -195,20 +214,40 @@ const Header = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 relative">
+                {/* Mobile search */}
                 <button onClick={() => setMobileSearchOpen(!mobileSearchOpen)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
                   <FaSearch className="text-base sm:text-lg" />
                 </button>
 
-                <Link to="/gio-hang" className="relative p-2 text-gray-600 hover:text-red-600 transition">
-                  <FaShoppingCart className="text-lg sm:text-xl" />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+                {/* Cart */}
+                <div className="relative" ref={cartRef}>
+                  <button
+                    onClick={() => setShowCartPreview(!showCartPreview)}
+                    className="relative p-2 text-gray-600 hover:text-red-600 transition flex items-center lg:flex-none"
+                  >
+                    <FaShoppingCart className="text-lg sm:text-xl" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center whitespace-nowrap">
+                        {cartCount}
+                      </span>
+                    )}
+                  </button>
 
+                  {/* Cart preview */}
+                  {cartCount > 0 && showCartPreview && (
+                    <div className="absolute right-0 mt-2 z-50">
+                      <CartPreview 
+                        items={cartItems.map(item => ({
+                          ...item,
+                          image: item.primary_image?.image_path || null
+                        }))}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile menu toggle */}
                 <button onClick={() => setShowMenu(!showMenu)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
                   {showMenu ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
                 </button>

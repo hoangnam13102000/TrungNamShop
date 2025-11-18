@@ -25,6 +25,7 @@ class EmployeeResource extends JsonResource
             'status' => $this->status,
             'avatar' => $this->avatar,
             'created_at' => $this->created_at,
+            'account_id' => $this->account_id,
 
             // Relations
             'account' => $this->whenLoaded('account'),

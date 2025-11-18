@@ -18,18 +18,14 @@ const OrderDetailModal = ({
   const [editItem, setEditItem] = useState(null);
   const [productDetailOptions, setProductDetailOptions] = useState([]);
 
-  // Lấy danh sách product-details
-  const { useGetAll: useGetProductDetails } = useCRUDApi("product-details");
-  const { data: productDetails = [], isLoading: loadingProducts } = useGetProductDetails({
+  const { data: productDetails = [] } = useCRUDApi("product-details").useGetAll({
     include: ["product", "memory", "screen", "rear_camera", "front_camera", "operating_system"],
   });
 
-  // Chuyển productDetails thành dropdown options
   useEffect(() => {
     if (productDetails.length > 0) {
       setProductDetailOptions(
         productDetails.map((pd) => {
-          // Tạo chuỗi detail_info từ các relation
           const detailParts = [
             pd.memory?.name,
             pd.screen?.name,
@@ -49,6 +45,12 @@ const OrderDetailModal = ({
     }
   }, [productDetails]);
 
+  // Hàm format tiền không hiển thị decimal và thêm VNĐ
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return "—";
+    return `${parseInt(amount).toLocaleString("vi-VN")} VNĐ`;
+  };
+
   if (!open || !order) return null;
 
   return (
@@ -64,7 +66,7 @@ const OrderDetailModal = ({
           </p>
         </div>
 
-        {/* TABLE SECTION */}
+        {/* TABLE */}
         {loadingDetails ? (
           <div className="flex items-center justify-center py-8 sm:py-12">
             <div className="animate-spin h-10 w-10 border-4 border-blue-200 border-t-blue-600 rounded-full"></div>
@@ -79,100 +81,49 @@ const OrderDetailModal = ({
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-gray-200">
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-800">
-                    Sản phẩm
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-800">
-                    Chi tiết
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-800">
-                    SL
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-800">
-                    Đơn giá
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-right font-bold text-gray-800">
-                    Thành tiền
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-800">
-                    Hành động
-                  </th>
+                  <th className="p-3">Sản phẩm</th>
+                  <th className="p-3">Chi tiết</th>
+                  <th className="p-3 text-center">SL</th>
+                  <th className="p-3 text-right">Đơn giá</th>
+                  <th className="p-3 text-right">Thành tiền</th>
+                  <th className="p-3 text-center">Hành động</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {orderDetails.map((item, idx) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-blue-50 transition-colors duration-200"
-                  >
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900">
+                  <tr key={item.id} className="hover:bg-blue-50 transition-colors duration-200">
+                    <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="hidden sm:flex w-8 h-8 bg-blue-100 rounded-lg items-center justify-center flex-shrink-0">
-                          <span className="text-xs sm:text-sm text-blue-600 font-bold">
-                            {idx + 1}
-                          </span>
+                          <span>{idx + 1}</span>
                         </div>
-                        <span className="truncate">{item.product_name}</span>
+                        <span>{item.product_name}</span>
                       </div>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-700">
-                      <span className="inline-block bg-gray-100 text-gray-700 px-2 sm:px-3 py-1 rounded-full text-xs font-medium truncate">
-                        {item.detail_info || "—"}
-                      </span>
+                    <td className="p-3">
+                      <span>{item.detail_info || "—"}</span>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
-                      <span className="inline-block bg-blue-100 text-blue-700 px-2 sm:px-3 py-1 rounded-lg font-semibold text-xs sm:text-sm">
-                        {item.quantity}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right font-semibold text-gray-900 text-xs sm:text-sm">
-                      {item.price_at_order.toLocaleString("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      })}
-                    </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
-                      <span className="font-bold text-blue-600 text-xs sm:text-base">
-                        {item.subtotal.toLocaleString("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
-                      <div className="flex items-center justify-center gap-2 sm:gap-3">
-                        <button
-                          className="inline-flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 hover:scale-110 transition-all"
-                          title="Sửa"
-                          onClick={() => {
-                            setEditItem(item);
-                            setEditing(true);
-                          }}
+                    <td className="p-3 text-center">{item.quantity}</td>
+                    <td className="p-3 text-right">{formatCurrency(item.price_at_order)}</td>
+                    <td className="p-3 text-right">{formatCurrency(item.subtotal)}</td>
+                    <td className="p-3 text-center">
+                      <div className="flex justify-center gap-2">
+                        <button 
+                          onClick={() => { setEditItem(item); setEditing(true); }}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition"
                         >
-                          <FaEdit size={14} className="sm:hidden" />
-                          <FaEdit size={16} className="hidden sm:block" />
+                          <FaEdit />
                         </button>
-                        <button
-                          className="inline-flex items-center justify-center w-7 h-7 sm:w-9 sm:h-9 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 hover:scale-110 transition-all"
-                          title="Xóa"
+                        <button 
                           onClick={() =>
-                            showDialog(
-                              "confirm",
-                              "Xác nhận",
-                              `Xóa sản phẩm "${item.product_name}" khỏi đơn hàng?`,
-                              async () => {
-                                try {
-                                  await deleteDetail.mutateAsync(item.id);
-                                  refetchDetails();
-                                } catch {
-                                  alert("Xóa thất bại");
-                                }
-                              }
-                            )
+                            showDialog("confirm", "Xác nhận", `Xóa sản phẩm "${item.product_name}" khỏi đơn hàng?`, async () => {
+                              await deleteDetail.mutateAsync(item.id);
+                              refetchDetails();
+                            })
                           }
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
                         >
-                          <FaTrash size={14} className="sm:hidden" />
-                          <FaTrash size={16} className="hidden sm:block" />
+                          <FaTrash />
                         </button>
                       </div>
                     </td>
@@ -183,53 +134,40 @@ const OrderDetailModal = ({
           </div>
         )}
 
-        {/* FORM MODAL */}
+        {/* FORM SỬA */}
         {editing && editItem && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-start pt-4 sm:pt-8 md:pt-10 z-50 overflow-y-auto p-3 sm:p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-2xl sm:max-w-3xl my-4">
-              <DynamicForm
-                title={`Sửa chi tiết: ${editItem.product_name}`}
-                fields={[
-                  {
-                    name: "product_detail_id",
-                    label: "Chọn phiên bản sản phẩm",
-                    type: "select",
-                    options: productDetailOptions,
-                    required: true,
-                  },
-                  { name: "quantity", label: "Số lượng", type: "number", required: true },
-                  { name: "price_at_order", label: "Đơn giá", type: "number", required: true },
-                  { name: "subtotal", label: "Thành tiền", type: "number", required: true },
-                ]}
-                initialData={editItem}
-                onSave={async (data) => {
-                  try {
-                    const selected = productDetailOptions.find(
-                      (opt) => opt.value === data.product_detail_id
-                    );
-                    const payload = {
-                      ...data,
-                      product_name: selected?.product_name ?? editItem.product_name,
-                      detail_info: selected?.detail_info ?? editItem.detail_info,
-                    };
-                    await updateDetail.mutateAsync({ id: editItem.id, data: payload });
-                    refetchDetails();
-                    setEditing(false);
-                  } catch {
-                    alert("Cập nhật thất bại");
-                  }
-                }}
-                onClose={() => setEditing(false)}
-              />
-            </div>
+          <div className="mt-6">
+            <DynamicForm
+              title={`Sửa chi tiết: ${editItem.product_name}`}
+              fields={[
+                { name: "product_detail_id", label: "Chọn phiên bản sản phẩm", type: "select", options: productDetailOptions, required: true },
+                { name: "quantity", label: "Số lượng", type: "number", required: true },
+                { name: "price_at_order", label: "Đơn giá", type: "number", required: true },
+                { name: "subtotal", label: "Thành tiền", type: "number", required: true },
+              ]}
+              initialData={editItem}
+              onSave={async (data) => {
+                const selected = productDetailOptions.find((opt) => opt.value === data.product_detail_id);
+                await updateDetail.mutateAsync({ 
+                  id: editItem.id, 
+                  data: { 
+                    ...data, 
+                    product_name: selected?.product_name, 
+                    detail_info: selected?.detail_info 
+                  } 
+                });
+                refetchDetails();
+                setEditing(false);
+              }}
+              onClose={() => setEditing(false)}
+            />
           </div>
         )}
 
-        {/* FOOTER */}
         <div className="mt-4 md:mt-6 flex justify-end">
-          <button
-            className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold text-sm sm:text-base rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg"
+          <button 
             onClick={onClose}
+            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
           >
             Đóng
           </button>

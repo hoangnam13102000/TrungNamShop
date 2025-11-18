@@ -54,8 +54,9 @@ use App\Http\Controllers\PaymentController;
 // });
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-
+Route::post('/change-password', [AuthController::class, 'changePassword'])->middleware('auth:sanctum');
 // Get current user information (requires auth)
 Route::get('/user', function (Request $request) {
     return $request->user();
