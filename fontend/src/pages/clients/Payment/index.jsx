@@ -6,6 +6,8 @@ import {
   FaBox,
   FaTruck,
   FaWallet,
+  FaTag,
+  FaTimes,
 } from "react-icons/fa";
 import BreadCrumb from "../theme/BreadCrumb";
 import { getImageUrl } from "../../../utils/helpers/getImageUrl";
@@ -15,12 +17,13 @@ import { useCustomerInfo } from "../../../utils/hooks/useCustomerInfo";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 
 const Payment = () => {
-  const [cartItems,setCartItems] = useState(JSON.parse(localStorage.getItem("cart")) || []);
+  const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem("cart")) || []);
   const {
     customerInfo,
     setCustomerInfo,
     customerId,
     loading: customerLoading,
+    userType,
   } = useCustomerInfo();
   const [errors, setErrors] = useState({});
   const [dialog, setDialog] = useState({
@@ -30,6 +33,11 @@ const Payment = () => {
     message: "",
     onConfirm: null,
   });
+  
+  // State cho mã giảm giá
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
   const { useCreate } = useCRUDApi("orders");
   const createOrder = useCreate();
@@ -40,8 +48,20 @@ const Payment = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const getTotal = () =>
+  const getSubtotal = () =>
     cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const getDiscountAmount = () => {
+    if (!appliedDiscount) return 0;
+    const subtotal = getSubtotal();
+    return (subtotal * appliedDiscount.percentage) / 100;
+  };
+
+  const getTotal = () => {
+    const subtotal = getSubtotal();
+    const discountAmount = getDiscountAmount();
+    return subtotal - discountAmount;
+  };
 
   const getCartItemImage = (item) => {
     if (!item) return null;
@@ -61,6 +81,63 @@ const Payment = () => {
 
   const closeDialog = () => {
     setDialog((prev) => ({ ...prev, open: false }));
+  };
+
+  // Hàm áp dụng mã giảm giá
+  const applyDiscount = async () => {
+    if (!discountCode.trim()) {
+      setDialog({
+        open: true,
+        mode: "alert",
+        title: "Lỗi",
+        message: "Vui lòng nhập mã giảm giá",
+      });
+      return;
+    }
+
+    setIsApplyingDiscount(true);
+    try {
+      // Gọi API để kiểm tra mã giảm giá
+      const response = await fetch(`http://127.0.0.1:8000/api/discounts/validate?code=${discountCode}`);
+      const discountData = await response.json();
+
+      if (response.ok && discountData.valid) {
+        setAppliedDiscount({
+          id: discountData.discount.id,
+          code: discountData.discount.code,
+          percentage: discountData.discount.percentage,
+        });
+        setDialog({
+          open: true,
+          mode: "alert",
+          title: "Thành công",
+          message: `Áp dụng mã giảm giá thành công! Giảm ${discountData.discount.percentage}%`,
+        });
+      } else {
+        setDialog({
+          open: true,
+          mode: "alert",
+          title: "Lỗi",
+          message: discountData.message || "Mã giảm giá không hợp lệ",
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi áp dụng mã giảm giá:", error);
+      setDialog({
+        open: true,
+        mode: "alert",
+        title: "Lỗi",
+        message: "Có lỗi xảy ra khi áp dụng mã giảm giá",
+      });
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  // Hàm xóa mã giảm giá
+  const removeDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode("");
   };
 
   const handlePayment = async () => {
@@ -103,7 +180,7 @@ const Payment = () => {
         order_code: `ORDER-${Date.now()}`,
         customer_id: customerId,
         store_id: 1,
-        discount_id: null,
+        discount_id: appliedDiscount?.id || null,
         recipient_name: customerInfo.name,
         recipient_phone: customerInfo.phone,
         recipient_address: customerInfo.address,
@@ -155,7 +232,6 @@ const Payment = () => {
           });
         }
       }
-
 
       // Cash
       if (customerInfo.payment_method === "cash") {
@@ -231,6 +307,19 @@ const Payment = () => {
             <div className="lg:col-span-2 space-y-6">
               {/* Customer Info */}
               <div className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-300 p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Thông tin người nhận</h3>
+                  {userType && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      userType === 'employee' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {userType === 'employee' ? 'Nhân viên' : 'Khách hàng'}
+                    </span>
+                  )}
+                </div>
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -420,22 +509,74 @@ const Payment = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Tóm tắt đơn hàng
                 </h2>
+                
+                {/* Mã giảm giá */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <FaTag className="text-green-600" />
+                    Mã giảm giá
+                  </label>
+                  {!appliedDiscount ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nhập mã giảm giá"
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value)}
+                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 transition-colors"
+                      />
+                      <button
+                        onClick={applyDiscount}
+                        disabled={isApplyingDiscount || !discountCode.trim()}
+                        className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isApplyingDiscount ? "..." : "Áp dụng"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border-2 border-green-200">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold text-green-800">
+                            {appliedDiscount.code}
+                          </p>
+                          <p className="text-sm text-green-600">
+                            Giảm {appliedDiscount.percentage}%
+                          </p>
+                        </div>
+                        <button
+                          onClick={removeDiscount}
+                          className="text-gray-500 hover:text-red-500 transition-colors"
+                        >
+                          <FaTimes />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-3 mb-6 pb-6 border-b-2 border-gray-200">
                   <div className="flex justify-between text-gray-700">
                     <span>Tạm tính:</span>
                     <span className="font-semibold">
-                      {getTotal().toLocaleString()}₫
+                      {getSubtotal().toLocaleString()}₫
                     </span>
                   </div>
+                  
+                  {appliedDiscount && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Giảm giá ({appliedDiscount.percentage}%):</span>
+                      <span className="font-semibold">
+                        -{getDiscountAmount().toLocaleString()}₫
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between text-gray-700">
                     <span>Phí vận chuyển:</span>
                     <span className="font-semibold text-green-600">
                       Miễn phí
                     </span>
-                  </div>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Giảm giá:</span>
-                    <span className="font-semibold text-green-600">0₫</span>
                   </div>
                 </div>
 

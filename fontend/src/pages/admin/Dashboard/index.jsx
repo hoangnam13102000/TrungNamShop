@@ -1,5 +1,5 @@
 import { memo} from "react";
-import DashboardCard from "../../../components/main/DashboardCard";
+import DashboardCard from "../../../components/UI/cards/DashboardCard";
 
 import {
   FaThLarge,

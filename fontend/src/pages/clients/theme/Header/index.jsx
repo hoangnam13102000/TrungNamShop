@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/UI/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/UI/dropdown/DropDown";
@@ -34,6 +34,9 @@ const Header = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showCartPreview, setShowCartPreview] = useState(false);
+  // State mới cho từ khóa tìm kiếm
+  const [searchTerm, setSearchTerm] = useState("");
+  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,8 +60,9 @@ const Header = () => {
 
   const isProfileLoading = isCustomersLoading || isEmployeesLoading;
 
-  const profile = customersData.find(c => c.account_id == accountId)
-               || employeesData.find(e => e.account_id == accountId);
+  const profile =
+    customersData.find((c) => c.account_id == accountId) ||
+    employeesData.find((e) => e.account_id == accountId);
 
   const cartRef = useRef();
 
@@ -126,6 +130,34 @@ const Header = () => {
     value: brand.id,
   }));
 
+  // Hàm xử lý tìm kiếm - cập nhật để hỗ trợ cả tên sản phẩm và thương hiệu
+  const handleSearch = useCallback(
+    (term, category) => {
+      const queryParams = new URLSearchParams();
+      if (term) {
+        queryParams.append("search", term);
+      }
+      if (category) {
+        queryParams.append("brands", category.value);
+      }
+      navigate(`/danh-sach-san-pham?${queryParams.toString()}`);
+      setMobileSearchOpen(false); // Đóng thanh tìm kiếm mobile sau khi tìm kiếm
+      setShowMenu(false); // Đóng mobile menu
+    },
+    [navigate]
+  );
+
+  const handleDesktopSearch = (e) => {
+    e.preventDefault();
+    handleSearch(searchTerm, selectedCategory);
+  };
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    // Trên mobile, ta chỉ tìm kiếm theo từ khóa nhập vào, không cần dropdown thương hiệu
+    handleSearch(mobileSearchTerm, null);
+  };
+
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 w-full">
@@ -138,15 +170,26 @@ const Header = () => {
                   <span className="text-xs opacity-80">Đang tải thông tin cửa hàng...</span>
                 ) : mainStore ? (
                   <>
-                    <a href={`tel:${mainStore.phone}`} className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
+                    <a
+                      href={`tel:${mainStore.phone}`}
+                      className="flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
+                    >
                       <FaPhoneAlt />
                       <span>{mainStore.phone}</span>
                     </a>
-                    <a href="/lien-he" className="hidden lg:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
+                    <a
+                      href="/lien-he"
+                      className="hidden lg:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
+                    >
                       <FaEnvelope />
                       <span>{mainStore.email}</span>
                     </a>
-                    <a href={mainStore.google_map || "#"} target="_blank" rel="noopener noreferrer" className="hidden md:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs">
+                    <a
+                      href={mainStore.google_map || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden md:flex items-center space-x-1.5 px-2 py-1.5 rounded-lg text-xs"
+                    >
                       <FaMapMarkerAlt />
                       <span>{mainStore.name ? `${mainStore.name} - ${mainStore.address}` : mainStore.address}</span>
                     </a>
@@ -159,7 +202,13 @@ const Header = () => {
               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                 <div className="hidden sm:flex items-center gap-1.5">
                   {SOCIAL_LINKS.map((social, i) => (
-                    <a key={i} href={social.url} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-white/20 rounded-lg">
+                    <a
+                      key={i}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 bg-white/20 rounded-lg"
+                    >
                       <social.icon className="text-white text-sm" />
                     </a>
                   ))}
@@ -194,29 +243,42 @@ const Header = () => {
               </Link>
 
               {/* Desktop Search */}
-              <div className="hidden lg:flex flex-1 max-w-2xl relative">
+              <form onSubmit={handleDesktopSearch} className="hidden lg:flex flex-1 max-w-2xl relative">
                 <div className="flex items-center border-2 border-red-400 bg-white w-full h-11">
                   <Dropdown
-                    label={selectedCategory?.label || "Chọn thương hiệu"}
+                    label={selectedCategory?.label || "Tất cả thương hiệu"}
                     options={dropdownOptions}
                     selected={selectedCategory}
                     onSelect={(option) => {
                       setSelectedCategory(option);
-                      navigate(`/danh-sach-san-pham?brand=${option.value}`);
+                      // Có thể tìm kiếm ngay sau khi chọn category hoặc chờ người dùng nhập keyword
+                      // navigate(`/danh-sach-san-pham?brand=${option.value}`);
                     }}
                     className="min-w-[180px] border-r border-red-400"
                   />
-                  <input type="text" placeholder="Tìm kiếm sản phẩm..." className="flex-1 px-4 text-sm outline-none h-full min-w-0" />
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm theo tên sản phẩm..."
+                    className="flex-1 px-4 text-sm outline-none h-full min-w-0"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
                     <FaSearch size={16} />
                   </button>
                 </div>
-              </div>
+              </form>
 
               {/* Actions */}
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 relative">
-                {/* Mobile search */}
-                <button onClick={() => setMobileSearchOpen(!mobileSearchOpen)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
+                {/* Mobile search toggle */}
+                <button
+                  onClick={() => {
+                    setMobileSearchOpen(!mobileSearchOpen);
+                    setShowMenu(false); // Đảm bảo menu mobile đóng khi mở/đóng search
+                  }}
+                  className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
+                >
                   <FaSearch className="text-base sm:text-lg" />
                 </button>
 
@@ -237,10 +299,10 @@ const Header = () => {
                   {/* Cart preview */}
                   {cartCount > 0 && showCartPreview && (
                     <div className="absolute right-0 mt-2 z-50">
-                      <CartPreview 
-                        items={cartItems.map(item => ({
+                      <CartPreview
+                        items={cartItems.map((item) => ({
                           ...item,
-                          image: item.primary_image?.image_path || null
+                          image: item.primary_image?.image_path || null,
                         }))}
                       />
                     </div>
@@ -248,11 +310,35 @@ const Header = () => {
                 </div>
 
                 {/* Mobile menu toggle */}
-                <button onClick={() => setShowMenu(!showMenu)} className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition">
+                <button
+                  onClick={() => {
+                    setShowMenu(!showMenu);
+                    setMobileSearchOpen(false); // Đảm bảo search mobile đóng khi mở/đóng menu
+                  }}
+                  className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
+                >
                   {showMenu ? <FaTimes className="text-lg" /> : <FaBars className="text-lg" />}
                 </button>
               </div>
             </div>
+
+            {/* Mobile Search Input */}
+            {mobileSearchOpen && (
+              <form onSubmit={handleMobileSearch} className="lg:hidden w-full pb-3 animate-in slide-in-from-top">
+                <div className="flex items-center border-2 border-red-400 bg-white w-full h-10">
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm theo tên sản phẩm..."
+                    className="flex-1 px-4 text-sm outline-none h-full min-w-0"
+                    value={mobileSearchTerm}
+                    onChange={(e) => setMobileSearchTerm(e.target.value)}
+                  />
+                  <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
+                    <FaSearch size={16} />
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Mobile Menu */}
             {showMenu && (
@@ -263,7 +349,7 @@ const Header = () => {
                       key={brand.id}
                       className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition w-full text-left"
                       onClick={() => {
-                        navigate(`/products?brand=${brand.id}`);
+                        navigate(`/danh-sach-san-pham?brands=${brand.id}`);
                         setShowMenu(false);
                       }}
                     >
