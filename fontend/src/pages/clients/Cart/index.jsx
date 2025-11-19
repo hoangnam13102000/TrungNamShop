@@ -117,6 +117,14 @@ const Cart = () => {
                   ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100)
                   : 0;
 
+                // Lấy ảnh theo logic giống CartPreview
+                const imageUrl = getImageUrl(
+                  item.image?.image_path ||
+                  (typeof item.primary_image === "string" ? item.primary_image : null) ||
+                  item.brand?.image ||
+                  null
+                );
+
                 return (
                   <div
                     key={item.id}
@@ -126,15 +134,8 @@ const Cart = () => {
                       {/* Product Image */}
                       <div className="relative flex-shrink-0">
                         <img
-                          src={getImageUrl(
-                            typeof item.image === "string"
-                              ? item.image
-                              : item.image?.image_path ||
-                                item.primary_image?.image_path ||
-                                item.brand?.image ||
-                                null
-                          )}
-                          alt={item.name}
+                          src={imageUrl}
+                          alt={item.name || "Sản phẩm"}
                           className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl bg-gray-50 border border-gray-200"
                         />
                         {isDiscounted && (
