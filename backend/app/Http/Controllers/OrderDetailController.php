@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use App\Http\Resources\OrderDetailResource;
@@ -15,14 +14,18 @@ class OrderDetailController extends Controller
      */
     public function index()
     {
-        $details = OrderDetail::with('productDetail')->get();
+        $details = OrderDetail::with([
+            'productDetail.memory',        // load memory để lấy ram
+            'productDetail.product.images' // load images
+        ])->get();
+
         return OrderDetailResource::collection($details);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $data = $request->validate([
             'order_id' => 'required|exists:orders,id',
@@ -39,13 +42,16 @@ class OrderDetailController extends Controller
         return new OrderDetailResource($detail);
     }
 
-
     /**
      * Display the specified resource.
      */
-     public function show(OrderDetail $orderDetail)
+    public function show(OrderDetail $orderDetail)
     {
-        $orderDetail->load('productDetail');
+        $orderDetail->load([
+            'productDetail.memory',
+            'productDetail.product.images'
+        ]);
+
         return new OrderDetailResource($orderDetail);
     }
 
@@ -65,6 +71,11 @@ class OrderDetailController extends Controller
         ]);
 
         $orderDetail->update($data);
+
+        $orderDetail->load([
+            'productDetail.memory',
+            'productDetail.product.images'
+        ]);
 
         return new OrderDetailResource($orderDetail);
     }

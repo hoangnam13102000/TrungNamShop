@@ -1,16 +1,13 @@
 import { memo, useMemo, useState } from "react";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
-import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import AdminLayoutPage from "../../../../components/common/Layout";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
-import Pagination from "../../../../components/common/Pagination"; // import component phân trang
 
 export default memo(function ColorManagement() {
   const colorApi = useCRUDApi("colors");
-  const { data: colors = [], isLoading, refetch } = colorApi.useGetAll();
+  const { data: colors = [], refetch } = colorApi.useGetAll();
 
   const createMutation = colorApi.useCreate();
   const updateMutation = colorApi.useUpdate();
@@ -33,13 +30,8 @@ export default memo(function ColorManagement() {
   } = useAdminHandler(crud, refetch);
 
   const [search, setSearch] = useState("");
-  const [viewItem, setViewItem] = useState(null);
-
-  /** ==========================
-   * PHÂN TRANG
-   * ========================== */
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // số lượng màu trên 1 trang
+  const itemsPerPage = 10;
 
   const filteredItems = useMemo(() => {
     return colors.filter((c) =>
@@ -59,90 +51,39 @@ export default memo(function ColorManagement() {
   const handleDelete = (item) => handleDeleteAdmin(item, "name");
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">Quản lý màu sắc</h1>
-
-      {/* BUTTON + SEARCH */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <button
-          onClick={crud.handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
-        >
-          <FaPlus /> Thêm màu sắc
-        </button>
-
-        <input
-          type="text"
-          placeholder="Tìm kiếm màu sắc..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* TABLE */}
-      {isLoading ? (
-        <p>Đang tải dữ liệu...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <AdminListTable
-              columns={[{ field: "name", label: "Tên màu sắc" }]}
-              data={paginatedItems} // dùng dữ liệu đã phân trang
-              actions={[
-                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-              ]}
-            />
-          </div>
-
-          {/* PHÂN TRANG */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            maxVisible={5} // số trang hiển thị tối đa
-          />
-        </>
-      )}
-
-      {/* FORM VIEW */}
-      {viewItem && (
-        <DynamicForm
-          mode="view"
-          title={`Chi tiết màu sắc - ${viewItem.name}`}
-          fields={[{ name: "name", label: "Tên màu sắc", type: "text" }]}
-          initialData={viewItem}
-          onClose={() => setViewItem(null)}
-          className="w-full max-w-lg mx-auto"
-        />
-      )}
-
-      {/* FORM EDIT / CREATE */}
-      {crud.openForm && (
-        <DynamicForm
-          title={
-            crud.mode === "edit"
-              ? `Chỉnh sửa màu sắc - ${crud.selectedItem?.name}`
-              : "Thêm màu sắc"
-          }
-          fields={[{ name: "name", label: "Tên màu sắc", type: "text", required: true }]}
-          initialData={crud.selectedItem}
-          onSave={handleSave}
-          onClose={crud.handleCloseForm}
-          className="w-full max-w-lg mx-auto"
-        />
-      )}
-
-      {/* DIALOG */}
-      <DynamicDialog
-        open={dialog.open}
-        mode={dialog.mode}
-        title={dialog.title}
-        message={dialog.message}
-        onClose={closeDialog}
-        onConfirm={dialog.onConfirm}
-      />
-    </div>
+    <AdminLayoutPage
+      title="Quản lý màu sắc"
+      searchValue={search}
+      onSearchChange={(e) => setSearch(e.target.value)}
+      onAdd={crud.handleAdd}
+      tableColumns={[{ field: "name", label: "Tên màu sắc" }]}
+      tableData={paginatedItems}
+      tableActions={[
+        { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+        { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+      ]}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={setCurrentPage}
+      formModal={{
+        open: crud.openForm,
+        title:
+          crud.mode === "edit"
+            ? `Chỉnh sửa màu sắc - ${crud.selectedItem?.name}`
+            : "Thêm màu sắc",
+        fields: [{ name: "name", label: "Tên màu sắc", type: "text", required: true }],
+        initialData: crud.selectedItem,
+      }}
+      onFormSave={handleSave}
+      onFormClose={crud.handleCloseForm}
+      dialogProps={{
+        open: dialog.open,
+        mode: dialog.mode,
+        title: dialog.title,
+        message: dialog.message,
+        onConfirm: dialog.onConfirm,
+        onClose: closeDialog,
+      }}
+    />
   );
 });

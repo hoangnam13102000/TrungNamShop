@@ -1,23 +1,13 @@
 import { memo, useMemo, useState } from "react";
-import {
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaCheckCircle,
-  FaTimesCircle,
-} from "react-icons/fa";
-import DynamicForm from "../../../../components/formAndDialog/DynamicForm";
-import AdminListTable from "../../../../components/common/AdminListTable";
-import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import AdminLayoutPage from "../../../../components/common/Layout";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
-import { useCRUDApi } from "../../../../api/hooks/useCRUDApi"; 
-import Pagination from "../../../../components/common/Pagination"; 
+import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminCommunicationConnectivityPage() {
-  const connectivityApi = useCRUDApi("communication-connectivities"); 
-  const { data: connectivities = [], isLoading, refetch } =
-    connectivityApi.useGetAll();
+  const connectivityApi = useCRUDApi("communication-connectivities");
+  const { data: connectivities = [], refetch } = connectivityApi.useGetAll();
 
   const createMutation = connectivityApi.useCreate();
   const updateMutation = connectivityApi.useUpdate();
@@ -39,13 +29,13 @@ export default memo(function AdminCommunicationConnectivityPage() {
   );
 
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const filteredItems = useMemo(
     () =>
       connectivities.filter((c) =>
-        (c.mobile_network || "")
-          .toLowerCase()
-          .includes(search.toLowerCase().trim())
+        (c.mobile_network || "").toLowerCase().includes(search.toLowerCase().trim())
       ),
     [connectivities, search]
   );
@@ -62,6 +52,14 @@ export default memo(function AdminCommunicationConnectivityPage() {
     [filteredItems]
   );
 
+  const totalPages = Math.ceil(mappedItems.length / itemsPerPage);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return mappedItems.slice(start, end);
+  }, [mappedItems, currentPage]);
+
   const initialData = useMemo(() => {
     if (!crud.selectedItem) return {};
     return {
@@ -73,133 +71,78 @@ export default memo(function AdminCommunicationConnectivityPage() {
     };
   }, [crud.selectedItem]);
 
-  /** ==========================
-   * PHÂN TRANG
-   * ========================== */
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // số item trên 1 trang
-  const totalPages = Math.ceil(mappedItems.length / itemsPerPage);
-
-  const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return mappedItems.slice(start, end);
-  }, [mappedItems, currentPage]);
-
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-6">
-        Quản lý Communication & Connectivities
-      </h1>
-
-      {/* BUTTON + SEARCH */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <button
-          onClick={crud.handleAdd}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto"
-        >
-          <FaPlus /> Thêm Communication & Connectivity
-        </button>
-
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo mạng..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1); // reset về trang 1 khi search
-          }}
-          className="border rounded-lg px-3 py-2 w-full sm:w-72"
-        />
-      </div>
-
-      {/* TABLE */}
-      {isLoading ? (
-        <p>Đang tải dữ liệu...</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <AdminListTable
-              columns={[
-                {
-                  field: "nfc",
-                  label: "Công nghệ NFC",
-                  render: (value) => (
-                    <div className="flex justify-center">
-                      {value ? (
-                        <FaCheckCircle className="text-green-500 text-lg" />
-                      ) : (
-                        <FaTimesCircle className="text-red-500 text-lg" />
-                      )}
-                    </div>
-                  ),
-                },
-                { field: "mobile_network", label: "Hỗ trợ mạng" },
-                { field: "sim_slot", label: "Sim" },
-                { field: "gps", label: "GPS" },
-              ]}
-              data={paginatedItems} // dữ liệu đã phân trang
-              actions={[
-                { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-                { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
-              ]}
-            />
-          </div>
-
-          {/* PHÂN TRANG */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            maxVisible={5}
-          />
-        </>
-      )}
-
-      {/* FORM */}
-      {crud.openForm && (
-        <DynamicForm
-          title={
-            crud.mode === "edit" ? "Sửa Connectivity" : "Thêm Connectivity"
-          }
-          fields={[
-            {
-              name: "nfc",
-              label: "Công nghệ NFC",
-              type: "select",
-              options: [
-                { label: "Có", value: "true" },
-                { label: "Không", value: "false" },
-              ],
-            },
-            { name: "mobile_network", label: "Hỗ trợ mạng", type: "text" },
-            { name: "sim_slot", label: "Sim", type: "text" },
-            { name: "gps", label: "GPS", type: "text" },
-          ]}
-          initialData={initialData}
-          onSave={(data) =>
-            handleSave({
-              ...data,
-              nfc: data.nfc === "true",
-              mobile_network: data.mobile_network || "",
-              sim_slot: data.sim_slot || "",
-              gps: data.gps || "",
-            })
-          }
-          onClose={crud.handleCloseForm}
-          className="w-full max-w-lg mx-auto"
-        />
-      )}
-
-      {/* DIALOG */}
-      <DynamicDialog
-        open={dialog.open}
-        mode={dialog.mode}
-        title={dialog.title}
-        message={dialog.message}
-        onClose={closeDialog}
-        onConfirm={dialog.onConfirm}
-      />
-    </div>
+    <AdminLayoutPage
+      title="Quản lý Communication & Connectivities"
+      searchValue={search}
+      onSearchChange={(e) => {
+        setSearch(e.target.value);
+        setCurrentPage(1);
+      }}
+      onAdd={crud.handleAdd}
+      tableColumns={[
+        {
+          field: "nfc",
+          label: "Công nghệ NFC",
+          render: (value) => (
+            <div className="flex justify-center">
+              {value ? (
+                <FaCheckCircle className="text-green-500 text-lg" />
+              ) : (
+                <FaTimesCircle className="text-red-500 text-lg" />
+              )}
+            </div>
+          ),
+        },
+        { field: "mobile_network", label: "Hỗ trợ mạng" },
+        { field: "sim_slot", label: "Sim" },
+        { field: "gps", label: "GPS" },
+      ]}
+      tableData={paginatedItems}
+      tableActions={[
+        { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+        { icon: <FaTrash />, label: "Xoá", onClick: handleDelete },
+      ]}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={setCurrentPage}
+      formModal={{
+        open: crud.openForm,
+        title: crud.mode === "edit" ? "Sửa Connectivity" : "Thêm Connectivity",
+        fields: [
+          {
+            name: "nfc",
+            label: "Công nghệ NFC",
+            type: "select",
+            options: [
+              { label: "Có", value: "true" },
+              { label: "Không", value: "false" },
+            ],
+          },
+          { name: "mobile_network", label: "Hỗ trợ mạng", type: "text" },
+          { name: "sim_slot", label: "Sim", type: "text" },
+          { name: "gps", label: "GPS", type: "text" },
+        ],
+        initialData,
+      }}
+      onFormSave={(data) =>
+        handleSave({
+          ...data,
+          nfc: data.nfc === "true",
+          mobile_network: data.mobile_network || "",
+          sim_slot: data.sim_slot || "",
+          gps: data.gps || "",
+        })
+      }
+      onFormClose={crud.handleCloseForm}
+      dialogProps={{
+        open: dialog.open,
+        mode: dialog.mode,
+        title: dialog.title,
+        message: dialog.message,
+        onConfirm: dialog.onConfirm,
+        onClose: closeDialog,
+      }}
+    />
   );
 });

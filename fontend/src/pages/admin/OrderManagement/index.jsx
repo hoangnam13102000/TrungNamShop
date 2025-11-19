@@ -8,7 +8,6 @@ import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import Pagination from "../../../components/common/Pagination";
 import InvoiceModal from "../../../components/order/InvoiceModal";
 
-/* Helper: Chuẩn hóa initialData */
 const formatInitialData = (item) => {
   if (!item) return {};
   const toNumber = (val) => (val !== null && val !== undefined ? Number(val) : null);
@@ -28,7 +27,6 @@ const formatInitialData = (item) => {
   };
 };
 
-/* Helper: Tạo options an toàn */
 const mapOptions = (list, labelKey = "name") =>
   list && list.length ? list.map((i) => ({ value: Number(i.id), label: i[labelKey] || "—" })) : [];
 const addPlaceholder = (options, placeholder) =>
@@ -37,12 +35,10 @@ const addPlaceholder = (options, placeholder) =>
 const OrderManagement = () => {
   const orderAPI = useCRUDApi("orders");
   const orderDetailAPI = useCRUDApi("order-details");
-
   const { data: orders = [], isLoading, refetch } = orderAPI.useGetAll();
   const createMutation = orderAPI.useCreate();
   const updateMutation = orderAPI.useUpdate();
   const deleteMutation = orderAPI.useDelete();
-
   const { data: allOrderDetails = [], refetch: refetchAllOrderDetails } = orderDetailAPI.useGetAll();
 
   const crud = useAdminCrud(
@@ -64,27 +60,40 @@ const OrderManagement = () => {
   const discountOptions = addPlaceholder(mapOptions(discounts, "code"), "Chưa có mã giảm giá");
   const storeOptions = addPlaceholder(mapOptions(stores, "name"), "Chưa có cửa hàng nào");
 
-  // Invoice Modal States
   const [invoiceModal, setInvoiceModal] = useState({ open: false, order: null });
   const [invoiceOrderDetails, setInvoiceOrderDetails] = useState([]);
   const [loadingInvoiceDetails, setLoadingInvoiceDetails] = useState(false);
 
-  // Fetch order details for Invoice Modal
   const fetchInvoiceOrderDetails = useCallback(
     async (orderId) => {
       if (!orderId) return;
       try {
         setLoadingInvoiceDetails(true);
+        let filteredDetails = [];
         if (allOrderDetails && Array.isArray(allOrderDetails)) {
-          const filteredDetails = allOrderDetails.filter((detail) => detail.order_id === orderId);
-          setInvoiceOrderDetails(filteredDetails);
+          filteredDetails = allOrderDetails.filter((detail) => detail.order_id === orderId);
         } else {
           const response = await fetch(`/api/order-details?order_id=${orderId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setInvoiceOrderDetails(Array.isArray(data) ? data : []);
-          } else setInvoiceOrderDetails([]);
+          if (response.ok) filteredDetails = await response.json();
         }
+
+        const detailsWithProducts = await Promise.all(
+          filteredDetails.map(async (detail) => {
+            if (!detail.product_id) return detail;
+            try {
+              const res = await fetch(`/api/products/${detail.product_id}`);
+              if (!res.ok) return detail;
+              const product = await res.json();
+              return { ...detail, product };
+            } catch (err) {
+              console.error("Fetch product error:", err);
+              return detail;
+            }
+          })
+        );
+
+        // console.log("Invoice details with product:", detailsWithProducts);
+        setInvoiceOrderDetails(detailsWithProducts);
       } catch (err) {
         console.error("Lỗi load chi tiết đơn hóa đơn:", err);
         setInvoiceOrderDetails([]);
@@ -106,7 +115,6 @@ const OrderManagement = () => {
   const showDialog = useCallback((mode, title, message, onConfirm = null) => {
     setDialog({ open: true, mode, title, message, onConfirm });
   }, []);
-
   const closeDialog = useCallback(() => setDialog((prev) => ({ ...prev, open: false })), []);
 
   const filteredItems = useMemo(() => {

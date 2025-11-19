@@ -6,7 +6,6 @@ const CommonViewDialog = memo(({ title, data, avatar, open, onClose }) => {
   const safeData = Array.isArray(data) ? data : [];
   const contentRef = useRef(null);
 
-  // Cuộn lên đầu dialog khi mở
   useEffect(() => {
     if (open && contentRef.current) {
       contentRef.current.scrollTop = 0;
