@@ -22,56 +22,99 @@ class ProductDetail extends Model
         'battery_charging_id',
         'utility_id',
         'price',
+        'final_price',        // thêm cột final_price
         'stock_quantity',
+        'promotion_id',       // cần để lấy promotion khi tính giá
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'final_price' => 'decimal:2',   // cast final_price
         'stock_quantity' => 'integer',
     ];
 
     // ---------------- Relationships ----------------
-    public function product() {
+    public function product()
+    {
         return $this->belongsTo(Product::class);
     }
 
-    public function screen() {
+    public function screen()
+    {
         return $this->belongsTo(Screen::class);
     }
 
-    public function rearCamera() {
+    public function rearCamera()
+    {
         return $this->belongsTo(RearCamera::class, 'rear_camera_id', 'id');
     }
 
-    public function frontCamera() {
+    public function frontCamera()
+    {
         return $this->belongsTo(FrontCamera::class, 'front_camera_id', 'id');
     }
 
-    public function memory() {
+    public function memory()
+    {
         return $this->belongsTo(Memory::class);
     }
 
-    public function operatingSystem() {
+    public function operatingSystem()
+    {
         return $this->belongsTo(OperatingSystem::class);
     }
 
-    public function generalInformation() {
+    public function generalInformation()
+    {
         return $this->belongsTo(GeneralInformation::class, 'general_information_id', 'id');
     }
 
-    public function communicationConnectivity() {
+    public function communicationConnectivity()
+    {
         return $this->belongsTo(CommunicationConnectivity::class, 'communication_connectivity_id', 'id');
     }
 
-    public function batteryCharging() {
+    public function batteryCharging()
+    {
         return $this->belongsTo(BatteryCharging::class, 'battery_charging_id', 'id');
     }
 
-    public function utility() {
+    public function utility()
+    {
         return $this->belongsTo(Utility::class, 'utility_id', 'id');
     }
 
-    public function images() {
+    public function images()
+    {
         return $this->hasMany(ProductImage::class);
+    }
+
+    public function promotion()
+    {
+        return $this->belongsTo(Promotion::class);
+    }
+
+    // ---------------- Custom Methods ----------------
+
+    /**
+     * Tính giá cuối cùng dựa trên promotion
+     */
+    public function calculateFinalPrice(): float
+    {
+        $price = $this->price ?? 0;
+        if ($this->promotion?->status === 'active' && $this->promotion->discount_percent) {
+            return max($price - ($price * $this->promotion->discount_percent / 100), 0);
+        }
+        return $price;
+    }
+
+    /**
+     * Tự động cập nhật final_price trước khi save
+     */
+    protected static function booted()
+    {
+        static::saving(function ($detail) {
+            $detail->final_price = $detail->calculateFinalPrice();
+        });
     }
 }

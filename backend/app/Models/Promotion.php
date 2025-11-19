@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Promotion extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
     protected $guarded = [];
+    public function productDetails()
+    {
+        return $this->hasMany(ProductDetail::class);
+    }
 }

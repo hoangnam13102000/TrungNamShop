@@ -31,4 +31,6 @@ export const useGeneralInformations = () => useCRUDApi("general-informations").u
 export const useCommunicationConnectivities = () => useCRUDApi("communication-connectivities").useGetAll();
 
 // ===================== PRODUCT DETAIL =====================
+export const usePromotions = () => useCRUDApi("promotions").useGetAll();
+// ===================== PRODUCT DETAIL =====================
 export const useProductDetails = () => useCRUDApi("product-details").useGetAll();

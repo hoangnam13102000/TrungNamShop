@@ -15,7 +15,7 @@ const ProductImageManagement = () => {
   const colorApi = useCRUDApi("colors");
   const productApi = useCRUDApi("products");
 
-  const { data: images = [], refetch } = imageApi.useGetAll();
+  const { data: images = [], isLoading, refetch } = imageApi.useGetAll();
   const { data: colors = [] } = colorApi.useGetAll();
   const { data: products = [] } = productApi.useGetAll();
 
@@ -38,8 +38,12 @@ const ProductImageManagement = () => {
     "product_images"
   );
 
-  const { dialog, handleSave: handleSaveAdmin, handleDelete: handleDeleteAdmin, closeDialog } =
-    useAdminHandler(crud, refetch);
+  const {
+    dialog,
+    handleSave: handleSaveAdmin,
+    handleDelete: handleDeleteAdmin,
+    closeDialog,
+  } = useAdminHandler(crud, refetch);
 
   /** ==========================
    * 3. SEARCH & PAGINATION
@@ -55,10 +59,18 @@ const ProductImageManagement = () => {
   }, [images, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * (optional) Loading UI
+   * ========================== */
+  if (isLoading) {
+    return <div className="p-4 text-gray-500">Đang tải dữ liệu...</div>;
+  }
 
   /** ==========================
    * 4. UI via AdminLayoutPage
@@ -86,7 +98,9 @@ const ProductImageManagement = () => {
                   src={imgUrl}
                   alt="product"
                   className="w-16 h-16 object-contain rounded border"
-                  onError={(e) => { if (e.target.src !== placeholder) e.target.src = placeholder; }}
+                  onError={(e) => {
+                    if (e.target.src !== placeholder) e.target.src = placeholder;
+                  }}
                 />
               </div>
             );
@@ -97,7 +111,11 @@ const ProductImageManagement = () => {
           label: "Ảnh chính",
           render: (v) => (
             <div className="flex justify-center">
-              {v ? <FaCheckCircle className="text-green-600 text-xl" /> : <FaTimesCircle className="text-red-400 text-xl" />}
+              {v ? (
+                <FaCheckCircle className="text-green-600 text-xl" />
+              ) : (
+                <FaTimesCircle className="text-red-400 text-xl" />
+              )}
             </div>
           ),
         },
@@ -105,20 +123,41 @@ const ProductImageManagement = () => {
       tableData={paginatedItems}
       tableActions={[
         { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
-        { icon: <FaTrash />, label: "Xóa", onClick: (item) => handleDeleteAdmin(item, "id") },
+        {
+          icon: <FaTrash />,
+          label: "Xóa",
+          onClick: (item) => handleDeleteAdmin(item, "id"),
+        },
       ]}
       currentPage={currentPage}
       totalPages={totalPages}
       onPageChange={setCurrentPage}
       formModal={{
         open: crud.openForm,
-        title: crud.mode === "edit"
-          ? `Chỉnh sửa ảnh - ${crud.selectedItem?.product?.name || ""}`
-          : "Thêm ảnh sản phẩm",
+        title:
+          crud.mode === "edit"
+            ? `Chỉnh sửa ảnh - ${crud.selectedItem?.product?.name || ""}`
+            : "Thêm ảnh sản phẩm",
         fields: [
-          { name: "product_id", label: "Sản phẩm", type: "select", options: productOptions, required: true },
-          { name: "color_id", label: "Màu sắc", type: "select", options: colorOptions },
-          { name: "image", label: "Hình ảnh", type: "file", required: crud.mode === "create" },
+          {
+            name: "product_id",
+            label: "Sản phẩm",
+            type: "select",
+            options: productOptions,
+            required: true,
+          },
+          {
+            name: "color_id",
+            label: "Màu sắc",
+            type: "select",
+            options: colorOptions,
+          },
+          {
+            name: "image",
+            label: "Hình ảnh",
+            type: "file",
+            required: crud.mode === "create",
+          },
           { name: "is_primary", label: "Ảnh chính", type: "checkbox" },
         ],
         initialData: crud.selectedItem,

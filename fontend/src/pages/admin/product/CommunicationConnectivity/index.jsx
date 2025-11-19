@@ -7,7 +7,7 @@ import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 
 export default memo(function AdminCommunicationConnectivityPage() {
   const connectivityApi = useCRUDApi("communication-connectivities");
-  const { data: connectivities = [], refetch } = connectivityApi.useGetAll();
+  const { data: connectivities = [], isLoading, refetch } = connectivityApi.useGetAll();
 
   const createMutation = connectivityApi.useCreate();
   const updateMutation = connectivityApi.useUpdate();
@@ -74,6 +74,7 @@ export default memo(function AdminCommunicationConnectivityPage() {
   return (
     <AdminLayoutPage
       title="Quản lý Communication & Connectivities"
+      isLoading={isLoading}
       searchValue={search}
       onSearchChange={(e) => {
         setSearch(e.target.value);

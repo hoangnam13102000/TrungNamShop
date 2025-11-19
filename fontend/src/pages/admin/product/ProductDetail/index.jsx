@@ -9,7 +9,7 @@ import useAdminHandler from "../../../../components/common/useAdminHandler";
 import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
 import { buildSpecs } from "../../../../utils/helpers/buildSpecs";
 import { getProductDetailFormFields } from "../../../../utils/productDetails/useProductDetailFormFields";
-import Pagination from "../../../../components/common/Pagination"; 
+import Pagination from "../../../../components/common/Pagination";
 
 import {
   useProductDetails,
@@ -28,6 +28,7 @@ import {
   useBatteriesCharging,
   useCommunicationConnectivities,
   useGeneralInformations,
+  usePromotions,
 } from "../../../../api/product/hooks";
 
 export default memo(function AdminProductDetailPage() {
@@ -43,6 +44,7 @@ export default memo(function AdminProductDetailPage() {
   const { data: batteries = [] } = useBatteriesCharging();
   const { data: connectivities = [] } = useCommunicationConnectivities();
   const { data: generalInfos = [] } = useGeneralInformations();
+  const { data: promotions = [] } = usePromotions(); // mới
 
   // --- Mutations ---
   const createMutation = useCreateProductDetail();
@@ -67,14 +69,13 @@ export default memo(function AdminProductDetailPage() {
   const [search, setSearch] = useState("");
   const [viewItem, setViewItem] = useState(null);
 
-  // --- Map data cho table ---
+  // --- Filter & Pagination ---
   const filteredItems = useMemo(() => {
     return details.filter((d) =>
       d.product?.name?.toLowerCase().includes(search.toLowerCase())
     );
   }, [details, search]);
 
-  // --- Pagination ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
@@ -84,17 +85,28 @@ export default memo(function AdminProductDetailPage() {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
 
+  // --- Map dữ liệu table với giá sau giảm ---
   const mappedItems = useMemo(() => {
-    return paginatedItems.map((d) => ({
-      ...d,
-      product_name: d.product?.name || "-",
-      product_image: getImageUrl(d.product?.primary_image?.image_path),
-      price_label: (d.price ? parseFloat(d.price).toLocaleString("vi-VN") : "0") + " VNĐ",
-      stock_quantity: d.stock_quantity ?? 0,
-    }));
+    return paginatedItems.map((d) => {
+      const finalPrice =
+        d.promotion && d.promotion.status === "active"
+          ? Math.max(d.price - (d.price * d.promotion.discount_percent) / 100, 0)
+          : d.price;
+
+      return {
+        ...d,
+        product_name: d.product?.name || "-",
+        product_image: getImageUrl(d.product?.primary_image?.image_path),
+        price_label: d.price ? parseFloat(d.price).toLocaleString("vi-VN") + " VNĐ" : "0 VNĐ",
+        final_price_label: parseFloat(finalPrice).toLocaleString("vi-VN") + " VNĐ",
+        stock_quantity: d.stock_quantity ?? 0,
+        promotion_label: d.promotion?.name ?? "-",
+        final_price: finalPrice,
+      };
+    });
   }, [paginatedItems]);
 
-  // --- Selected Data cho form edit ---
+  // --- Selected data cho form edit ---
   const selectedData = useMemo(() => {
     if (crud.mode === "edit" && crud.selectedItem) {
       const item = crud.selectedItem;
@@ -110,6 +122,7 @@ export default memo(function AdminProductDetailPage() {
         battery_charging_id: item.battery_charging?.id ?? null,
         utility_id: item.utility?.id ?? null,
         communication_connectivity_id: item.communication_connectivity?.id ?? null,
+        promotion_id: item.promotion?.id ?? null,
         price: item.price ? parseFloat(item.price) : 0,
         stock_quantity: item.stock_quantity ?? 0,
       };
@@ -130,6 +143,7 @@ export default memo(function AdminProductDetailPage() {
         utilities,
         connectivities,
         generalInfos,
+        promotions,
       }),
     [
       products,
@@ -142,6 +156,7 @@ export default memo(function AdminProductDetailPage() {
       utilities,
       connectivities,
       generalInfos,
+      promotions,
     ]
   );
 
@@ -163,7 +178,7 @@ export default memo(function AdminProductDetailPage() {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setCurrentPage(1); // reset về trang 1 khi search
+            setCurrentPage(1);
           }}
           className="border px-4 py-2 rounded-xl w-full sm:w-80 focus:border-red-500 focus:ring-1 focus:ring-red-500"
         />
@@ -191,7 +206,17 @@ export default memo(function AdminProductDetailPage() {
                     ),
                 },
                 { field: "product_name", label: "Sản phẩm" },
-                { field: "price_label", label: "Giá bán" },
+                {
+                  field: "price_label",
+                  label: "Giá gốc",
+                  render: (_, row) => row.price_label,
+                },
+                {
+                  field: "final_price_label",
+                  label: "Giá sau giảm",
+                  render: (_, row) => row.final_price_label,
+                },
+                { field: "promotion_label", label: "Khuyến mãi" },
                 { field: "stock_quantity", label: "Tồn kho" },
               ]}
               data={mappedItems}

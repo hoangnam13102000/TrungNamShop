@@ -10,7 +10,7 @@ const AdminOperatingSystemPage = () => {
    * 1. FETCH DATA & CRUD API
    * ========================== */
   const osApi = useCRUDApi("operating-systems");
-  const { data: operatingSystems = [], refetch } = osApi.useGetAll();
+  const { data: operatingSystems = [], isLoading, refetch } = osApi.useGetAll();
   const createMutation = osApi.useCreate();
   const updateMutation = osApi.useUpdate();
   const deleteMutation = osApi.useDelete();
@@ -20,27 +20,19 @@ const AdminOperatingSystemPage = () => {
    * ========================== */
   const crud = useAdminCrud(
     {
-      create: async (data) => {
-        await createMutation.mutateAsync(data);
-        await refetch();
-      },
-      update: async (id, data) => {
-        await updateMutation.mutateAsync({ id, data });
-        await refetch();
-      },
-      delete: async (id) => {
-        await deleteMutation.mutateAsync({ id });
-        await refetch();
-      },
+      create: async (data) => await createMutation.mutateAsync(data),
+      update: async (id, data) => await updateMutation.mutateAsync({ id, data }),
+      delete: async (id) => await deleteMutation.mutateAsync({ id }),
     },
     "operating-systems"
   );
 
-  const { dialog, handleSave, handleDelete, closeDialog } = useAdminHandler(
-    crud,
-    refetch,
-    (item) => item?.name || "Không rõ"
-  );
+  const {
+    dialog,
+    handleSave,
+    handleDelete,
+    closeDialog,
+  } = useAdminHandler(crud, refetch, (item) => item?.name || "Không rõ");
 
   /** ==========================
    * 3. SEARCH & PAGINATION
@@ -57,10 +49,18 @@ const AdminOperatingSystemPage = () => {
   }, [operatingSystems, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * Loading UI
+   * ========================== */
+  if (isLoading) {
+    return <div className="p-4 text-gray-500">Đang tải dữ liệu...</div>;
+  }
 
   /** ==========================
    * 4. UI

@@ -12,7 +12,7 @@ const AdminProductPage = () => {
   const productApi = useCRUDApi("products");
   const brandApi = useCRUDApi("brands");
 
-  const { data: products = [],refetch } = productApi.useGetAll();
+  const { data: products = [], isLoading, refetch } = productApi.useGetAll();
   const { data: brands = [] } = brandApi.useGetAll();
 
   const createMutation = productApi.useCreate();
@@ -63,6 +63,13 @@ const AdminProductPage = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return mappedItems.slice(start, start + itemsPerPage);
   }, [mappedItems, currentPage]);
+
+  /** ==========================
+   * Loading UI
+   * ========================== */
+  if (isLoading) {
+    return <div className="p-4 text-gray-500">Đang tải dữ liệu...</div>;
+  }
 
   /** ==========================
    * 4. UI via AdminLayoutPage

@@ -9,6 +9,7 @@ export const getProductDetailFormFields = ({
   utilities = [],
   connectivities = [],
   generalInfos = [],
+  promotions = [], // thêm danh sách promotion
 }) => {
   const safeEntries = (obj) => (obj ? Object.entries(obj) : []);
 
@@ -136,6 +137,17 @@ export const getProductDetailFormFields = ({
       fields: [
         { name: "price", label: "Giá bán (VNĐ)", type: "number", min: 0, step: 1000 },
         { name: "stock_quantity", label: "Số lượng tồn kho", type: "number", min: 0, step: 1 },
+        {
+          name: "promotion_id",
+          label: "Khuyến mãi",
+          type: "select",
+          options: promotions.map((p) => ({
+            label: `${p.name} - ${p.discount_percent || 0}%`,
+            value: p.id,
+            discount_percent: p.discount_percent || 0,
+          })),
+        },
+        { name: "final_price", label: "Giá sau giảm (VNĐ)", type: "number", min: 0, step: 1000, disabled: true },
       ],
     },
   ];

@@ -10,7 +10,7 @@ const AdminMemoryPage = () => {
    * 1. FETCH DATA & CRUD API
    * ========================== */
   const memoryApi = useCRUDApi("memories");
-  const { data: memories = [],  refetch } = memoryApi.useGetAll();
+  const { data: memories = [], isLoading, refetch } = memoryApi.useGetAll();
   const createMutation = memoryApi.useCreate();
   const updateMutation = memoryApi.useUpdate();
   const deleteMutation = memoryApi.useDelete();
@@ -48,10 +48,18 @@ const AdminMemoryPage = () => {
   }, [memories, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
+
+  /** ==========================
+   * Loading UI
+   * ========================== */
+  if (isLoading) {
+    return <div className="p-4 text-gray-500">Đang tải dữ liệu...</div>;
+  }
 
   /** ==========================
    * 4. UI

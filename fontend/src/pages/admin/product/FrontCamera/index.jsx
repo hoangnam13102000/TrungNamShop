@@ -10,7 +10,7 @@ const AdminFrontCameraPage = () => {
    * 1. FETCH DATA & CRUD API
    * ========================== */
   const frontCameraApi = useCRUDApi("front-cameras");
-  const { data: frontCameras = [],  refetch } = frontCameraApi.useGetAll();
+  const { data: frontCameras = [], isLoading, refetch } = frontCameraApi.useGetAll();
   const createMutation = frontCameraApi.useCreate();
   const updateMutation = frontCameraApi.useUpdate();
   const deleteMutation = frontCameraApi.useDelete();
@@ -48,6 +48,7 @@ const AdminFrontCameraPage = () => {
   }, [frontCameras, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
@@ -59,6 +60,7 @@ const AdminFrontCameraPage = () => {
   return (
     <AdminLayoutPage
       title="Quản lý camera trước"
+      isLoading={isLoading}
       searchValue={search}
       onSearchChange={(e) => {
         setSearch(e.target.value);

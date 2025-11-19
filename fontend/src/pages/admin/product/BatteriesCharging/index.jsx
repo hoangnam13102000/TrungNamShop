@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import AdminLayoutPage from "../../../../components/common/Layout";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
@@ -7,7 +7,8 @@ import useAdminHandler from "../../../../components/common/useAdminHandler";
 
 export default memo(function AdminBatteryPage() {
   const batteryApi = useCRUDApi("batteries-charging");
-  const { data: batteries = [], refetch } = batteryApi.useGetAll();
+  const { data: batteries = [], isLoading, refetch } = batteryApi.useGetAll();
+
   const createMutation = batteryApi.useCreate();
   const updateMutation = batteryApi.useUpdate();
   const deleteMutation = batteryApi.useDelete();
@@ -24,22 +25,22 @@ export default memo(function AdminBatteryPage() {
   const { dialog, closeDialog, handleSave, handleDelete } = useAdminHandler(
     crud,
     refetch,
-    (item) => `${item?.battery_capacity || "Không rõ"} (${item?.charging_port || "Không rõ"})`
+    (item) =>
+      `${item?.battery_capacity || "Không rõ"} (${item?.charging_port || "Không rõ"})`
   );
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  const filteredItems = useMemo(
-    () =>
-      batteries.filter(
-        (b) =>
-          b.battery_capacity?.toLowerCase().includes(search.toLowerCase()) ||
-          b.charging?.toLowerCase().includes(search.toLowerCase())
-      ),
-    [batteries, search]
-  );
+  const filteredItems = useMemo(() => {
+    const keyword = search.toLowerCase().trim();
+    return batteries.filter(
+      (b) =>
+        b.battery_capacity?.toLowerCase().includes(keyword) ||
+        b.charging_port?.toLowerCase().includes(keyword) ||
+        b.charging?.toLowerCase().includes(keyword)
+    );
+  }, [batteries, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
@@ -47,6 +48,11 @@ export default memo(function AdminBatteryPage() {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
+
+ 
+  if (isLoading) {
+    return <div className="p-4 text-gray-600">Đang tải dữ liệu...</div>;
+  }
 
   return (
     <AdminLayoutPage

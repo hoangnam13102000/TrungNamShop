@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); 
-            $table->text('description')->nullable(); 
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->integer('discount_percent')->default(0)->change();
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['active', 'inactive'])->default('active'); // trạng thái

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Dropdown from "../UI/dropdown/DropDown";
 import DynamicDialog from "./DynamicDialog";
@@ -8,35 +8,30 @@ import { validateGeneral } from "../../utils/forms/validate";
 
 export default function DynamicForm({
   title,
-  fields = [], 
-  fieldGroups = [], 
+  fields = [],
+  fieldGroups = [],
   initialData = {},
   onSave = () => {},
   onClose = () => {},
   mode = "create", // create | edit | view
 }) {
-  /** ============================================================
-   *                 0. GHÉP FIELDS (Safe)
-   * ============================================================ */
-  let allFields = [];
-  if (Array.isArray(fieldGroups) && fieldGroups.length > 0) {
-    allFields = fieldGroups.flatMap((g) => g.fields || []);
-  } else if (Array.isArray(fields)) {
-    allFields = fields;
-  } else {
-    console.warn(" DynamicForm: không có field hợp lệ nào được truyền vào!");
-  }
+  const allFields = Array.isArray(fieldGroups) && fieldGroups.length > 0
+    ? fieldGroups.flatMap((g) => g.fields || [])
+    : Array.isArray(fields)
+    ? fields
+    : [];
 
   const safeData = initialData || {};
 
-  /** ============================================================
-   *                           1. STATE
-   * ============================================================ */
   const [formData, setFormData] = useState(() => {
     const result = {};
     allFields.forEach((f) => {
       result[f.name] = safeData[f.name] ?? "";
     });
+    // đảm bảo final_price luôn có giá trị
+    if ("price" in result && !("final_price" in result)) {
+      result.final_price = parseFloat(result.price) || 0;
+    }
     return result;
   });
 
@@ -69,12 +64,31 @@ export default function DynamicForm({
   };
   const closeDialog = () => setDialog((prev) => ({ ...prev, open: false }));
 
-  /** ============================================================
-   *                           2. HANDLE INPUT
-   * ============================================================ */
+  // --- HANDLE CHANGE ---
   const handleChange = (name, value) => {
     if (mode === "view") return;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+
+      // Cập nhật final_price nếu price hoặc promotion_id thay đổi
+      if ("price" in newData || "promotion_id" in newData) {
+        const price = parseFloat(newData.price) || 0;
+        let discount = 0;
+
+        if (newData.promotion_id) {
+          const promoField = allFields.find((f) => f.name === "promotion_id");
+          const selectedPromo = promoField?.options?.find(
+            (opt) => opt.value === newData.promotion_id
+          );
+          discount = selectedPromo?.discount_percent || 0;
+        }
+
+        newData.final_price = price - (price * discount) / 100;
+      }
+
+      return newData;
+    });
   };
 
   const handleFileChange = (name, file) => {
@@ -86,12 +100,9 @@ export default function DynamicForm({
     }));
   };
 
-  /** ============================================================
-   *                       3. VALIDATION
-   * ============================================================ */
+  // --- VALIDATION ---
   const validate = () => {
     if (mode === "view") return true;
-
     const rules = {};
     allFields.forEach((f) => {
       rules[f.name] = {
@@ -102,20 +113,16 @@ export default function DynamicForm({
         message: f.message,
       };
     });
-
     const newErrors = validateGeneral(formData, rules);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /** ============================================================
-   *                         4. SUBMIT FORM
-   * ============================================================ */
+  // --- SUBMIT ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting || mode === "view") return;
     if (!validate()) return;
-
     try {
       setSubmitting(true);
       await onSave(formData);
@@ -124,9 +131,7 @@ export default function DynamicForm({
     }
   };
 
-  /** ============================================================
-   *                               5. RENDER
-   * ============================================================ */
+  // --- RENDER ---
   return (
     <AnimatePresence>
       <motion.div
@@ -157,133 +162,91 @@ export default function DynamicForm({
               onSubmit={handleSubmit}
               className="flex-1 overflow-y-auto space-y-6 pr-3"
             >
-              {fieldGroups.length > 0
-                ? fieldGroups.map((group, gi) => (
-                    <div key={gi} className="border-t border-gray-200 pt-6 first:border-none first:pt-0">
-                      {group.section && (
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">
-                          {group.section}
-                        </h3>
-                      )}
-                      <div className="space-y-5">
-                        {group.fields.map((field) => {
-                          const value = formData[field.name] ?? "";
-                          const error = errors[field.name];
+              {fieldGroups.map((group, gi) => (
+                <div key={gi} className="border-t border-gray-200 pt-6 first:border-none first:pt-0">
+                  {group.section && (
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">
+                      {group.section}
+                    </h3>
+                  )}
+                  <div className="space-y-5">
+                    {group.fields.map((field) => {
+                      const value = formData[field.name] ?? "";
+                      const error = errors[field.name];
 
-                          return (
-                            <div key={field.name}>
-                              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                {field.label}{" "}
-                                {field.required && (
-                                  <span className="text-red-500">*</span>
-                                )}
-                              </label>
+                      return (
+                        <div key={field.name}>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                          </label>
 
-                              {field.type === "file" ? (
-                                <div className="flex flex-col items-center gap-3 w-full">
-                                  <div
-                                    className={`w-48 h-48 border-2 border-dashed border-gray-300 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 bg-center bg-cover transition-all ${
-                                      mode !== "view"
-                                        ? "cursor-pointer hover:border-blue-400 hover:from-blue-50 hover:to-indigo-50"
-                                        : "opacity-75"
-                                    }`}
-                                    style={{
-                                      backgroundImage: `url(${
-                                        preview[field.name] || placeholder
-                                      })`,
-                                    }}
-                                    onClick={() => {
-                                      if (mode !== "view")
-                                        document
-                                          .getElementById(field.name + "-file")
-                                          .click();
-                                    }}
-                                  />
-                                  <input
-                                    id={field.name + "-file"}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) =>
-                                      handleFileChange(
-                                        field.name,
-                                        e.target.files[0]
-                                      )
-                                    }
-                                    className="hidden"
-                                    disabled={mode === "view"}
-                                  />
-                                  <p className="text-xs text-gray-500 truncate max-w-[90%] text-center">
-                                    {formData[field.name]?.name ||
-                                      safeData[field.name] ||
-                                      safeData.image_path ||
-                                      "JPG, PNG, GIF (max 5MB)"}
-                                  </p>
-                                </div>
-                              ) : field.type === "select" ? (
-                                <>
-                                  <Dropdown
-                                    value={value}
-                                    options={field.options || []}
-                                    placeholder={`Chọn ${field.label}`}
-                                    onSelect={(opt) =>
-                                      handleChange(field.name, opt.value)
-                                    }
-                                    disabled={mode === "view"}
-                                  />
-                                  {error && mode !== "view" && (
-                                    <p className="text-red-500 text-sm mt-2">
-                                      {error}
-                                    </p>
-                                  )}
-                                </>
-                              ) : field.type === "checkbox" ? (
-                                <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!value}
-                                    onChange={(e) =>
-                                      handleChange(
-                                        field.name,
-                                        e.target.checked
-                                      )
-                                    }
-                                    disabled={field.disabled || mode === "view"}
-                                    className="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer"
-                                  />
-                                  <label className="text-gray-700 font-medium cursor-pointer">{field.label}</label>
-                                </div>
-                              ) : (
-                                <>
-                                  <input
-                                    type={field.type || "text"}
-                                    value={value}
-                                    onChange={(e) =>
-                                      handleChange(field.name, e.target.value)
-                                    }
-                                    placeholder={`Nhập ${field.label.toLowerCase()}`}
-                                    className={`w-full border border-gray-200 rounded-lg px-4 py-3 transition-all focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${
-                                      mode === "view"
-                                        ? "bg-gray-50 text-gray-600 cursor-not-allowed"
-                                        : "bg-white"
-                                    }`}
-                                    disabled={field.disabled || mode === "view"}
-                                  />
-                                  {error && mode !== "view" && (
-                                    <p className="text-red-500 text-sm mt-2">
-                                      {error}
-                                    </p>
-                                  )}
-                                </>
-                              )}
+                          {field.type === "file" ? (
+                            <div className="flex flex-col items-center gap-3 w-full">
+                              <div
+                                className={`w-48 h-48 border-2 border-dashed border-gray-300 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 bg-center bg-cover transition-all ${
+                                  mode !== "view"
+                                    ? "cursor-pointer hover:border-blue-400 hover:from-blue-50 hover:to-indigo-50"
+                                    : "opacity-75"
+                                }`}
+                                style={{ backgroundImage: `url(${preview[field.name] || placeholder})` }}
+                                onClick={() => {
+                                  if (mode !== "view")
+                                    document.getElementById(field.name + "-file").click();
+                                }}
+                              />
+                              <input
+                                id={field.name + "-file"}
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileChange(field.name, e.target.files[0])}
+                                className="hidden"
+                                disabled={mode === "view"}
+                              />
+                              <p className="text-xs text-gray-500 truncate max-w-[90%] text-center">
+                                {formData[field.name]?.name || safeData[field.name] || safeData.image_path || "JPG, PNG, GIF (max 5MB)"}
+                              </p>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))
-                : allFields.map((field) => (
-                    <div key={field.name}>{/* fallback simple */}</div>
-                  ))}
+                          ) : field.type === "select" ? (
+                            <Dropdown
+                              value={value}
+                              options={field.options || []}
+                              placeholder={`Chọn ${field.label}`}
+                              onSelect={(opt) => handleChange(field.name, opt.value)}
+                              disabled={mode === "view"}
+                              renderOption={(opt) =>
+                                field.name === "promotion_id" ? `${opt.label} - ${opt.discount_percent || 0}%` : opt.label
+                              }
+                            />
+                          ) : field.type === "checkbox" ? (
+                            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={!!value}
+                                onChange={(e) => handleChange(field.name, e.target.checked)}
+                                disabled={field.disabled || mode === "view"}
+                                className="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer"
+                              />
+                              <label className="text-gray-700 font-medium cursor-pointer">{field.label}</label>
+                            </div>
+                          ) : (
+                            <input
+                              type={field.type || "text"}
+                              value={value}
+                              onChange={(e) => handleChange(field.name, e.target.value)}
+                              placeholder={`Nhập ${field.label.toLowerCase()}`}
+                              className={`w-full border border-gray-200 rounded-lg px-4 py-3 transition-all focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${
+                                mode === "view" ? "bg-gray-50 text-gray-600 cursor-not-allowed" : "bg-white"
+                              }`}
+                              disabled={field.disabled || mode === "view" || field.name === "final_price"}
+                            />
+                          )}
+                          {error && mode !== "view" && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
 
               {/* BUTTONS */}
               <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
@@ -294,7 +257,6 @@ export default function DynamicForm({
                 >
                   Đóng
                 </button>
-
                 {mode !== "view" && (
                   <button
                     type="submit"
@@ -305,11 +267,7 @@ export default function DynamicForm({
                         : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:shadow-blue-200 active:scale-95"
                     }`}
                   >
-                    {submitting
-                      ? "Đang lưu..."
-                      : mode === "edit"
-                      ? "Cập nhật"
-                      : "Lưu"}
+                    {submitting ? "Đang lưu..." : mode === "edit" ? "Cập nhật" : "Lưu"}
                   </button>
                 )}
               </div>

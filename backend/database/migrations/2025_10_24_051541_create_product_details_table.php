@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('product_details', function (Blueprint $table) {
             $table->id();
 
-            // FK to PK
+            // FK to products
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->cascadeOnDelete()
@@ -58,15 +58,25 @@ return new class extends Migration
 
             $table->foreignId('battery_charging_id')->nullable()
                 ->constrained('batteries_charging')
-                ->nullOnDelete();
+                ->nullOnDelete()
+                ->name('product_details_battery_charging_id_fk');
 
             $table->foreignId('utility_id')->nullable()->index();
             $table->foreign('utility_id', 'product_details_utility_id_fk')
                 ->references('id')->on('utilities')
                 ->nullOnDelete();
 
+            // Promotion FK
+            $table->foreignId('promotion_id')->nullable()->index();
+            $table->foreign('promotion_id')
+                ->references('id')
+                ->on('promotions')
+                ->nullOnDelete()
+                ->name('product_details_promotion_id_fk');
+
             // Business info
             $table->decimal('price', 15, 2)->nullable();
+            $table->decimal('final_price', 15, 2)->nullable();
             $table->unsignedInteger('stock_quantity')->default(0);
 
             $table->timestamps();

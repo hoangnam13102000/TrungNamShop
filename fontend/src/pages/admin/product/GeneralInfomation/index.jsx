@@ -10,7 +10,7 @@ const AdminGeneralInformationPage = () => {
    * 1. FETCH DATA & CRUD API
    * ========================== */
   const generalInfoApi = useCRUDApi("general-informations");
-  const { data: generalInfos = [], refetch } = generalInfoApi.useGetAll();
+  const { data: generalInfos = [], isLoading, refetch } = generalInfoApi.useGetAll();
   const createMutation = generalInfoApi.useCreate();
   const updateMutation = generalInfoApi.useUpdate();
   const deleteMutation = generalInfoApi.useDelete();
@@ -59,7 +59,18 @@ const AdminGeneralInformationPage = () => {
   }, [filteredItems]);
 
   /** ==========================
-   * 4. UI
+   * 4. LOADING UI
+   * ========================== */
+  if (isLoading) {
+    return (
+      <div className="p-6 text-center text-gray-600">
+        Đang tải dữ liệu...
+      </div>
+    );
+  }
+
+  /** ==========================
+   * 5. UI
    * ========================== */
   return (
     <AdminLayoutPage

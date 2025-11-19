@@ -8,12 +8,19 @@ import placeholder from "../../../../assets/admin/logoicon1.jpg";
 
 export default memo(function BrandManagement() {
   const brandAPI = useCRUDApi("brands");
-  const { data: brands = [], refetch } = brandAPI.useGetAll();
+
+  /** ==========================
+   * 1. FETCH DATA + isLoading
+   * ========================== */
+  const { data: brands = [], isLoading, refetch } = brandAPI.useGetAll();
 
   const createMutation = brandAPI.useCreate();
   const updateMutation = brandAPI.useUpdate();
   const deleteMutation = brandAPI.useDelete();
 
+  /** ==========================
+   * 2. HANDLER CRUD
+   * ========================== */
   const crud = useAdminCrud(
     {
       create: createMutation.mutateAsync,
@@ -29,6 +36,9 @@ export default memo(function BrandManagement() {
     (item) => item?.name || "Không rõ"
   );
 
+  /** ==========================
+   * 3. SEARCH + PAGINATION
+   * ========================== */
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -48,9 +58,13 @@ export default memo(function BrandManagement() {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
 
+  /** ==========================
+   * 4. UI
+   * ========================== */
   return (
     <AdminLayoutPage
       title="Quản lý thương hiệu"
+      isLoading={isLoading}
       searchValue={search}
       onSearchChange={(e) => {
         setSearch(e.target.value);
