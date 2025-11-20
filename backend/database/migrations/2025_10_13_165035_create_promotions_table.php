@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->integer('discount_percent')->default(0)->change();
+            $table->integer('discount_percent')->default(0);
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['active', 'inactive'])->default('active'); // trạng thái

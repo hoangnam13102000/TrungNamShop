@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Attendance;
+
 use App\Models\User;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -18,13 +18,15 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
         $this->call(AccountSeeder::class);
         $this->call(CustomerSeeder::class);
-        
+
+
         $this->call(BrandSeeder::class);
+        $this->call(ColorSeeder::class);
         $this->call(ProductSeeder::class);
         $this->call(ProductImageSeeder::class);
         $this->call(ScreenSeeder::class);
         $this->call(RearCameraSeeder::class);
-        $this->call(ColorSeeder::class);
+
         $this->call(FrontCameraSeeder::class);
         $this->call(GeneralInformationSeeder::class);
         $this->call(OperatingSystemSeeder::class);
@@ -39,12 +41,13 @@ class DatabaseSeeder extends Seeder
 
         $this->call(WarehouseSeeder::class);
         $this->call(PositionsTableSeeder::class);
+
         $this->call(EmployeeSeeder::class);
         $this->call(RewardsTableSeeder::class);
         $this->call(SalaryCoefficientsTableSeeder::class);
         $this->call(AllowancesTableSeeder::class);
-        $this->call(Attendance::class);
-        
+        $this->call(AttendanceSeeder::class);
+
 
 
 
@@ -53,6 +56,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-         $this->call(StoreSeeder::class);
+        $this->call(StoreSeeder::class);
     }
 }

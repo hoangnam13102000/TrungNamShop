@@ -33,12 +33,12 @@ const useQuery = () => new URLSearchParams(useLocation().search);
 
 const ProductList = () => {
   const query = useQuery();
-  const brandQuery = query.get("brand");
+  const brandQuery = query.get("brands");
   // 👉 Đọc tham số tìm kiếm theo tên từ URL
   const searchQuery = query.get("search");
 
   /** ===============================
-   *   Lấy dữ liệu qua useCRUDApi
+   *  Lấy dữ liệu qua useCRUDApi
    * =============================== */
   // Giả định `useGetProducts()` trả về TẤT CẢ sản phẩm và việc lọc được thực hiện ở client (như code hiện tại của bạn)
   const { useGetAll: useGetProducts } = useCRUDApi("products");
@@ -48,7 +48,7 @@ const ProductList = () => {
   const { data: brandsData = [] } = useGetBrands();
 
   /** ===============================
-   *   Xử lý dữ liệu Brand & Product
+   *  Xử lý dữ liệu Brand & Product
    * =============================== */
   const brandMap = useMemo(() => {
     const map = {};
@@ -89,7 +89,7 @@ const ProductList = () => {
   }, [products]);
 
   /** ===============================
-   *   Bộ lọc sản phẩm
+   * Bộ lọc sản phẩm
    * =============================== */
 
   // Chuẩn hóa từ khóa tìm kiếm (chuyển về chữ thường để tìm kiếm không phân biệt hoa thường)
@@ -128,7 +128,7 @@ const ProductList = () => {
   const brandName = title; // Đổi tên biến để phản ánh tiêu đề chính xác hơn
 
   /** ===============================
-   *   Giao diện
+   *  Giao diện
    * =============================== */
   return (
     <div

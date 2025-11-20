@@ -1,5 +1,5 @@
 import { memo, useState, useMemo } from "react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
@@ -57,7 +57,41 @@ const AccountManagement = () => {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [currentPage, filteredItems]);
 
-  /** 5. TABLE & FORM CONFIG */
+  /** 5. UI - Status Label */
+  const renderStatusLabel = (val) => {
+    const isActive = val === 1;
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "6px 12px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: "600",
+          color: isActive ? "#047857" : "#6b7280",
+          backgroundColor: isActive ? "#d1fae5" : "#f3f4f6",
+          border: `1.5px solid ${isActive ? "#6ee7b7" : "#d1d5db"}`,
+          transition: "all 0.2s ease",
+        }}
+      >
+        {isActive ? (
+          <>
+            <FaCheckCircle style={{ fontSize: "12px", color: "#10b981" }} />
+            <span>Hoạt động</span>
+          </>
+        ) : (
+          <>
+            <FaTimesCircle style={{ fontSize: "12px", color: "#9ca3af" }} />
+            <span>Ngừng hoạt động</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  /** 6. TABLE & FORM CONFIG */
   const tableColumns = [
     { field: "username", label: "Tên tài khoản" },
     { field: "account_type.account_type_name", label: "Loại tài khoản" },
@@ -65,7 +99,7 @@ const AccountManagement = () => {
     {
       field: "status",
       label: "Trạng thái",
-      render: (val) => val === 1 ? "Hoạt động" : "Ngừng hoạt động",
+      render: (val) => renderStatusLabel(val),
     },
   ];
 
@@ -84,28 +118,34 @@ const AccountManagement = () => {
 
   return (
     <>
-      <AdminLayoutPage
-        title="Tài khoản"
-        description="Quản lý các tài khoản hệ thống"
-        searchValue={search}
-        onSearchChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-        onAdd={crud.handleAdd}
-        tableColumns={tableColumns}
-        tableData={currentItems}
-        tableActions={tableActions}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        formModal={{
-          open: crud.openForm,
-          title: crud.mode === "edit" ? `Chỉnh sửa: ${crud.selectedItem?.username}` : "Thêm tài khoản",
-          fields: formFields,
-          initialData: crud.selectedItem,
-          errors: crud.errors,
-        }}
-        onFormSave={handleSave}
-        onFormClose={crud.handleCloseForm}
-      />
+      {isLoading ? (
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        <AdminLayoutPage
+          title="Tài khoản"
+          description="Quản lý các tài khoản hệ thống"
+          searchValue={search}
+          onSearchChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+          onAdd={crud.handleAdd}
+          tableColumns={tableColumns}
+          tableData={currentItems}
+          tableActions={tableActions}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          formModal={{
+            open: crud.openForm,
+            title: crud.mode === "edit" ? `Chỉnh sửa: ${crud.selectedItem?.username}` : "Thêm tài khoản",
+            fields: formFields,
+            initialData: crud.selectedItem,
+            errors: crud.errors,
+          }}
+          onFormSave={handleSave}
+          onFormClose={crud.handleCloseForm}
+        />
+      )}
 
       <DynamicDialog
         open={dialog.open}

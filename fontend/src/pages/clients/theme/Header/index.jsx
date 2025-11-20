@@ -34,7 +34,6 @@ const Header = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showCartPreview, setShowCartPreview] = useState(false);
-  // State mới cho từ khóa tìm kiếm
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileSearchTerm, setMobileSearchTerm] = useState("");
 
@@ -130,19 +129,14 @@ const Header = () => {
     value: brand.id,
   }));
 
-  // Hàm xử lý tìm kiếm - cập nhật để hỗ trợ cả tên sản phẩm và thương hiệu
   const handleSearch = useCallback(
     (term, category) => {
       const queryParams = new URLSearchParams();
-      if (term) {
-        queryParams.append("search", term);
-      }
-      if (category) {
-        queryParams.append("brands", category.value);
-      }
+      if (term) queryParams.append("search", term);
+      if (category) queryParams.append("brands", category.value);
       navigate(`/danh-sach-san-pham?${queryParams.toString()}`);
-      setMobileSearchOpen(false); // Đóng thanh tìm kiếm mobile sau khi tìm kiếm
-      setShowMenu(false); // Đóng mobile menu
+      setMobileSearchOpen(false);
+      setShowMenu(false);
     },
     [navigate]
   );
@@ -154,7 +148,6 @@ const Header = () => {
 
   const handleMobileSearch = (e) => {
     e.preventDefault();
-    // Trên mobile, ta chỉ tìm kiếm theo từ khóa nhập vào, không cần dropdown thương hiệu
     handleSearch(mobileSearchTerm, null);
   };
 
@@ -251,8 +244,7 @@ const Header = () => {
                     selected={selectedCategory}
                     onSelect={(option) => {
                       setSelectedCategory(option);
-                      // Có thể tìm kiếm ngay sau khi chọn category hoặc chờ người dùng nhập keyword
-                      // navigate(`/danh-sach-san-pham?brand=${option.value}`);
+                      navigate(`/danh-sach-san-pham?brands=${option.value}`);
                     }}
                     className="min-w-[180px] border-r border-red-400"
                   />
@@ -275,7 +267,7 @@ const Header = () => {
                 <button
                   onClick={() => {
                     setMobileSearchOpen(!mobileSearchOpen);
-                    setShowMenu(false); // Đảm bảo menu mobile đóng khi mở/đóng search
+                    setShowMenu(false);
                   }}
                   className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
                 >
@@ -299,12 +291,7 @@ const Header = () => {
                   {/* Cart preview */}
                   {cartCount > 0 && showCartPreview && (
                     <div className="absolute right-0 mt-2 z-50">
-                      <CartPreview
-                        items={cartItems.map((item) => ({
-                          ...item,
-                          image: item.primary_image?.image_path || null,
-                        }))}
-                      />
+                      <CartPreview items={cartItems} />
                     </div>
                   )}
                 </div>
@@ -313,7 +300,7 @@ const Header = () => {
                 <button
                   onClick={() => {
                     setShowMenu(!showMenu);
-                    setMobileSearchOpen(false); // Đảm bảo search mobile đóng khi mở/đóng menu
+                    setMobileSearchOpen(false);
                   }}
                   className="lg:hidden p-2 text-gray-600 hover:text-red-600 transition"
                 >

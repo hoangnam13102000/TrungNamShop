@@ -1,5 +1,5 @@
 import { memo, useState, useMemo } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import AdminLayoutPage from "../../../../components/common/Layout";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
@@ -65,6 +65,42 @@ const AdminProductPage = () => {
   }, [mappedItems, currentPage]);
 
   /** ==========================
+   * 4. UI - Status Label
+   * ========================== */
+  const renderStatusLabel = (val) => {
+    const isActive = val === 1;
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "6px 12px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: "600",
+          color: isActive ? "#047857" : "#6b7280",
+          backgroundColor: isActive ? "#d1fae5" : "#f3f4f6",
+          border: `1.5px solid ${isActive ? "#6ee7b7" : "#d1d5db"}`,
+          transition: "all 0.2s ease",
+        }}
+      >
+        {isActive ? (
+          <>
+            <FaCheckCircle style={{ fontSize: "12px", color: "#10b981" }} />
+            <span>Đang bán</span>
+          </>
+        ) : (
+          <>
+            <FaTimesCircle style={{ fontSize: "12px", color: "#9ca3af" }} />
+            <span>Ngừng bán</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  /** ==========================
    * Loading UI
    * ========================== */
   if (isLoading) {
@@ -72,7 +108,7 @@ const AdminProductPage = () => {
   }
 
   /** ==========================
-   * 4. UI via AdminLayoutPage
+   * 5. UI via AdminLayoutPage
    * ========================== */
   return (
     <AdminLayoutPage
@@ -90,17 +126,7 @@ const AdminProductPage = () => {
         {
           field: "status_val",
           label: "Trạng thái",
-          render: (val) => (
-            <span
-              className={`px-2 py-1 rounded-full text-sm ${
-                val === 1
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {val === 1 ? "Đang bán" : "Ngừng bán"}
-            </span>
-          ),
+          render: (val) => renderStatusLabel(val),
         },
       ]}
       tableData={paginatedItems}

@@ -14,7 +14,7 @@ class ProductDetailResource extends JsonResource
         return [
             'id' => $this->id,
             'price' => $this->price,
-            'final_price' => $this->final_price, // Lấy trực tiếp từ DB
+            'final_price' => $this->final_price, 
             'stock_quantity' => $this->stock_quantity,
 
             'product' => new ProductResource($this->whenLoaded('product')),

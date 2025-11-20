@@ -60,7 +60,14 @@ class ProductDetailController extends Controller
 
         $detail = ProductDetail::create($data);
 
-        // Load relation
+        // Reload promotion để final_price tự tính
+        $detail->load('promotion');
+
+        // Tính final_price ngay sau khi tạo
+        $detail->final_price = $detail->calculateFinalPrice();
+        $detail->save();
+
+        // Load đầy đủ quan hệ
         $detail->load($this->relations);
 
         return new ProductDetailResource($detail);
@@ -79,13 +86,20 @@ class ProductDetailController extends Controller
         $validated = $request->validate($this->validationRules(true));
 
         $data = collect($validated)
-            ->only((new ProductDetail())->getFillable())
+            ->only($detail->getFillable())
             ->map(fn($v) => $v ?? null)
             ->toArray();
 
         $detail->update($data);
 
-        // Load relation để trả về resource
+        // Reload promotion mới sau khi update promotion_id
+        $detail->load('promotion');
+
+        // Tính lại final_price dựa trên promotion hiện tại
+        $detail->final_price = $detail->calculateFinalPrice();
+        $detail->save();
+
+        // Load đầy đủ quan hệ
         $detail->load($this->relations);
 
         return new ProductDetailResource($detail);

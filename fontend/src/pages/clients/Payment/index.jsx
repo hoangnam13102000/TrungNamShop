@@ -28,7 +28,6 @@ const Payment = () => {
     customerInfo,
     setCustomerInfo,
     customerId,
-    loading: customerLoading,
     userType,
   } = useCustomerInfo();
   const [errors, setErrors] = useState({});
@@ -430,8 +429,8 @@ const Payment = () => {
                           }`}
                         >
                           <option value="">-- Chọn phương thức --</option>
-                          <option value="delivery">🚚 Giao tận nơi</option>
-                          <option value="pickup">🏪 Nhận tại cửa hàng</option>
+                          <option value="delivery"> Giao tận nơi</option>
+                          <option value="pickup"> Nhận tại cửa hàng</option>
                         </select>
                         {errors.delivery_method && (
                           <p className="text-red-600 text-sm mt-2">⚠ {errors.delivery_method}</p>
@@ -455,8 +454,8 @@ const Payment = () => {
                           }`}
                         >
                           <option value="">-- Chọn phương thức --</option>
-                          <option value="momo">💳 MoMo</option>
-                          <option value="cash">💵 Thanh toán khi nhận</option>
+                          <option value="momo"> MoMo</option>
+                          <option value="cash">Thanh toán khi nhận</option>
                         </select>
                         {errors.payment_method && (
                           <p className="text-red-600 text-sm mt-2">⚠ {errors.payment_method}</p>
@@ -476,8 +475,6 @@ const Payment = () => {
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {cartItems.map((item) => {
                     const finalPrice = Number(item.final_price ?? item.price ?? 0);
-                    const originalPrice = Number(item.price ?? 0);
-                    const isDiscounted = originalPrice > finalPrice;
                     return (
                       <div
                         key={item.id}

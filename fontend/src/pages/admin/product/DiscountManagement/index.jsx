@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import AdminLayoutPage from "../../../../components/common/Layout";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
@@ -55,7 +55,43 @@ const DiscountManagement = () => {
   }, [filteredItems, currentPage]);
 
   /** ==========================
-   * 4. UI
+   * 4. UI - Status Label
+   * ========================== */
+  const renderStatusLabel = (val) => {
+    const isActive = val === "active";
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "6px 12px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: "600",
+          color: isActive ? "#047857" : "#6b7280",
+          backgroundColor: isActive ? "#d1fae5" : "#f3f4f6",
+          border: `1.5px solid ${isActive ? "#6ee7b7" : "#d1d5db"}`,
+          transition: "all 0.2s ease",
+        }}
+      >
+        {isActive ? (
+          <>
+            <FaCheckCircle style={{ fontSize: "12px", color: "#10b981" }} />
+            <span>Hoạt động</span>
+          </>
+        ) : (
+          <>
+            <FaTimesCircle style={{ fontSize: "12px", color: "#9ca3af" }} />
+            <span>Ngừng hoạt động</span>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  /** ==========================
+   * 5. Loading & Error States
    * ========================== */
   if (isLoading)
     return <div className="p-6 text-center">Đang tải dữ liệu...</div>;
@@ -66,6 +102,9 @@ const DiscountManagement = () => {
       </div>
     );
 
+  /** ==========================
+   * 6. UI via AdminLayoutPage
+   * ========================== */
   return (
     <AdminLayoutPage
       title="Quản lý giảm giá"
@@ -83,15 +122,7 @@ const DiscountManagement = () => {
         {
           field: "status",
           label: "Trạng thái",
-          render: (val) => (
-            <span
-              className={`px-2 py-1 rounded-full text-sm ${
-                val === "active" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {val === "active" ? "Hoạt động" : "Ngừng hoạt động"}
-            </span>
-          ),
+          render: (val) => renderStatusLabel(val),
         },
       ]}
       tableData={paginatedItems}

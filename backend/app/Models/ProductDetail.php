@@ -114,7 +114,11 @@ class ProductDetail extends Model
     protected static function booted()
     {
         static::saving(function ($detail) {
-            $detail->final_price = $detail->calculateFinalPrice();
-        });
+        if ($detail->isDirty('promotion_id')) {
+            $detail->loadMissing('promotion');
+        }
+
+        $detail->final_price = $detail->calculateFinalPrice();
+    });
     }
 }

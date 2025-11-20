@@ -37,6 +37,14 @@ class RearCameraSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'resolution' => '108 MP (wide), PDAF, OIS',
+                'aperture' => 'f/1.7',
+                'video_capability' => '8K@24fps, 4K@60fps',
+                'features' => 'HDR, panorama, night mode, super slow-mo',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

@@ -17,6 +17,7 @@ class ColorSeeder extends Seeder
             ['name' => 'Trắng',     'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Xanh dương','created_at' => now(), 'updated_at' => now()],
             ['name' => 'Đỏ',        'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Xám',        'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 }
