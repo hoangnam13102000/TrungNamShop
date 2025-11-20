@@ -53,7 +53,7 @@ const Header = () => {
   const { data: stores = [], isLoading: isStoresLoading } = storeAPI.useGetAll();
   const mainStore = stores[0];
 
-  const { data: brandsData = [], isLoading: isBrandsLoading } = brandAPI.useGetAll();
+  const { data: brandsData = [] } = brandAPI.useGetAll();
   const { data: customersData = [], isLoading: isCustomersLoading } = customerAPI.useGetAll();
   const { data: employeesData = [], isLoading: isEmployeesLoading } = employeeAPI.useGetAll();
 
@@ -216,7 +216,7 @@ const Header = () => {
                     onNavigate={navigate}
                     menuItems={[
                       { label: "Thông tin cá nhân", link: "/thong-tin-ca-nhan" },
-                      { label: "Đơn hàng của tôi", link: "/don-hang" },
+                      { label: "Đơn hàng của tôi", link: "/don-hang-cua-toi" },
                     ]}
                   />
                 )}

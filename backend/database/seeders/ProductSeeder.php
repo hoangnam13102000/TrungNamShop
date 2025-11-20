@@ -20,7 +20,7 @@ class ProductSeeder extends Seeder
 
             // -- Sản phẩm 2: Samsung Galaxy S23
             [
-                'brand_id' => 2,
+                'brand_id' => 1,
                 'name' => 'Samsung Galaxy S23',
                 'description' => 'Điện thoại flagship Samsung với camera siêu nét.',
                 'status' => true,

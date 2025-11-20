@@ -1,4 +1,4 @@
-import { memo, useRef, useMemo } from "react";
+import { memo, useRef, useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../../../components/product/ProductCard";
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
@@ -31,10 +31,10 @@ const ProductCarousel = ({ products }) => {
   }
 
   return (
-    <div className="relative">
+    <div className="relative group">
       <button
         onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-red-500 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10"
+        className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gray-800 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-all duration-200"
       >
         ‹
       </button>
@@ -52,7 +52,7 @@ const ProductCarousel = ({ products }) => {
 
       <button
         onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-red-500 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10"
+        className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gray-800 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-all duration-200"
       >
         ›
       </button>
@@ -61,12 +61,35 @@ const ProductCarousel = ({ products }) => {
 };
 
 const HomePage = () => {
-  // Sử dụng useCRUDApi cho products
   const { useGetAll } = useCRUDApi("products");
   const { data: products = [], isLoading } = useGetAll();
 
+  const [topBrands, setTopBrands] = useState([]);
+
+  // Lấy 2 thương hiệu có nhiều sản phẩm nhất
+  useEffect(() => {
+    if (products && products.length > 0) {
+      const brandMap = {};
+      products.forEach((product) => {
+        const brand = product.brand || { id: 0, name: "Khác", image: null };
+        const brandId = brand.id;
+        if (!brandMap[brandId]) {
+          brandMap[brandId] = { brand, products: [] };
+        }
+        brandMap[brandId].products.push(product);
+      });
+
+      const sortedBrands = Object.values(brandMap)
+        .sort((a, b) => b.products.length - a.products.length)
+        .slice(0, 2);
+
+      setTopBrands(sortedBrands);
+    }
+  }, [products]);
+
   return (
     <div className="w-full">
+      {/* Banner Section */}
       <section
         className="w-full py-16 relative bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${backgroundImage})` }}
@@ -94,6 +117,51 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Brand Carousels */}
+      {!isLoading && topBrands.length > 0 && (
+        <div className="w-full bg-gradient-to-b from-gray-50 to-white py-12">
+          <div className="container mx-auto px-4 space-y-12">
+            {topBrands.map(({ brand, products }) => (
+              <section key={brand.id} className="relative">
+                {/* Brand Header */}
+                <div className="mb-8 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {brand.image && (
+                      <img
+                        src={brand.image}
+                        alt={brand.name}
+                        className="h-12 object-contain"
+                      />
+                    )}
+                    <div>
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{brand.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{products.length} sản phẩm</p>
+                    </div>
+                  </div>
+                  <div className="hidden md:block flex-1 ml-6 h-0.5 bg-gradient-to-r from-gray-300 to-transparent"></div>
+                </div>
+
+                {/* Carousel */}
+                <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                  <ProductCarousel products={products} />
+                </div>
+
+                {/* View All Link */}
+                <div className="text-right mt-4">
+                  <Link
+                    to={`/danh-sach-san-pham?brands=${brand.id}`}
+                    className="text-gray-600 hover:text-red-600 font-semibold text-sm transition-colors duration-200 inline-flex items-center gap-2"
+                  >
+                    Xem tất cả {brand.name}
+                    <span>→</span>
+                  </Link>
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

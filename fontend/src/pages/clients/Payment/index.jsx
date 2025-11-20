@@ -94,7 +94,7 @@ const Payment = () => {
     if (!discountCode.trim()) {
       setDialog({
         open: true,
-        mode: "alert",
+        mode: "error",
         title: "Lỗi",
         message: "Vui lòng nhập mã giảm giá",
       });
@@ -116,14 +116,14 @@ const Payment = () => {
         });
         setDialog({
           open: true,
-          mode: "alert",
+          mode: "success",
           title: "Thành công",
           message: `Áp dụng mã giảm giá thành công! Giảm ${discountData.discount.percentage}%`,
         });
       } else {
         setDialog({
           open: true,
-          mode: "alert",
+          mode: "error",
           title: "Lỗi",
           message: discountData.message || "Mã giảm giá không hợp lệ",
         });
@@ -132,7 +132,7 @@ const Payment = () => {
       console.error("Lỗi khi áp dụng mã giảm giá:", error);
       setDialog({
         open: true,
-        mode: "alert",
+        mode: "error",
         title: "Lỗi",
         message: "Có lỗi xảy ra khi áp dụng mã giảm giá",
       });
@@ -164,9 +164,9 @@ const Payment = () => {
     if (!customerId) {
       setDialog({
         open: true,
-        mode: "alert",
+        mode: "error",
         title: "Lỗi",
-        message: "Không tìm thấy thông tin khách hàng. Vui lòng đăng nhập lại.",
+        message: "Bạn chưa đăng nhập. Vui lòng đăng nhập để thanh toán.",
       });
       return;
     }
@@ -202,7 +202,7 @@ const Payment = () => {
       if (!orderId) {
         setDialog({
           open: true,
-          mode: "alert",
+          mode: "error",
           title: "Lỗi",
           message: "Không thể lấy ID đơn hàng từ server.",
         });
@@ -221,7 +221,7 @@ const Payment = () => {
         } else {
           setDialog({
             open: true,
-            mode: "alert",
+            mode: "error",
             title: "Lỗi",
             message: "MoMo phản hồi không hợp lệ.",
           });
@@ -231,7 +231,7 @@ const Payment = () => {
       if (customerInfo.payment_method === "cash") {
         setDialog({
           open: true,
-          mode: "confirm",
+          mode: "success",
           title: "Thành công",
           message: "Đặt hàng thành công!",
           onConfirm: () => {
@@ -245,7 +245,7 @@ const Payment = () => {
       console.error("Lỗi khi tạo đơn:", error);
       setDialog({
         open: true,
-        mode: "alert",
+        mode: "error",
         title: "Lỗi",
         message: "Có lỗi xảy ra khi tạo đơn hàng.",
       });

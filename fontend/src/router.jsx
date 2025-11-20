@@ -61,6 +61,7 @@ import AboutPage from "@page_user/IntroPage";
 import FeedbackPage from "@page_user/ContactPage";
 import ProductList from "@page_user/product/ProductList";
 import ProductsDetails from "@page_user/product/ProductsDetails";
+import MyOrder from "@page_user/OrderPage";
 
 
 import MasterLayout from "@page_user/theme/MasterLayout";
@@ -120,6 +121,7 @@ const userRouter = [
   { path: ROUTERS.USER.PAYMENT, element: <Payment /> },
   { path: ROUTERS.USER.MOMORETURN, element: <MomoReturn /> },
   { path: ROUTERS.USER.NOTFOUND, element: <NotFound /> },
+  { path: ROUTERS.USER.MYORDERS, element: <MyOrder /> },
 ];
 
 //================= RENDER ADMIN =================//

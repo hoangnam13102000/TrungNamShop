@@ -22,7 +22,7 @@ export const useCustomerInfo = () => {
   useEffect(() => {
     const accountId = Number(localStorage.getItem("account_id"));
     if (!accountId) {
-      alert("Bạn chưa đăng nhập. Vui lòng đăng nhập trước khi thanh toán.");
+      // alert("Bạn chưa đăng nhập. Vui lòng đăng nhập trước khi thanh toán.");
       setLoading(false);
       return;
     }
@@ -51,7 +51,7 @@ export const useCustomerInfo = () => {
           note: "",
         });
       } else {
-        alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
+        // alert("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
       }
       setLoading(false);
     }
