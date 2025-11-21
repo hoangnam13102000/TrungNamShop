@@ -19,6 +19,7 @@ import { validateGeneral } from "../../../utils/forms/validate";
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import { useCustomerInfo } from "../../../utils/hooks/useCustomerInfo";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
+import ChatWidget from "../../../components/Chats/ChatWidget";
 
 const Payment = () => {
   const [cartItems, setCartItems] = useState(
@@ -610,6 +611,8 @@ const Payment = () => {
           </div>
         </div>
       </div>
+       {/* Chat Widget */}
+            <ChatWidget />
     </>
   );
 };

@@ -35,7 +35,13 @@ export const AuthProvider = ({ children }) => {
     const res = await loginAPI(credentials);
 
     if (res?.token && res?.user) {
-      const { id: account_id, username, account_type_id, status, avatar } = res.user;
+      const {
+        id: account_id,
+        username,
+        account_type_id,
+        status,
+        avatar,
+      } = res.user;
       const token = res.token;
 
       if (status === 0) {
@@ -95,7 +101,10 @@ export const AuthProvider = ({ children }) => {
    * Đồng bộ giữa các tab: khi localStorage thay đổi
    */
   useEffect(() => {
-    const handleStorage = () => {
+    const handleStorage = (event) => {
+      if (event.key === "chatbot_clear") {
+        localStorage.removeItem("chat_history_v1");
+      }
       const account_id = localStorage.getItem("account_id");
       const token = localStorage.getItem("token");
       const username = localStorage.getItem("username");
@@ -103,7 +112,13 @@ export const AuthProvider = ({ children }) => {
       const role = localStorage.getItem("role");
 
       if (token && username) {
-        setUser({ account_id: Number(account_id), token, username, avatar, role });
+        setUser({
+          account_id: Number(account_id),
+          token,
+          username,
+          avatar,
+          role,
+        });
       } else {
         setUser(null);
       }
@@ -121,7 +136,13 @@ export const AuthProvider = ({ children }) => {
       if (user?.token) {
         try {
           const res = await getCurrentUser(user.token);
-          const { id: account_id, username, account_type_id, avatar, status } = res;
+          const {
+            id: account_id,
+            username,
+            account_type_id,
+            avatar,
+            status,
+          } = res;
           if (status === 0) {
             logout();
             return;
@@ -130,7 +151,13 @@ export const AuthProvider = ({ children }) => {
           const role = roleMap[account_type_id] || "khách hàng";
           const avatarUrl = avatar || userUnknown;
 
-          setUser({ account_id, username, avatar: avatarUrl, role, token: user.token });
+          setUser({
+            account_id,
+            username,
+            avatar: avatarUrl,
+            role,
+            token: user.token,
+          });
         } catch (err) {
           console.warn("Không thể refresh user:", err);
           logout();
@@ -142,7 +169,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, setUser }}>
+    <AuthContext.Provider
+      value={{ user, isAuthenticated, login, logout, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

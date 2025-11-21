@@ -32,7 +32,7 @@ class PromotionSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Sale Tháng 3 Mừng ngày Quốc tế Phụ nữ',
+                'name' => 'Sale Tháng 3 - Mừng ngày Quốc tế Phụ nữ',
                 'description' => 'Giảm giá lên đến 30% cho nhiều mẫu điện thoại.',
                 'discount_percent' => 30,
                 'start_date' => '2025-03-01',

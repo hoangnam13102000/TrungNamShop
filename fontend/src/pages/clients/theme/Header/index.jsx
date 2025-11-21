@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef, useCallback } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AuthDropdown from "../../../../components/UI/dropdown/AuthDropdown";
 import Dropdown from "../../../../components/UI/dropdown/DropDown";
@@ -19,6 +19,15 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
+
+import {
+  handleLogout as logoutHandler,
+  handleSearch as searchHandler,
+  handleDesktopSearch as desktopSearchHandler,
+  handleMobileSearch as mobileSearchHandler,
+  getProfile,
+  loadCartFromStorage,
+} from "./headerHandlers";
 
 const SOCIAL_LINKS = [
   { icon: FaFacebookSquare, url: "https://facebook.com/phonestore" },
@@ -59,9 +68,7 @@ const Header = () => {
 
   const isProfileLoading = isCustomersLoading || isEmployeesLoading;
 
-  const profile =
-    customersData.find((c) => c.account_id == accountId) ||
-    employeesData.find((e) => e.account_id == accountId);
+  const profile = getProfile(customersData, employeesData, accountId);
 
   const cartRef = useRef();
 
@@ -77,19 +84,12 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    const loadCart = () => {
-      const cart = JSON.parse(localStorage.getItem("cart")) || [];
-      const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      setCartCount(totalQuantity);
-      setCartItems(cart);
-    };
-
-    loadCart();
+    loadCartFromStorage(setCartItems, setCartCount);
 
     const handleStorageChange = (e) => {
-      if (e.key === "cart") loadCart();
+      if (e.key === "cart") loadCartFromStorage(setCartItems, setCartCount);
     };
-    const handleCartUpdated = () => loadCart();
+    const handleCartUpdated = () => loadCartFromStorage(setCartItems, setCartCount);
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("cartUpdated", handleCartUpdated);
@@ -115,41 +115,10 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showCartPreview]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("avatar");
-    localStorage.removeItem("account_id");
-    window.dispatchEvent(new Event("storage"));
-    navigate("/");
-  };
-
   const dropdownOptions = brandsData.map((brand) => ({
     label: brand.name,
     value: brand.id,
   }));
-
-  const handleSearch = useCallback(
-    (term, category) => {
-      const queryParams = new URLSearchParams();
-      if (term) queryParams.append("search", term);
-      if (category) queryParams.append("brands", category.value);
-      navigate(`/danh-sach-san-pham?${queryParams.toString()}`);
-      setMobileSearchOpen(false);
-      setShowMenu(false);
-    },
-    [navigate]
-  );
-
-  const handleDesktopSearch = (e) => {
-    e.preventDefault();
-    handleSearch(searchTerm, selectedCategory);
-  };
-
-  const handleMobileSearch = (e) => {
-    e.preventDefault();
-    handleSearch(mobileSearchTerm, null);
-  };
 
   return (
     <>
@@ -212,7 +181,7 @@ const Header = () => {
                     isLoggedIn={isLoggedIn}
                     username={username}
                     avatar={getImageUrl(profile?.avatar)}
-                    onLogout={handleLogout}
+                    onLogout={() => logoutHandler(navigate)}
                     onNavigate={navigate}
                     menuItems={[
                       { label: "Thông tin cá nhân", link: "/thong-tin-ca-nhan" },
@@ -236,7 +205,12 @@ const Header = () => {
               </Link>
 
               {/* Desktop Search */}
-              <form onSubmit={handleDesktopSearch} className="hidden lg:flex flex-1 max-w-2xl relative">
+              <form
+                onSubmit={(e) =>
+                  desktopSearchHandler(e, searchTerm, selectedCategory, navigate, setMobileSearchOpen, setShowMenu)
+                }
+                className="hidden lg:flex flex-1 max-w-2xl relative"
+              >
                 <div className="flex items-center border-2 border-red-400 bg-white w-full h-11">
                   <Dropdown
                     label={selectedCategory?.label || "Tất cả thương hiệu"}
@@ -255,7 +229,10 @@ const Header = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                  <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
+                  <button
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition"
+                  >
                     <FaSearch size={16} />
                   </button>
                 </div>
@@ -311,7 +288,12 @@ const Header = () => {
 
             {/* Mobile Search Input */}
             {mobileSearchOpen && (
-              <form onSubmit={handleMobileSearch} className="lg:hidden w-full pb-3 animate-in slide-in-from-top">
+              <form
+                onSubmit={(e) =>
+                  mobileSearchHandler(e, mobileSearchTerm, navigate, setMobileSearchOpen, setShowMenu)
+                }
+                className="lg:hidden w-full pb-3 animate-in slide-in-from-top"
+              >
                 <div className="flex items-center border-2 border-red-400 bg-white w-full h-10">
                   <input
                     type="text"
@@ -320,7 +302,10 @@ const Header = () => {
                     value={mobileSearchTerm}
                     onChange={(e) => setMobileSearchTerm(e.target.value)}
                   />
-                  <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition">
+                  <button
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-700 text-white px-5 h-full flex items-center justify-center transition"
+                  >
                     <FaSearch size={16} />
                   </button>
                 </div>

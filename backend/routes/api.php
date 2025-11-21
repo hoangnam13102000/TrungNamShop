@@ -35,6 +35,9 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Api\ChatbotController;
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -61,6 +64,7 @@ Route::post('/change-password', [AuthController::class, 'changePassword'])->midd
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
 
 // ------------------ Momo Payment ------------------
 Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
@@ -103,7 +107,7 @@ Route::prefix('admin')->group(function () {
 
     // ------------------Allowance ------------------
     Route::apiResource('allowances', AllowanceController::class);
-    
+
     // ------------------Attendance ------------------
     Route::apiResource('attendances', AttendanceController::class);
 
@@ -155,11 +159,15 @@ Route::prefix('admin')->group(function () {
     // ------------------Orders ------------------
     Route::apiResource('orders', OrderController::class);
 
-     // ------------------Order-Details ------------------
+    // ------------------Order-Details ------------------
     Route::apiResource('order-details', OrderDetailController::class);
-    
+
     // ------------------Discount ------------------
     Route::apiResource('discounts', DiscountController::class);
     // ------------------Reviews ------------------
     Route::apiResource('reviews', ReviewController::class);
+
+    // ------------------ Chat bot ------------------
+    Route::post('/chatbot', [ChatbotController::class, 'chat']);
+
 });

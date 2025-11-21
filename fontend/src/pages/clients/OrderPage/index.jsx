@@ -8,6 +8,7 @@ import {
   FaPhone,
   FaMapMarkerAlt,
   FaChevronRight,
+  FaSearch,
 } from "react-icons/fa";
 import Pagination from "../../../components/common/Pagination";
 import InvoiceModal from "../../../components/order/InvoiceModal";
@@ -156,7 +157,7 @@ const MyOrders = () => {
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-600 rounded-xl blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
           <div className="relative bg-white rounded-xl border-2 border-gray-200 group-focus-within:border-red-500 transition-all duration-300 shadow-sm p-1">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 group-focus-within:text-red-600">🔍</div>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 group-focus-within:text-red-600"><FaSearch /></div>
             <input
               type="text"
               placeholder="Tìm kiếm theo mã đơn, tên người nhận hoặc số điện thoại..."
@@ -183,7 +184,6 @@ const MyOrders = () => {
             const statusColor = getStatusColor(order.order_status_label);
             const paymentColor = getPaymentStatusColor(order.payment_status_label);
 
-            // Tính tổng số lượng và tổng tiền từ chi tiết order
             const orderDetails = allOrderDetails.filter((d) => d.order_id === order.id);
             const totalItems = orderDetails.reduce((sum, d) => sum + (d.quantity || 0), 0) || order.items_count || 0;
             const totalAmount = orderDetails.reduce((sum, d) => sum + ((d.price_at_order || 0) * (d.quantity || 0)), 0) || order.total_amount || 0;

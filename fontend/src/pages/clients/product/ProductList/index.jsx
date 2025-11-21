@@ -5,6 +5,7 @@ import Dropdown from "../../../../components/UI/dropdown/DropDown";
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
+import ChatWidget from "../../../../components/Chats/ChatWidget"; 
 
 const PRICE_RANGES = [
   { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
@@ -131,6 +132,7 @@ const ProductList = () => {
    *  Giao diện
    * =============================== */
   return (
+    <>
     <div
       className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative"
       style={{ backgroundImage: `url(${backgroundImage})` }}
@@ -212,6 +214,9 @@ const ProductList = () => {
         </div>
       </div>
     </div>
+    { /* Chat Widget */}
+          <ChatWidget />
+    </>
   );
 };
 

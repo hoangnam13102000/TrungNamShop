@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ProductCard from "../../../components/product/ProductCard";
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
+import ChatWidget from "../../../components/Chats/ChatWidget"; 
 
 const ProductCarousel = ({ products }) => {
   const scrollRef = useRef();
@@ -16,7 +17,6 @@ const ProductCarousel = ({ products }) => {
     });
   };
 
-  // Lọc sản phẩm đang bán
   const availableProducts = useMemo(
     () => products.filter((product) => Number(product.status) === 1 || product.status === true),
     [products]
@@ -66,7 +66,6 @@ const HomePage = () => {
 
   const [topBrands, setTopBrands] = useState([]);
 
-  // Lấy 2 thương hiệu có nhiều sản phẩm nhất
   useEffect(() => {
     if (products && products.length > 0) {
       const brandMap = {};
@@ -88,7 +87,7 @@ const HomePage = () => {
   }, [products]);
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Banner Section */}
       <section
         className="w-full py-16 relative bg-cover bg-center bg-no-repeat"
@@ -124,7 +123,6 @@ const HomePage = () => {
           <div className="container mx-auto px-4 space-y-12">
             {topBrands.map(({ brand, products }) => (
               <section key={brand.id} className="relative">
-                {/* Brand Header */}
                 <div className="mb-8 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     {brand.image && (
@@ -142,12 +140,10 @@ const HomePage = () => {
                   <div className="hidden md:block flex-1 ml-6 h-0.5 bg-gradient-to-r from-gray-300 to-transparent"></div>
                 </div>
 
-                {/* Carousel */}
                 <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
                   <ProductCarousel products={products} />
                 </div>
 
-                {/* View All Link */}
                 <div className="text-right mt-4">
                   <Link
                     to={`/danh-sach-san-pham?brands=${brand.id}`}
@@ -162,6 +158,9 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      {/* Chat Widget */}
+      <ChatWidget /> {/* tích hợp ChatWidget ở cuối homepage */}
     </div>
   );
 };

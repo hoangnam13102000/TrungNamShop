@@ -188,6 +188,7 @@ const AdminProductPage = () => {
       }}
     />
   );
+  
 };
 
 export default memo(AdminProductPage);
