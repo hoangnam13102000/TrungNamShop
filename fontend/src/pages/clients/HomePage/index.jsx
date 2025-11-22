@@ -1,80 +1,33 @@
-import { memo, useRef, useMemo, useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import ProductCard from "../../../components/product/ProductCard";
+import ProductCarousel from "../../../components/Carousel/ProductCarousel";
+import RecommendedProducts from "../../../components/product/RecommendedProducts";
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
-import ChatWidget from "../../../components/Chats/ChatWidget"; 
-
-const ProductCarousel = ({ products }) => {
-  const scrollRef = useRef();
-
-  const scroll = (direction) => {
-    if (!scrollRef.current) return;
-    const scrollAmount = 320;
-    scrollRef.current.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
-
-  const availableProducts = useMemo(
-    () => products.filter((product) => Number(product.status) === 1 || product.status === true),
-    [products]
-  );
-
-  if (!availableProducts.length) {
-    return (
-      <div className="text-center py-10 text-gray-500">
-        Hiện tại không có sản phẩm nào đang bán.
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative group">
-      <button
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gray-800 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-all duration-200"
-      >
-        ‹
-      </button>
-
-      <div
-        ref={scrollRef}
-        className="flex overflow-x-auto gap-4 scroll-smooth scrollbar-hide snap-x snap-mandatory px-10"
-      >
-        {availableProducts.map((product) => (
-          <div key={product.id} className="min-w-[250px] snap-center flex-shrink-0">
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-gray-800 hover:text-white text-gray-700 rounded-full shadow-md w-10 h-10 flex items-center justify-center z-10 opacity-0 group-hover:opacity-100 transition-all duration-200"
-      >
-        ›
-      </button>
-    </div>
-  );
-};
+import ChatWidget from "../../../components/Chats/ChatWidget";
 
 const HomePage = () => {
   const { useGetAll } = useCRUDApi("products");
   const { data: products = [], isLoading } = useGetAll();
 
   const [topBrands, setTopBrands] = useState([]);
+  const [userId, setUserId] = useState(null);
 
+  // Get account_id from localStorage
   useEffect(() => {
-    if (products && products.length > 0) {
+    const storedId = localStorage.getItem("account_id");
+    setUserId(storedId ? Number(storedId) : 1);
+  }, []);
+
+  // Top Brands
+  useEffect(() => {
+    if (products.length > 0) {
       const brandMap = {};
       products.forEach((product) => {
+        if (!product) return;
         const brand = product.brand || { id: 0, name: "Khác", image: null };
         const brandId = brand.id;
-        if (!brandMap[brandId]) {
-          brandMap[brandId] = { brand, products: [] };
-        }
+        if (!brandMap[brandId]) brandMap[brandId] = { brand, products: [] };
         brandMap[brandId].products.push(product);
       });
 
@@ -100,7 +53,9 @@ const HomePage = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
                 Sản Phẩm Bán Chạy
               </h2>
-              <p className="text-gray-600 mt-2">Những sản phẩm được ưa chuộng nhất</p>
+              <p className="text-gray-600 mt-2">
+                Những sản phẩm được ưa chuộng nhất
+              </p>
             </div>
 
             {!isLoading && <ProductCarousel products={products} />}
@@ -116,6 +71,9 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Recommended Products Carousel */}
+      {userId && <RecommendedProducts userId={userId} />}
 
       {/* Brand Carousels */}
       {!isLoading && topBrands.length > 0 && (
@@ -133,8 +91,12 @@ const HomePage = () => {
                       />
                     )}
                     <div>
-                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900">{brand.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{products.length} sản phẩm</p>
+                      <h3 className="text-2xl md:text-3xl font-bold text-gray-900">
+                        {brand.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {products.length} sản phẩm
+                      </p>
                     </div>
                   </div>
                   <div className="hidden md:block flex-1 ml-6 h-0.5 bg-gradient-to-r from-gray-300 to-transparent"></div>
@@ -160,7 +122,7 @@ const HomePage = () => {
       )}
 
       {/* Chat Widget */}
-      <ChatWidget /> {/* tích hợp ChatWidget ở cuối homepage */}
+      <ChatWidget />
     </div>
   );
 };

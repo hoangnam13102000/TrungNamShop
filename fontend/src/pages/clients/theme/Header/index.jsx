@@ -30,7 +30,7 @@ import {
 } from "./headerHandlers";
 
 const SOCIAL_LINKS = [
-  { icon: FaFacebookSquare, url: "https://facebook.com/phonestore" },
+  { icon: FaFacebookSquare, url: "http://facebook.com/profile.php?id=61583647847492" },
   { icon: FaYoutube, url: "https://youtube.com/@phonestore" },
   { icon: FaInstagramSquare, url: "https://instagram.com/phonestore" },
   { icon: FaTwitter, url: "https://twitter.com/phonestore" },

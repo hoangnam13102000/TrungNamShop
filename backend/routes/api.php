@@ -36,6 +36,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OrderDetailController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\RecommendationController;
 
 
 /*
@@ -70,7 +71,11 @@ Route::get('/user', function (Request $request) {
 Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
 Route::post('/momo/notify', [PaymentController::class, 'momoNotify']);
 
+
+
 Route::get('/discounts/validate', [DiscountController::class, 'validateDiscount']);
+
+
 
 // Group Router for Admin
 Route::prefix('admin')->group(function () {
@@ -169,5 +174,8 @@ Route::prefix('admin')->group(function () {
 
     // ------------------ Chat bot ------------------
     Route::post('/chatbot', [ChatbotController::class, 'chat']);
+
+    // ------------------ Recommendations System ------------------
+    Route::get('/recommendations/{product_id}', [RecommendationController::class, 'getRecommendations']);
 
 });

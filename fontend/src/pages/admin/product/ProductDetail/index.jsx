@@ -44,7 +44,12 @@ export default memo(function AdminProductDetailPage() {
   const { data: batteries = [] } = useBatteriesCharging();
   const { data: connectivities = [] } = useCommunicationConnectivities();
   const { data: generalInfos = [] } = useGeneralInformations();
-  const { data: promotions = [] } = usePromotions(); // mới
+  const { data: promotions = [] } = usePromotions();
+
+  // 🔥 Lọc Promotion Active
+  const promotionsActive = useMemo(() => {
+    return promotions.filter((p) => p.status === "active");
+  }, [promotions]);
 
   // --- Mutations ---
   const createMutation = useCreateProductDetail();
@@ -85,7 +90,7 @@ export default memo(function AdminProductDetailPage() {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
 
-  // --- Map dữ liệu table với giá sau giảm ---
+  // --- Tính giá sau giảm ---
   const mappedItems = useMemo(() => {
     return paginatedItems.map((d) => {
       const finalPrice =
@@ -97,8 +102,11 @@ export default memo(function AdminProductDetailPage() {
         ...d,
         product_name: d.product?.name || "-",
         product_image: getImageUrl(d.product?.primary_image?.image_path),
-        price_label: d.price ? parseFloat(d.price).toLocaleString("vi-VN") + " VNĐ" : "0 VNĐ",
-        final_price_label: parseFloat(finalPrice).toLocaleString("vi-VN") + " VNĐ",
+        price_label: d.price
+          ? parseFloat(d.price).toLocaleString("vi-VN") + " VNĐ"
+          : "0 VNĐ",
+        final_price_label:
+          parseFloat(finalPrice).toLocaleString("vi-VN") + " VNĐ",
         stock_quantity: d.stock_quantity ?? 0,
         promotion_label: d.promotion?.name ?? "-",
         final_price: finalPrice,
@@ -130,6 +138,7 @@ export default memo(function AdminProductDetailPage() {
     return {};
   }, [crud.mode, crud.selectedItem]);
 
+  // --- Form fields ---
   const formFields = useMemo(
     () =>
       getProductDetailFormFields({
@@ -143,7 +152,7 @@ export default memo(function AdminProductDetailPage() {
         utilities,
         connectivities,
         generalInfos,
-        promotions,
+        promotions: promotionsActive, // 🔥 chỉ truyền promotion active
       }),
     [
       products,
@@ -156,7 +165,7 @@ export default memo(function AdminProductDetailPage() {
       utilities,
       connectivities,
       generalInfos,
-      promotions,
+      promotionsActive,
     ]
   );
 
@@ -202,27 +211,25 @@ export default memo(function AdminProductDetailPage() {
                         className="w-16 h-16 object-contain rounded-lg"
                       />
                     ) : (
-                      <span className="text-gray-400 italic">Không có ảnh</span>
+                      <span className="text-gray-400 italic">
+                        Không có ảnh
+                      </span>
                     ),
                 },
                 { field: "product_name", label: "Sản phẩm" },
-                {
-                  field: "price_label",
-                  label: "Giá gốc",
-                  render: (_, row) => row.price_label,
-                },
-                {
-                  field: "final_price_label",
-                  label: "Giá sau giảm",
-                  render: (_, row) => row.final_price_label,
-                },
+                { field: "price_label", label: "Giá gốc" },
+                { field: "final_price_label", label: "Giá sau giảm" },
                 { field: "promotion_label", label: "Khuyến mãi" },
                 { field: "stock_quantity", label: "Tồn kho" },
               ]}
               data={mappedItems}
               actions={[
                 { icon: <FaEye />, label: "Xem", onClick: setViewItem },
-                { icon: <FaEdit />, label: "Sửa", onClick: (item) => crud.handleEdit(item) },
+                {
+                  icon: <FaEdit />,
+                  label: "Sửa",
+                  onClick: (item) => crud.handleEdit(item),
+                },
               ]}
             />
           </div>

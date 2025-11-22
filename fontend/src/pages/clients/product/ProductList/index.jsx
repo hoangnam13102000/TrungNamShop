@@ -5,7 +5,8 @@ import Dropdown from "../../../../components/UI/dropdown/DropDown";
 import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
-import ChatWidget from "../../../../components/Chats/ChatWidget"; 
+import ChatWidget from "../../../../components/Chats/ChatWidget";
+import RecommendedProducts from "../../../../components/product/RecommendedProducts"; // import RecommendedProducts
 
 const PRICE_RANGES = [
   { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
@@ -35,22 +36,14 @@ const useQuery = () => new URLSearchParams(useLocation().search);
 const ProductList = () => {
   const query = useQuery();
   const brandQuery = query.get("brands");
-  // 👉 Đọc tham số tìm kiếm theo tên từ URL
   const searchQuery = query.get("search");
 
-  /** ===============================
-   *  Lấy dữ liệu qua useCRUDApi
-   * =============================== */
-  // Giả định `useGetProducts()` trả về TẤT CẢ sản phẩm và việc lọc được thực hiện ở client (như code hiện tại của bạn)
   const { useGetAll: useGetProducts } = useCRUDApi("products");
   const { useGetAll: useGetBrands } = useCRUDApi("brands");
 
   const { data: products = [], isLoading } = useGetProducts();
   const { data: brandsData = [] } = useGetBrands();
 
-  /** ===============================
-   *  Xử lý dữ liệu Brand & Product
-   * =============================== */
   const brandMap = useMemo(() => {
     const map = {};
     brandsData.forEach((b) => {
@@ -63,18 +56,22 @@ const ProductList = () => {
   const [priceRange, setPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("default");
   const [memoryFilter, setMemoryFilter] = useState("all");
-  // Không cần state cho searchQuery vì nó được đọc trực tiếp từ URL
+
+  const [userId, setUserId] = useState(null); // state lưu userId từ localStorage
 
   useEffect(() => {
-    // Cập nhật Brand Filter khi URL thay đổi (từ Header)
+    const storedId = localStorage.getItem("account_id");
+    setUserId(storedId ? Number(storedId) : 1);
+  }, []);
+
+  useEffect(() => {
     setBrandFilter(brandQuery || "all");
-    // Thiết lập lại các bộ lọc khác nếu có tìm kiếm mới
     if (searchQuery) {
       setPriceRange("all");
       setSortBy("default");
       setMemoryFilter("all");
     }
-  }, [brandQuery, searchQuery]); // Thêm searchQuery vào dependencies
+  }, [brandQuery, searchQuery]);
 
   const brandOptions = useMemo(() => {
     return [{ label: "Tất cả", value: "all" }, ...brandsData.map((b) => ({ label: b.name, value: b.id }))];
@@ -89,25 +86,12 @@ const ProductList = () => {
     }));
   }, [products]);
 
-  /** ===============================
-   * Bộ lọc sản phẩm
-   * =============================== */
-
-  // Chuẩn hóa từ khóa tìm kiếm (chuyển về chữ thường để tìm kiếm không phân biệt hoa thường)
   const lowerCaseSearchQuery = searchQuery ? searchQuery.toLowerCase().trim() : "";
 
   let filteredProducts = mappedProducts.filter((p) => {
-    // 1. Lọc theo tên (Search Query)
-    const matchesSearch = lowerCaseSearchQuery
-      ? p.name.toLowerCase().includes(lowerCaseSearchQuery)
-      : true; // Nếu không có searchQuery thì luôn true
-
-    // 2. Lọc theo Thương hiệu
+    const matchesSearch = lowerCaseSearchQuery ? p.name.toLowerCase().includes(lowerCaseSearchQuery) : true;
     const matchesBrand = brandFilter === "all" || p.brand?.id === Number(brandFilter);
-
-    // 3. Lọc theo Bộ nhớ
     const matchesMemory = memoryFilter === "all" || p.memory === Number(memoryFilter);
-
     return matchesSearch && matchesBrand && matchesMemory;
   });
 
@@ -123,99 +107,96 @@ const ProductList = () => {
   else if (sortBy === "name-asc") filteredProducts = [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
 
   let title = brandFilter !== "all" ? brandMap[brandFilter] || "Sản phẩm" : "Tất cả sản phẩm";
-  if (searchQuery) {
-    title = `Kết quả tìm kiếm cho "${searchQuery}"`;
-  }
-  const brandName = title; // Đổi tên biến để phản ánh tiêu đề chính xác hơn
+  if (searchQuery) title = `Kết quả tìm kiếm cho "${searchQuery}"`;
+  const brandName = title;
 
-  /** ===============================
-   *  Giao diện
-   * =============================== */
   return (
     <>
-    <div
-      className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
-    >
-      <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="flex gap-4">
-          <div className="flex-1 bg-white rounded-3xl shadow-2xl p-6 md:p-8 border-4 border-red-600">
-            <div className="text-sm text-gray-500 mb-4">
-              <BreadCrumb name={brandName} />
+      <div
+        className="w-full min-h-screen py-8 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex gap-4">
+            <div className="flex-1 bg-white rounded-3xl shadow-2xl p-6 md:p-8 border-4 border-red-600">
+              <div className="text-sm text-gray-500 mb-4">
+                <BreadCrumb name={brandName} />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">{brandName}</h1>
+              {searchQuery && (
+                <p className="mb-4 text-red-600 font-semibold">
+                  Tìm kiếm đang hoạt động cho từ khóa: "{searchQuery}"
+                </p>
+              )}
+
+              {/* Bộ lọc */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Thương hiệu</label>
+                    <Dropdown
+                      label={brandFilter !== "all" ? brandMap[brandFilter] : "Tất cả"}
+                      options={brandOptions}
+                      onSelect={(option) => setBrandFilter(option.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá</label>
+                    <Dropdown
+                      label={PRICE_RANGES.find((r) => r.id === priceRange)?.label || "Tất cả"}
+                      options={PRICE_RANGES.map((r) => ({ label: r.label, value: r.id }))}
+                      onSelect={(option) => setPriceRange(option.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Sắp xếp</label>
+                    <Dropdown
+                      label={SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Mặc định"}
+                      options={SORT_OPTIONS.map((o) => ({ label: o.label, value: o.id }))}
+                      onSelect={(option) => setSortBy(option.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Bộ nhớ</label>
+                    <Dropdown
+                      label={memoryFilter === "all" ? "Tất cả" : memoryFilter + "GB"}
+                      options={MEMORY_OPTIONS}
+                      onSelect={(option) => setMemoryFilter(option.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 text-sm text-gray-600">
+                  Tìm thấy <span className="font-semibold text-red-600">{filteredProducts.length}</span> sản phẩm
+                </div>
+              </div>
+
+              {/* Danh sách sản phẩm */}
+              {isLoading ? (
+                <div className="text-center py-20">Đang tải sản phẩm...</div>
+              ) : filteredProducts.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {filteredProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20">
+                  <p className="text-gray-500 text-lg">Không tìm thấy sản phẩm nào</p>
+                  <p className="text-gray-400 text-sm mt-2">Vui lòng thử điều chỉnh bộ lọc</p>
+                </div>
+              )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">{brandName}</h1>
-            {searchQuery && (
-              <p className="mb-4 text-red-600 font-semibold">
-                Tìm kiếm đang hoạt động cho từ khóa: "{searchQuery}"
-              </p>
-            )}
-
-            {/* 🔹 Bộ lọc */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* ... Các Dropdown Brand, Price, Sort, Memory giữ nguyên ... */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Thương hiệu</label>
-                  <Dropdown
-                    label={brandFilter !== "all" ? brandMap[brandFilter] : "Tất cả"}
-                    options={brandOptions}
-                    onSelect={(option) => setBrandFilter(option.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá</label>
-                  <Dropdown
-                    label={PRICE_RANGES.find((r) => r.id === priceRange)?.label || "Tất cả"}
-                    options={PRICE_RANGES.map((r) => ({ label: r.label, value: r.id }))}
-                    onSelect={(option) => setPriceRange(option.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sắp xếp</label>
-                  <Dropdown
-                    label={SORT_OPTIONS.find((o) => o.id === sortBy)?.label || "Mặc định"}
-                    options={SORT_OPTIONS.map((o) => ({ label: o.label, value: o.id }))}
-                    onSelect={(option) => setSortBy(option.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Bộ nhớ</label>
-                  <Dropdown
-                    label={memoryFilter === "all" ? "Tất cả" : memoryFilter + "GB"}
-                    options={MEMORY_OPTIONS}
-                    onSelect={(option) => setMemoryFilter(option.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 text-sm text-gray-600">
-                Tìm thấy{" "}
-                <span className="font-semibold text-red-600">{filteredProducts.length}</span> sản phẩm
-              </div>
-            </div>
-
-            {/* 🔹 Danh sách sản phẩm */}
-            {isLoading ? (
-              <div className="text-center py-20">Đang tải sản phẩm...</div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20">
-                <p className="text-gray-500 text-lg">Không tìm thấy sản phẩm nào</p>
-                <p className="text-gray-400 text-sm mt-2">Vui lòng thử điều chỉnh bộ lọc</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
-    </div>
-    { /* Chat Widget */}
-          <ChatWidget />
+
+      {/* Recommended Products */}
+      {userId && <RecommendedProducts userId={userId} />}
+
+      {/* Chat Widget */}
+      <ChatWidget />
     </>
   );
 };

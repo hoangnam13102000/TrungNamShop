@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Discount;
+use App\Models\ProductDetail;
 use App\Http\Resources\OrderResource;
 
 class OrderController extends Controller
@@ -81,7 +82,7 @@ class OrderController extends Controller
             'final_amount' => $finalAmount,
         ]));
 
-        // Tạo OrderDetails
+        // Tạo OrderDetails và trừ stock
         foreach ($validated['items'] as $item) {
             $order->details()->create([
                 'product_detail_id' => $item['product_detail_id'] ?? null,
@@ -91,11 +92,22 @@ class OrderController extends Controller
                 'price_at_order' => $item['price_at_order'],
                 'subtotal' => $item['price_at_order'] * $item['quantity'],
             ]);
+
+            // Trừ stock nếu product_detail_id tồn tại
+            if (!empty($item['product_detail_id'])) {
+                $productDetail = ProductDetail::find($item['product_detail_id']);
+                if ($productDetail) {
+                    $productDetail->stock_quantity -= $item['quantity'];
+                    if ($productDetail->stock_quantity < 0) $productDetail->stock_quantity = 0; // tránh âm
+                    $productDetail->save();
+                }
+            }
         }
 
         return response()->json([
             'message' => 'Đơn hàng tạo thành công',
-            'order' => $order->load('details', 'discount')
+            'order_id' => $order->id,
+            'order' => new OrderResource($order->load('details', 'discount'))
         ], 201);
     }
 
@@ -141,11 +153,6 @@ class OrderController extends Controller
             'payment_status' => 'required|in:unpaid,paid,refunded',
             'order_status' => 'required|in:pending,processing,shipping,completed,cancelled',
         ]);
-
-        // Nếu thanh toán VNPay, lưu payment_gateway
-        if ($validated['payment_method'] === 'vnpay') {
-            $validated['payment_gateway'] = 'vnpay';
-        }
 
         $order->update($validated);
 

@@ -13,6 +13,8 @@ import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 import { buildSpecs } from "../../../../utils/helpers/buildSpecs";
 import ChatWidget from "../../../../components/Chats/ChatWidget";
+import RecommendedProducts from "../../../../components/product/RecommendedProducts";
+
 const ProductDetail = () => {
   const { id } = useParams();
   const productId = Number(id);
@@ -29,6 +31,8 @@ const ProductDetail = () => {
     message: "",
   });
 
+  const [userId, setUserId] = useState(null);
+
   const loadCart = () => {
     const stored = JSON.parse(localStorage.getItem("cart")) || [];
     setCartItems(stored);
@@ -39,6 +43,11 @@ const ProductDetail = () => {
     const handleCartUpdated = () => loadCart();
     window.addEventListener("cartUpdated", handleCartUpdated);
     return () => window.removeEventListener("cartUpdated", handleCartUpdated);
+  }, []);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("account_id");
+    setUserId(storedId ? Number(storedId) : 1);
   }, []);
 
   const handleAddToCart = (product) => {
@@ -111,7 +120,7 @@ const ProductDetail = () => {
       : ["/placeholder.png"];
 
   // =========================== Build full specs ===========================
-  const specs = buildSpecs(data); // Sử dụng buildSpecs để tạo toàn bộ specs
+  const specs = buildSpecs(data);
 
   const breadcrumbPaths = [
     { name: "Trang chủ", to: "/" },
@@ -152,6 +161,13 @@ const ProductDetail = () => {
           isOpen={showSpecModal}
           onClose={() => setShowSpecModal(false)}
         />
+
+        {/* Recommended Products Section - Placed after product info */}
+        {userId && (
+          <div className="mt-16">
+            <RecommendedProducts userId={userId} />
+          </div>
+        )}
 
         {/* Reviews section */}
         <div className="mt-16 grid lg:grid-cols-3 gap-8">

@@ -25,12 +25,8 @@ const Payment = () => {
   const [cartItems, setCartItems] = useState(
     JSON.parse(localStorage.getItem("cart")) || []
   );
-  const {
-    customerInfo,
-    setCustomerInfo,
-    customerId,
-    userType,
-  } = useCustomerInfo();
+  const { customerInfo, setCustomerInfo, customerId, userType } =
+    useCustomerInfo();
   const [errors, setErrors] = useState({});
   const [dialog, setDialog] = useState({
     open: false,
@@ -75,7 +71,8 @@ const Payment = () => {
   const getSubtotal = () =>
     cartItems.reduce(
       (sum, item) =>
-        sum + (Number(item.final_price ?? item.price ?? 0) * (item.quantity || 1)),
+        sum +
+        Number(item.final_price ?? item.price ?? 0) * (item.quantity || 1),
       0
     );
 
@@ -150,10 +147,20 @@ const Payment = () => {
   const handlePayment = async () => {
     const rules = {
       name: { required: true, message: "Vui lòng nhập họ và tên" },
-      phone: { required: true, type: "phone", message: "Số điện thoại không hợp lệ" },
+      phone: {
+        required: true,
+        type: "phone",
+        message: "Số điện thoại không hợp lệ",
+      },
       address: { required: true, message: "Vui lòng nhập địa chỉ nhận hàng" },
-      delivery_method: { required: true, message: "Vui lòng chọn phương thức giao hàng" },
-      payment_method: { required: true, message: "Vui lòng chọn phương thức thanh toán" },
+      delivery_method: {
+        required: true,
+        message: "Vui lòng chọn phương thức giao hàng",
+      },
+      payment_method: {
+        required: true,
+        message: "Vui lòng chọn phương thức thanh toán",
+      },
     };
 
     const validationErrors = validateGeneral(customerInfo, rules);
@@ -199,7 +206,7 @@ const Payment = () => {
 
       const orderRes = await createOrder.mutateAsync(orderPayload);
       const orderId = orderRes?.order?.id;
-
+      console.log("orderRes", orderRes);
       if (!orderId) {
         setDialog({
           open: true,
@@ -262,8 +269,12 @@ const Payment = () => {
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FaBox className="text-5xl text-gray-400" />
             </div>
-            <p className="text-gray-600 text-xl font-semibold mb-2">Giỏ hàng của bạn trống</p>
-            <p className="text-gray-500 mb-8">Hãy thêm sản phẩm để tiếp tục thanh toán</p>
+            <p className="text-gray-600 text-xl font-semibold mb-2">
+              Giỏ hàng của bạn trống
+            </p>
+            <p className="text-gray-500 mb-8">
+              Hãy thêm sản phẩm để tiếp tục thanh toán
+            </p>
             <Link
               to="/products"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
@@ -434,7 +445,9 @@ const Payment = () => {
                           <option value="pickup"> Nhận tại cửa hàng</option>
                         </select>
                         {errors.delivery_method && (
-                          <p className="text-red-600 text-sm mt-2">⚠ {errors.delivery_method}</p>
+                          <p className="text-red-600 text-sm mt-2">
+                            ⚠ {errors.delivery_method}
+                          </p>
                         )}
                       </div>
 
@@ -459,7 +472,9 @@ const Payment = () => {
                           <option value="cash">Thanh toán khi nhận</option>
                         </select>
                         {errors.payment_method && (
-                          <p className="text-red-600 text-sm mt-2">⚠ {errors.payment_method}</p>
+                          <p className="text-red-600 text-sm mt-2">
+                            ⚠ {errors.payment_method}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -475,7 +490,9 @@ const Payment = () => {
                 </h3>
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {cartItems.map((item) => {
-                    const finalPrice = Number(item.final_price ?? item.price ?? 0);
+                    const finalPrice = Number(
+                      item.final_price ?? item.price ?? 0
+                    );
                     return (
                       <div
                         key={item.id}
@@ -487,9 +504,12 @@ const Payment = () => {
                           className="w-20 h-20 object-contain rounded-lg bg-white border border-gray-200 p-1"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">{item.name}</p>
+                          <p className="font-semibold text-gray-900 truncate">
+                            {item.name}
+                          </p>
                           <p className="text-sm text-gray-600 mt-1">
-                            <span className="font-bold">{item.quantity}</span> × {finalPrice.toLocaleString()} VNĐ
+                            <span className="font-bold">{item.quantity}</span> ×{" "}
+                            {finalPrice.toLocaleString()} VNĐ
                           </p>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -544,7 +564,9 @@ const Payment = () => {
 
                   <div className="border-t-2 border-gray-100 pt-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-900 font-bold text-lg">Tổng cộng</span>
+                      <span className="text-gray-900 font-bold text-lg">
+                        Tổng cộng
+                      </span>
                       <span className="text-3xl font-black bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                         {getTotal().toLocaleString()}
                       </span>
@@ -611,8 +633,8 @@ const Payment = () => {
           </div>
         </div>
       </div>
-       {/* Chat Widget */}
-            <ChatWidget />
+      {/* Chat Widget */}
+      <ChatWidget />
     </>
   );
 };

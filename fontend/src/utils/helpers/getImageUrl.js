@@ -8,6 +8,7 @@ import placeholder from "../../assets/admin/logoicon1.jpg";
 export const getImageUrl = (value) => {
   if (!value) return placeholder;
 
+  
   // Nếu value là object (VD: { url: "abc.jpg" })
   if (typeof value === "object" && value !== null) {
     value = value.url || value.path || value.src || "";

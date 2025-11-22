@@ -28,7 +28,7 @@ export default function ChatWidget({ sessionId = null }) {
   const scrollRef = useRef();
 
   /** ---------------------------
-   *  SAVE + AUTO SCROLL
+   * SAVE + AUTO SCROLL
    * --------------------------- */
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -38,7 +38,7 @@ export default function ChatWidget({ sessionId = null }) {
   }, [messages, STORAGE_KEY]);
 
   /** ---------------------------
-   *  FIX: CLEAR KHI LOGOUT (EVENT GLOBAL)
+   * FIX: CLEAR KHI LOGOUT (EVENT GLOBAL)
    * --------------------------- */
   useEffect(() => {
     const handleStorage = (event) => {
@@ -53,7 +53,7 @@ export default function ChatWidget({ sessionId = null }) {
   }, [STORAGE_KEY]);
 
   /** ---------------------------
-   *  FIX: LOAD CHAT MỚI KHI sessionId đổi
+   * FIX: LOAD CHAT MỚI KHI sessionId đổi (Đăng nhập/Đăng xuất)
    * --------------------------- */
   useEffect(() => {
     try {
@@ -69,11 +69,16 @@ export default function ChatWidget({ sessionId = null }) {
     const text = input.trim();
     if (!text) return;
 
+    // LẤY THÔNG TIN VAI TRÒ VÀ USERNAME TỪ LOCALSTORAGE
+    const userRole = localStorage.getItem("role") || "khách hàng";
+    const userName = localStorage.getItem("username") || "Khách hàng";
+
     const userMsg = { role: "user", content: text };
     setMessages((m) => [...m, userMsg]);
     setInput("");
     setLoading(true);
 
+    // messages ở đây là trạng thái cũ, bao gồm các tin nhắn trước tin nhắn hiện tại
     const history = messages.slice(-8);
 
     try {
@@ -85,6 +90,8 @@ export default function ChatWidget({ sessionId = null }) {
           session_id: sessionId,
           history,
           save: false,
+          user_role: userRole, // GỬI THÊM VAI TRÒ CỦA NGƯỜI DÙNG
+          username: userName, // GỬI THÊM TÊN NGƯỜI DÙNG
         }),
         credentials: "include",
       });
@@ -125,11 +132,46 @@ export default function ChatWidget({ sessionId = null }) {
     setShowClearConfirm(false);
   };
 
+  // ===========================================
+  //          IMAGE RENDERING LOGIC
+  // ===========================================
+  const renderMessageContent = (content) => {
+    const urlRegex = /(https?:\/\/[^\s]+(?:\.jpg|\.jpeg|\.png|\.gif|\.webp)[^\s]*)/gi;
+    const parts = content.split(urlRegex);
+
+    return parts.map((part, index) => {
+      if (index % 2 !== 0 && part) {
+        return (
+          <div key={index} className="flex flex-col gap-2 mt-2">
+            <a href={part} target="_blank" rel="noopener noreferrer">
+              <img
+                src={part}
+                alt="Product Image"
+                className="max-w-full h-auto rounded-xl shadow-lg border border-gray-200 cursor-pointer transition-transform hover:scale-[1.01] duration-300"
+                style={{ maxWidth: "200px", maxHeight: "200px", objectFit: "cover" }}
+                loading="lazy"
+              />
+            </a>
+          </div>
+        );
+      }
+
+      let renderedText = part.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      return <span key={index} dangerouslySetInnerHTML={{ __html: renderedText }} />;
+    });
+  };
+
+  // ===========================================
+  //        COMPONENT RENDER
+  // ===========================================
   return (
-    <div className="fixed right-4 sm:right-6 bottom-6 z-50">
-      <div className="flex flex-col items-end gap-3 max-h-[calc(100vh-120px)]">
+    <div style={{ position: "fixed", right: "1rem", bottom: "1.5rem", zIndex: 50 }}>
+      <div className="flex flex-col items-end gap-3" style={{ maxHeight: "calc(100vh - 120px)" }}>
         {open && (
-          <div className="w-full sm:w-96 max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 border border-gray-100 mx-4 sm:mx-0 max-h-[calc(100vh-120px)]">
+          <div
+            className="w-full sm:w-96 max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-300 border border-gray-100 mx-4 sm:mx-0"
+            style={{ maxHeight: "calc(100vh - 120px)" }}
+          >
             {/* Header */}
             <div className="relative px-6 py-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 flex items-center justify-between overflow-hidden">
               <div className="absolute inset-0 opacity-20">
@@ -137,7 +179,6 @@ export default function ChatWidget({ sessionId = null }) {
                 <div className="absolute bottom-0 right-0 w-32 h-32 bg-slate-600 rounded-full blur-3xl"></div>
               </div>
 
-              {/* LEFT */}
               <div className="flex items-center gap-4 relative z-10">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
                   <FaComments className="text-white text-xl" />
@@ -148,7 +189,6 @@ export default function ChatWidget({ sessionId = null }) {
                 </div>
               </div>
 
-              {/* RIGHT BUTTONS */}
               <div className="flex items-center gap-2 relative z-10">
                 {messages.length > 0 && (
                   <button
@@ -159,7 +199,6 @@ export default function ChatWidget({ sessionId = null }) {
                     <FaTrash size={18} />
                   </button>
                 )}
-
                 <button
                   className="text-gray-300 hover:text-white hover:bg-white/10 p-2.5 rounded-lg transition-all duration-200"
                   onClick={() => setOpen(false)}
@@ -198,7 +237,8 @@ export default function ChatWidget({ sessionId = null }) {
             {/* Messages */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white p-4 h-96 flex flex-col gap-3 scroll-smooth"
+              className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white p-4 flex flex-col gap-3 scroll-smooth"
+              style={{ height: "384px" }} // 96 * 4 = 384px
             >
               {messages.length === 0 && (
                 <div className="flex items-center justify-center h-full flex-col gap-4">
@@ -207,7 +247,7 @@ export default function ChatWidget({ sessionId = null }) {
                   </div>
                   <div className="text-center">
                     <p className="text-gray-800 font-semibold text-sm">
-                      Chào bạn! 👋
+                      Chào bạn!
                     </p>
                     <p className="text-gray-500 text-xs mt-1">
                       Mình có thể giúp gì cho bạn hôm nay?
@@ -219,9 +259,7 @@ export default function ChatWidget({ sessionId = null }) {
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`flex ${
-                    m.role === "user" ? "justify-end" : "justify-start"
-                  } animate-in fade-in slide-in-from-bottom-2 duration-200`}
+                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-200`}
                 >
                   <div
                     className={`max-w-xs px-4 py-3 rounded-2xl text-sm leading-relaxed font-medium shadow-sm ${
@@ -230,7 +268,9 @@ export default function ChatWidget({ sessionId = null }) {
                         : "bg-white text-gray-800 rounded-bl-sm border border-gray-100"
                     }`}
                   >
-                    {m.content}
+                    {m.role === "assistant"
+                      ? renderMessageContent(m.content)
+                      : m.content}
                   </div>
                 </div>
               ))}
@@ -238,10 +278,7 @@ export default function ChatWidget({ sessionId = null }) {
               {loading && (
                 <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="bg-white border border-gray-100 text-gray-700 px-4 py-3 rounded-2xl rounded-bl-sm flex items-center gap-2 shadow-sm">
-                    <FaSpinner
-                      className="animate-spin text-blue-500"
-                      size={14}
-                    />
+                    <FaSpinner className="animate-spin text-blue-500" size={14} />
                     <span className="text-sm font-medium">Đang xử lý...</span>
                   </div>
                 </div>

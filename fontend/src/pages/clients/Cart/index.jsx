@@ -11,6 +11,7 @@ import {
 } from "react-icons/fa";
 import { getImageUrl } from "../../../utils/helpers/getImageUrl";
 import ChatWidget from "../../../components/Chats/ChatWidget";
+import RecommendedProducts from "../../../components/product/RecommendedProducts";
 
 // Utils xử lý giỏ hàng
 const increaseQuantity = (cart, id) =>
@@ -38,6 +39,7 @@ const calculateTotal = (cart) =>
 const Cart = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
+  const [userId, setUserId] = useState(null); // state cho RecommendedProducts
 
   // Load cart
   const loadCart = () => {
@@ -51,6 +53,11 @@ const Cart = () => {
     const handleCartUpdated = () => loadCart();
     window.addEventListener("cartUpdated", handleCartUpdated);
     return () => window.removeEventListener("cartUpdated", handleCartUpdated);
+  }, []);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("account_id");
+    setUserId(storedId ? Number(storedId) : 1);
   }, []);
 
   const handleIncrease = (id) => {
@@ -298,8 +305,12 @@ const Cart = () => {
               </div>
             </div>
           )}
+
+          {/* Recommended Products */}
+          {userId && <RecommendedProducts userId={userId} />}
         </div>
       </div>
+
       {/* Chat Widget */}
       <ChatWidget />
     </>
