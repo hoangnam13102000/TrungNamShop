@@ -53,7 +53,7 @@
 
 ```bash
 # 1. Clone repository
-git clone [https://github.com/yourusername/TechPhone.git](https://github.com/yourusername/TechPhone.git)
+git clone (https://github.com/hoangnam13102000/TrungNamShop.git)
 cd TechPhone
 
 # 2. Cài đặt các thư viện PHP
@@ -67,7 +67,7 @@ php artisan key:generate
 
 # 5. Cấu hình Database và các biến khác trong tệp .env
 
-# 6. Chạy Migration và Seeder (nếu có)
+# 6. Chạy Migration và Seeder 
 php artisan migrate --seed
 
 # 7. Khởi động Laravel Server
