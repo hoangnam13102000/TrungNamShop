@@ -11,8 +11,7 @@ use App\Models\MomoPayment;
 class PaymentController extends Controller
 {
     /* -----------------------------------------------------
-        Tạo thanh toán MoMo
-        (Order phải ở trạng thái DRAFT)
+            Create Momo Payment
     ------------------------------------------------------*/
     public function createMomoPayment(Request $request)
     {
@@ -30,7 +29,7 @@ class PaymentController extends Controller
         }
 
         // MoMo Credentials
-        $endpoint    = "https://test-payment.momo.vn/v2/gateway/api/create";
+        $endpoint    = env('MOMO_ENDPOINT');
         $partnerCode = env('MOMO_PARTNER_CODE');
         $accessKey   = env('MOMO_ACCESS_KEY');
         $secretKey   = env('MOMO_SECRET_KEY');
