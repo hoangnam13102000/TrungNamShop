@@ -1,19 +1,75 @@
-<div align="center">
-🔥 Website bán điện thoại tích hợp AI Chatbot + Recommendation System
+# 📱 TechPhone - Website Thương Mại Điện Tử Điện Thoại Tích Hợp AI
 
-Laravel + React + Vite + TailwindCSS
+[![Laravel](https://img.shields.io/badge/Laravel-^10.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-^18.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-^3.0-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-^4.0-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
+[![Yarn](https://img.shields.io/badge/Yarn-^1.22-2C8EBB?style=for-the-badge&logo=yarn)](https://yarnpkg.com/)
+[![AI Powered](https://img.shields.io/badge/AI_Powered-Gemini-FF6B00?style=for-the-badge&logo=google)](https://ai.google/technologies/gemini)
 
-<br/>
+## 🌟 Giới Thiệu
 
+**TechPhone** là một nền tảng thương mại điện tử chuyên bán điện thoại di động, được xây dựng trên bộ công nghệ hiện đại: **Laravel (Backend API)** kết hợp với **React/Vite/Tailwind CSS (Frontend)**.
 
+Điểm nổi bật của dự án là việc tích hợp **Trợ lý AI Chatbot** sử dụng **API Gemini** của Google và một **Hệ thống Gợi ý Sản phẩm (Recommendation System)** thông minh, nhằm cá nhân hóa và tối ưu hóa trải nghiệm mua sắm của khách hàng.
 
+---
 
+## ✨ Tính Năng Nổi Bật
 
+* **🛒 Giao Diện Mua Sắm Hiện Đại:** Sử dụng React/Vite cho giao diện người dùng nhanh chóng, mượt mà (Single Page Application - SPA experience).
+* **🤖 Trợ Lý AI Chatbot:** Tích hợp **API Gemini** giúp người dùng tra cứu thông tin sản phẩm, so sánh cấu hình, và nhận gợi ý mua hàng chuyên sâu.
+* **💡 Hệ Thống Gợi Ý Thông Minh:** Đề xuất sản phẩm dựa trên hành vi người dùng, lịch sử xem, và các thuật toán liên quan để tăng tỷ lệ chuyển đổi.
+* **🛡️ Backend Mạnh Mẽ:** Laravel 10+ đóng vai trò là API Backend bảo mật, có cấu trúc rõ ràng và dễ dàng mở rộng.
+* **🎨 Thiết Kế Responsive:** Giao diện được xây dựng hoàn toàn bằng **Tailwind CSS**, đảm bảo hiển thị đẹp mắt trên mọi kích thước màn hình.
 
+---
 
+## 🛠️ Công Nghệ Sử Dụng
 
+| Lĩnh vực | Công nghệ | Phiên bản | Mô tả |
+| :--- | :--- | :--- | :--- |
+| **Backend** | **Laravel** | ^10.x | Khung PHP mạnh mẽ và bảo mật. |
+| **Frontend** | **React** | ^18.x | Thư viện JavaScript hàng đầu để xây dựng UI. |
+| **Build Tool** | **Vite** | ^4.x | Công cụ build/dev server siêu nhanh. |
+| **Styling** | **Tailwind CSS** | ^3.x | Khung CSS utility-first linh hoạt. |
+| **AI Integration**| **Gemini API**| Mới nhất| Cung cấp khả năng Chatbot đàm thoại thông minh. |
+| **Quản lý gói** | **Yarn** | ^1.22/4.x| Công cụ quản lý dependency nhanh và đáng tin cậy. |
+| **Cơ sở dữ liệu**| **MySQL/PostgreSQL**| Tùy chọn | Cơ sở dữ liệu quan hệ mạnh mẽ. |
 
+---
 
+## 🚀 Cài Đặt và Khởi Động Dự Án
 
+### Yêu cầu Tiên quyết
 
-</div>
+* **PHP** (>= 8.1)
+* **Composer**
+* **Node.js** (>= 18.x)
+* **Yarn**
+* **Cơ sở dữ liệu** (MySQL hoặc PostgreSQL)
+
+### 1. Backend (Laravel)
+
+```bash
+# 1. Clone repository
+git clone [https://github.com/yourusername/TechPhone.git](https://github.com/yourusername/TechPhone.git)
+cd TechPhone
+
+# 2. Cài đặt các thư viện PHP
+composer install
+
+# 3. Sao chép và cấu hình biến môi trường
+cp .env.example .env
+
+# 4. Tạo App Key
+php artisan key:generate
+
+# 5. Cấu hình Database và các biến khác trong tệp .env
+
+# 6. Chạy Migration và Seeder (nếu có)
+php artisan migrate --seed
+
+# 7. Khởi động Laravel Server
+php artisan serve
+# Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
