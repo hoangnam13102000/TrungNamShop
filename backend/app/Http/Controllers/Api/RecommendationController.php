@@ -30,13 +30,13 @@ class RecommendationController extends Controller
         // Lấy detail đầu tiên (nếu có nhiều variants)
         $productDetail = $product->details->first();
 
-        // 1️⃣ Content-based similarity
+        // Content-based similarity
         $similarProducts = $this->contentBased($product, $productDetail);
 
-        // 2️⃣ Collaborative filtering
+        // Collaborative filtering
         $collabProducts = $user_id ? $this->collaborativeBased($user_id) : collect();
 
-        // 3️⃣ Hybrid scoring
+        // Hybrid scoring
         $finalProducts = $this->hybridScore($similarProducts, $collabProducts);
 
         return response()->json([

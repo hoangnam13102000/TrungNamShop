@@ -72,7 +72,7 @@ Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
 Route::post('/momo/notify', [PaymentController::class, 'momoNotify']);
 
 
-
+Route::post('/momo/confirm', [PaymentController::class, 'clientConfirmPayment']);
 Route::get('/discounts/validate', [DiscountController::class, 'validateDiscount']);
 
 

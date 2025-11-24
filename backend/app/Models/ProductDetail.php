@@ -24,7 +24,7 @@ class ProductDetail extends Model
         'utility_id',
         'price',
         'final_price',
-        'stock_quantity', // Đây là cột tồn kho
+        'stock_quantity',
         'promotion_id',
     ];
 

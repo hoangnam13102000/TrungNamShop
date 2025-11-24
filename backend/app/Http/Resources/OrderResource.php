@@ -12,7 +12,6 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // Chuẩn hóa và trim enum
         $deliveryMethod = $this->delivery_method ? trim($this->delivery_method) : null;
         $paymentMethod = $this->payment_method ? trim($this->payment_method) : null;
         $orderStatus = $this->order_status ? trim($this->order_status) : null;
@@ -27,8 +26,6 @@ class OrderResource extends JsonResource
 
         $paymentMethodLabel = match($paymentMethod) {
             'cash' => 'Tiền mặt',
-            'paypal' => 'Paypal',
-            'bank_transfer' => 'Chuyển khoản',
             'momo' => 'Ví Momo',
             default => '—'
         };
@@ -49,9 +46,25 @@ class OrderResource extends JsonResource
             default => '—'
         };
 
+        $subtotal = $this->whenLoaded('details', function () {
+            if ($this->details) {
+                return $this->details->sum('subtotal');
+            }
+            return 0;
+        }, 0); 
+
+       
+        $discountAmount = 0;
+        if ($this->whenLoaded('discount') && $this->discount) {
+            $percentage = $this->discount->percentage > 100 ? 100 : $this->discount->percentage;
+            $discountAmount = ($subtotal * $percentage) / 100;
+        }
+
+
         return [
             'id' => $this->id,
             'order_code' => $this->order_code,
+            'customer_id' => $this->customer_id, // Thêm customer_id để client dễ lọc
 
             // Relations
             'customer' => $this->whenLoaded('customer', function () {
@@ -82,15 +95,22 @@ class OrderResource extends JsonResource
                     'address' => $this->store->address,
                 ];
             }),
+            
+            // Order Details 
+            'details' => OrderDetailResource::collection($this->whenLoaded('details')),
+
 
             // Recipient info
             'recipient_name' => $this->recipient_name,
             'recipient_address' => $this->recipient_address,
             'recipient_phone' => $this->recipient_phone,
 
+            // Amount Info 
+            'discount_amount' => round($discountAmount, 2),
+            'final_amount' => round($this->final_amount, 2),
+            
             // Other info
             'note' => $this->note,
-            'final_amount' => $this->final_amount,
             'payment_gateway' => $this->payment_gateway,
             'transaction_id' => $this->transaction_id,
             'payment_response' => $this->payment_response ? json_decode($this->payment_response) : null,
@@ -105,9 +125,9 @@ class OrderResource extends JsonResource
             'payment_status' => $paymentStatus,
             'payment_status_label' => $paymentStatusLabel,
 
-            // Dates (format Y-m-d để dùng cho input type="date")
+            // Dates 
             'delivery_date' => $this->delivery_date ? $this->delivery_date->format('Y-m-d') : null,
-            'order_date' => $this->order_date ? $this->order_date->format('Y-m-d') : null,
+            'order_date' => $this->order_date ? $this->order_date->toDateTimeString() : null, // Giữ lại DateTimeString cho order_date
 
             // Timestamps
             'created_at' => $this->created_at->toDateTimeString(),

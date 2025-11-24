@@ -2,43 +2,30 @@ import { createCRUD } from "../../hooks/apiBase";
 import { useQuery } from "@tanstack/react-query";
 import { useGetAll, useMutate } from "../../hooks/useBaseQuery";
 
+// Tạo instance API
 const productDetailAPI = createCRUD("/product-details");
-const productImageAPI = createCRUD("/product-images");
 
+// --- SỬA LẠI HOOK NÀY: Dùng getOne thay vì tự filter ---
 export const useProductDetailById = (productId) => {
   return useQuery({
     queryKey: ["product-detail", productId],
     queryFn: async () => {
       if (!productId) throw new Error("Missing product ID");
 
-      const allDetails = await productDetailAPI.getAll();
+      // Gọi hàm getOne từ file createCRUD của bạn
+      // Backend Laravel (Resource) trả về { data: { ... } }
+      // Hàm getOne của bạn đã xử lý return res.data?.data rồi, nên ở đây lấy được object chuẩn luôn.
+      const detail = await productDetailAPI.getOne(productId);
 
-      const detail = allDetails.find(item => item.product?.id === productId);
-
-      if (!detail) return null; // fallback: không tìm thấy
-
-      
-      const allImages = await productImageAPI.getAll();
-
-      
-      const images = allImages.filter(img => img.product_id === productId);
-
-      const finalImages = images.length > 0
-        ? images
-        : detail.product?.primary_image
-        ? [detail.product.primary_image]
-        : [];
-
-      return {
-        ...detail,
-        images: finalImages,
-      };
+      return detail;
     },
-    enabled: !!productId,
+    enabled: !!productId, // Chỉ chạy khi có ID
+    staleTime: 0,         // Luôn fetch mới khi component mount lại (để lấy dữ liệu mới nhất khi edit)
+    refetchOnWindowFocus: false,
   });
 };
 
-
+// --- CÁC HOOK KHÁC ---
 
 export const useProductDetails = (options) =>
   useGetAll("product-details", productDetailAPI.getAll, options);
@@ -51,6 +38,7 @@ export const useUpdateProductDetail = (options) =>
     "product-details",
     async ({ id, data }) => {
       if (!id) throw new Error("Missing ID for update");
+      // Gọi hàm update từ file createCRUD
       return await productDetailAPI.update(id, data);
     },
     options

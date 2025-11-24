@@ -14,46 +14,105 @@ export default function PaymentResult({ setCartItems }) {
     onClose: null,
   });
 
+  const apiBaseUrl = "http://127.0.0.1:8000/api/";
+
+  const openDialog = (mode, title, message, onClose) => {
+    setDialog({
+      open: true,
+      mode,
+      title,
+      message,
+      onClose: () => {
+        setDialog((prev) => ({ ...prev, open: false }));
+        if (onClose) onClose();
+      },
+    });
+  };
+
+  const clearCart = () => {
+    localStorage.removeItem("cart");
+    setCartItems?.([]);
+  };
+
+  const handleConfirmation = async (orderId, resultCode) => {
+    try {
+      openDialog(
+        "loading",
+        "Đang xử lý kết quả",
+        "Vui lòng đợi trong giây lát...",
+        null
+      );
+
+      const response = await fetch(`${apiBaseUrl}momo/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: Number(orderId),
+          result_code: resultCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      setDialog((prev) => ({ ...prev, open: false }));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Lỗi không xác định từ server.");
+      }
+
+      if (resultCode === "0") {
+        clearCart();
+        openDialog(
+          "success",
+          "Thanh toán thành công 🎉",
+          `Cảm ơn bạn! Đơn hàng #${orderId} đã được xác nhận và đang được xử lý.`,
+          () => navigate("/gio-hang")
+        );
+      } else {
+        openDialog(
+          "warning",
+          "Giao dịch bị Hủy/Thất bại ⚠️",
+          `Đơn hàng #${orderId} đã được tạo nhưng giao dịch không thành công. Hệ thống đã chuyển đơn sang trạng thái Đã Hủy.`,
+          () => navigate("/gio-hang")
+        );
+      }
+    } catch (error) {
+      console.error("API Confirmation Error:", error);
+
+      setDialog((prev) => ({ ...prev, open: false }));
+
+      openDialog(
+        "error",
+        "Lỗi Hệ thống Xác nhận",
+        `Có lỗi xảy ra khi xác nhận đơn hàng. Vui lòng kiểm tra lại đơn hàng #${orderId} hoặc liên hệ hỗ trợ.`,
+        () => navigate("/ho-tro")
+      );
+    }
+  };
+
   useEffect(() => {
     if (handledRef.current) return;
     handledRef.current = true;
 
     const query = new URLSearchParams(window.location.search);
     const resultCode = query.get("resultCode");
+    const orderId = query.get("orderId");
 
-    if (resultCode === "0") {
-      // Thành công
-      localStorage.removeItem("cart");
-      if (setCartItems) setCartItems([]);
-
-      setDialog({
-        open: true,
-        mode: "success",
-        title: "Thanh toán thành công",
-        message: "Cảm ơn bạn đã thanh toán qua MoMo!",
-        onClose: () => {
-          setDialog((p) => ({ ...p, open: false }));
-          navigate("/gio-hang");
-        },
-      });
+    if (orderId && resultCode !== null) {
+      handleConfirmation(orderId, resultCode);
     } else {
-      // Thất bại
-      setDialog({
-        open: true,
-        mode: "error",
-        title: "Thanh toán thất bại",
-        message: "Giao dịch bị huỷ hoặc không thành công.",
-        onClose: () => {
-          setDialog((p) => ({ ...p, open: false }));
-          navigate("/gio-hang");
-        },
-      });
+      openDialog(
+        "error",
+        "Truy cập không hợp lệ",
+        "Thiếu thông tin kết quả thanh toán. Vui lòng kiểm tra lại đơn hàng.",
+        () => navigate("/gio-hang")
+      );
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p>Đang xử lý thanh toán...</p>
+      <p className="text-gray-600 text-lg">Đang xử lý kết quả thanh toán...</p>
 
       <DynamicDialog
         open={dialog.open}

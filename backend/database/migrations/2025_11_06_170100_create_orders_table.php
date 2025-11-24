@@ -32,7 +32,7 @@ return new class extends Migration
 
             // Payment info: thêm 'vnpay' vào enum
             $table->enum('payment_method', ['cash', 'paypal', 'bank_transfer', 'momo', 'vnpay'])
-                  ->default('cash');
+                ->default('cash');
             $table->decimal('final_amount', 15, 2)->default(0)->comment('Tổng tiền cuối cùng sau giảm giá');
 
             // Payment integration (PayPal, Momo, VNPay...)
@@ -44,11 +44,8 @@ return new class extends Migration
             $table->dateTime('delivery_date')->nullable();
             $table->dateTime('order_date')->useCurrent();
 
-            // Status
-            $table->enum('payment_status', ['unpaid', 'paid', 'refunded'])->default('unpaid');
-            $table->enum('order_status', ['pending', 'processing', 'shipping', 'completed', 'cancelled'])
-                ->default('pending');
-
+            $table->string('payment_status', 30)->default('unpaid')->comment('unpaid, paid, refunded, failed, pending_refund...');
+            $table->string('order_status', 30)->default('pending')->comment('pending, processing, shipping, completed, cancelled, failed...');
             // Timestamps & Soft delete
             $table->timestamps();
             $table->softDeletes();

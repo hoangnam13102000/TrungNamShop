@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Discount;
 use App\Models\ProductDetail;
 use App\Http\Resources\OrderResource;
+use Illuminate\Support\Facades\DB; 
 
 class OrderController extends Controller
 {
@@ -43,7 +44,8 @@ class OrderController extends Controller
             'recipient_phone' => 'required|string|max:20',
             'note' => 'nullable|string',
             'delivery_method' => 'required|in:pickup,delivery',
-            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo,vnpay',
+            // CHỈ CHO PHÉP 'cash' HOẶC 'momo'
+            'payment_method' => 'required|in:cash,momo', 
             'delivery_date' => 'nullable|date',
             'order_date' => 'nullable|date',
             'payment_status' => 'required|in:unpaid,paid,refunded',
@@ -56,59 +58,86 @@ class OrderController extends Controller
             'items.*.price_at_order' => 'required|numeric|min:0',
         ]);
 
-        // Tính subtotal từ items
-        $subtotal = collect($validated['items'])->sum(function ($item) {
-            return $item['price_at_order'] * $item['quantity'];
-        });
+        
+        DB::beginTransaction();
 
-        // Tính giảm giá nếu có
-        $discountAmount = 0;
-        if (!empty($validated['discount_id'])) {
-            $discount = Discount::find($validated['discount_id']);
-            if ($discount) {
-                $discountAmount = ($subtotal * $discount->percentage) / 100;
-            }
-        }
+        try {
+            // Tính subtotal từ items
+            $subtotal = collect($validated['items'])->sum(function ($item) {
+                return $item['price_at_order'] * $item['quantity'];
+            });
 
-        $finalAmount = $subtotal - $discountAmount;
-
-        // Nếu thanh toán VNPay, lưu payment_gateway
-        if ($validated['payment_method'] === 'vnpay') {
-            $validated['payment_gateway'] = 'vnpay';
-        }
-
-        // Tạo order
-        $order = Order::create(array_merge($validated, [
-            'final_amount' => $finalAmount,
-        ]));
-
-        // Tạo OrderDetails và trừ stock
-        foreach ($validated['items'] as $item) {
-            $order->details()->create([
-                'product_detail_id' => $item['product_detail_id'] ?? null,
-                'product_name' => $item['product_name'],
-                'detail_info' => $item['detail_info'] ?? null,
-                'quantity' => $item['quantity'],
-                'price_at_order' => $item['price_at_order'],
-                'subtotal' => $item['price_at_order'] * $item['quantity'],
-            ]);
-
-            // Trừ stock nếu product_detail_id tồn tại
-            if (!empty($item['product_detail_id'])) {
-                $productDetail = ProductDetail::find($item['product_detail_id']);
-                if ($productDetail) {
-                    $productDetail->stock_quantity -= $item['quantity'];
-                    if ($productDetail->stock_quantity < 0) $productDetail->stock_quantity = 0; // tránh âm
-                    $productDetail->save();
+            // Tính giảm giá nếu có
+            $discountAmount = 0;
+            if (!empty($validated['discount_id'])) {
+                $discount = Discount::find($validated['discount_id']);
+                if ($discount) {
+                    // Kiểm tra và đảm bảo percentage hợp lệ
+                    $percentage = $discount->percentage > 100 ? 100 : $discount->percentage;
+                    $discountAmount = ($subtotal * $percentage) / 100;
                 }
             }
-        }
 
-        return response()->json([
-            'message' => 'Đơn hàng tạo thành công',
-            'order_id' => $order->id,
-            'order' => new OrderResource($order->load('details', 'discount'))
-        ], 201);
+            $finalAmount = $subtotal - $discountAmount;
+            
+            
+            if ($validated['payment_method'] === 'momo') {
+                 $validated['payment_gateway'] = 'momo';
+                 
+            } else {
+               
+                 $validated['payment_gateway'] = null;
+                 $validated['transaction_id'] = null;
+                 $validated['payment_response'] = null;
+            }
+
+
+           
+            $order = Order::create(array_merge($validated, [
+                'final_amount' => $finalAmount,
+            ]));
+
+            // Tạo OrderDetails và trừ stock
+            foreach ($validated['items'] as $item) {
+                $order->details()->create([
+                    'product_detail_id' => $item['product_detail_id'] ?? null,
+                    'product_name' => $item['product_name'],
+                    'detail_info' => $item['detail_info'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'price_at_order' => $item['price_at_order'],
+                    'subtotal' => $item['price_at_order'] * $item['quantity'],
+                ]);
+
+                // Trừ stock nếu product_detail_id tồn tại
+                if (!empty($item['product_detail_id'])) {
+                    $productDetail = ProductDetail::find($item['product_detail_id']);
+                    if ($productDetail) {
+                        // Kiểm tra đủ hàng trước khi trừ
+                        if ($productDetail->stock_quantity < $item['quantity']) {
+                             // Ném exception để rollback transaction nếu không đủ hàng
+                            throw new \Exception("Không đủ số lượng cho sản phẩm: " . $item['product_name']); 
+                        }
+                        $productDetail->stock_quantity -= $item['quantity'];
+                        $productDetail->save();
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Đơn hàng tạo thành công',
+                'order_id' => $order->id,
+                'order' => new OrderResource($order->load('details', 'discount'))
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Tạo đơn hàng thất bại',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -147,12 +176,23 @@ class OrderController extends Controller
             'recipient_phone' => 'required|string|max:20',
             'note' => 'nullable|string',
             'delivery_method' => 'required|in:pickup,delivery',
-            'payment_method' => 'required|in:cash,paypal,bank_transfer,momo,vnpay',
+            'payment_method' => 'required|in:cash,momo', 
             'delivery_date' => 'nullable|date',
             'order_date' => 'nullable|date',
             'payment_status' => 'required|in:unpaid,paid,refunded',
             'order_status' => 'required|in:pending,processing,shipping,completed,cancelled',
         ]);
+        
+        
+        if ($validated['payment_method'] === 'momo') {
+             $validated['payment_gateway'] = 'momo';
+           
+        } else {
+            
+             $validated['payment_gateway'] = null;
+             $validated['transaction_id'] = null;
+             $validated['payment_response'] = null;
+        }
 
         $order->update($validated);
 
@@ -165,7 +205,8 @@ class OrderController extends Controller
         if (!empty($order->discount_id)) {
             $discount = Discount::find($order->discount_id);
             if ($discount) {
-                $discountAmount = ($subtotal * $discount->percentage) / 100;
+                $percentage = $discount->percentage > 100 ? 100 : $discount->percentage;
+                $discountAmount = ($subtotal * $percentage) / 100;
             }
         }
 

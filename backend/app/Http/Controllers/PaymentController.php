@@ -4,42 +4,61 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\MomoPayment;
 
 class PaymentController extends Controller
 {
-    // ---------------- MoMo ----------------
+    /* -----------------------------------------------------
+        Tạo thanh toán MoMo
+        (Order phải ở trạng thái DRAFT)
+    ------------------------------------------------------*/
     public function createMomoPayment(Request $request)
     {
-        $request->validate(['order_id' => 'required|integer|exists:orders,id']);
+        $request->validate([
+            'order_id' => 'required|integer|exists:orders,id'
+        ]);
+
         $order = Order::findOrFail($request->order_id);
 
-        $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+        if ($order->payment_status === 'paid') {
+            return response()->json([
+                'error' => 'Order already paid',
+                'message' => 'Đơn hàng này đã được thanh toán.'
+            ], 400);
+        }
+
+        // MoMo Credentials
+        $endpoint    = "https://test-payment.momo.vn/v2/gateway/api/create";
         $partnerCode = env('MOMO_PARTNER_CODE');
-        $accessKey = env('MOMO_ACCESS_KEY');
-        $secretKey = env('MOMO_SECRET_KEY');
-        $redirectUrl = env('MOMO_RETURN_URL');
-        $ipnUrl = env('MOMO_NOTIFY_URL');
+        $accessKey   = env('MOMO_ACCESS_KEY');
+        $secretKey   = env('MOMO_SECRET_KEY');
 
-        $orderId = $order->id . '_' . time();
-        $amount = (int) round($order->final_amount);
-        $requestId = (string) time();
-        $orderInfo = "Thanh toan don hang #" . $order->id;
-        $extraData = "";
+        // URLs
+        $redirectUrl = env('MOMO_RETURN_URL') . "?orderId={$order->id}";
+        $ipnUrl      = env('MOMO_NOTIFY_URL');
 
-        $rawHashManual = 
-            "accessKey={$accessKey}&amount={$amount}&extraData={$extraData}" .
-            "&ipnUrl={$ipnUrl}&orderId={$orderId}&orderInfo={$orderInfo}" .
-            "&partnerCode={$partnerCode}&redirectUrl={$redirectUrl}&requestId={$requestId}&requestType=captureWallet";
+        // Payment meta
+        $orderId     = $order->id . '_' . time();
+        $amount      = (int) round($order->final_amount);
+        $requestId   = (string) time();
+        $orderInfo   = "Thanh toan don hang #{$order->id}";
+        $extraData   = "";
 
-        $signature = hash_hmac('sha256', $rawHashManual, $secretKey);
+        // Signature
+        $rawHash = "accessKey={$accessKey}&amount={$amount}&extraData={$extraData}"
+            . "&ipnUrl={$ipnUrl}&orderId={$orderId}&orderInfo={$orderInfo}"
+            . "&partnerCode={$partnerCode}&redirectUrl={$redirectUrl}"
+            . "&requestId={$requestId}&requestType=captureWallet";
+
+        $signature = hash_hmac('sha256', $rawHash, $secretKey);
 
         $payload = [
             'partnerCode' => $partnerCode,
             'accessKey'   => $accessKey,
             'requestId'   => $requestId,
-            'amount'      => (string)$amount,
+            'amount'      => (string) $amount,
             'orderId'     => $orderId,
             'orderInfo'   => $orderInfo,
             'redirectUrl' => $redirectUrl,
@@ -49,91 +68,201 @@ class PaymentController extends Controller
             'signature'   => $signature
         ];
 
-        Log::info('MoMo Request Payload', ['payload' => $payload]);
+        Log::info('MoMo Request Payload', $payload);
 
+        // CURL call
         $ch = curl_init($endpoint);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json']
+        ]);
+
         $result = curl_exec($ch);
 
         if ($result === false) {
-            $curlErr = curl_error($ch);
+            $error = curl_error($ch);
             curl_close($ch);
-            Log::error('MoMo CURL error', ['error' => $curlErr]);
-            return response()->json(['error' => 'CURL error', 'message' => $curlErr], 500);
+
+            Log::error('MoMo CURL Error', ['error' => $error]);
+            return response()->json([
+                'error'   => 'CURL error',
+                'message' => $error
+            ], 500);
         }
 
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $responseCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        Log::info('MoMo Response', ['http_code' => $httpCode, 'body' => $result]);
+        Log::info('MoMo Response', ['status' => $responseCode, 'body' => $result]);
 
         $res = json_decode($result, true);
 
-        if (!is_array($res) || !isset($res['payUrl'])) {
-            return response()->json(['error' => 'MoMo server response invalid', 'raw' => $res], 500);
+        if (!isset($res['payUrl'])) {
+            return response()->json([
+                'error' => 'MoMo server response invalid',
+                'raw'   => $res
+            ], 500);
         }
 
+        // Save transaction record
         MomoPayment::create([
-            'order_id'  => $order->id,
-            'orderId'   => $orderId,
-            'requestId' => $requestId,
-            'amount'    => $amount,
-            'is_success'=> false
+            'order_id'   => $order->id,
+            'orderId'    => $orderId,
+            'requestId'  => $requestId,
+            'amount'     => $amount,
+            'is_success' => false
         ]);
 
         return response()->json(['payment_url' => $res['payUrl']]);
     }
 
-    // ---------------- MoMo Notify Callback ----------------
+    /* -----------------------------------------------------
+        Client Confirm Payment (Frontend sau redirect)
+    ------------------------------------------------------*/
+    public function clientConfirmPayment(Request $request)
+    {
+        $request->validate([
+            'order_id'    => 'required|integer|exists:orders,id',
+            'result_code' => 'required|string'
+        ]);
+
+        $orderId    = $request->order_id;
+        $resultCode = intval($request->result_code);
+
+        try {
+            DB::beginTransaction();
+
+            // Lock order
+            $order = Order::lockForUpdate()->find($orderId);
+
+            if (!$order) {
+                DB::rollBack();
+                Log::warning('Client Confirm Failed: Order not found', ['order_id' => $orderId]);
+                return response()->json(['message' => 'Order not found'], 404);
+            }
+
+            // Success
+            if ($resultCode === 0) {
+                if ($order->payment_status !== 'paid') {
+                    $order->payment_status = 'paid';
+                    $order->order_status   = 'processing';
+                    $order->save();
+
+                    Log::info('Client Confirm Success', [
+                        'order_id' => $orderId,
+                        'status'   => 'updated_to_paid_processing'
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'message' => 'Payment confirmed and order updated successfully.',
+                    'status'  => 'paid'
+                ]);
+            }
+
+            // Failed or canceled
+            if ($order->order_status === 'draft' || $order->payment_status === 'unpaid') {
+                $order->payment_status = 'failed';
+                $order->order_status   = 'canceled';
+                $order->save();
+            }
+
+            DB::commit();
+
+            Log::info('Client Confirm Received: Payment Failed/Canceled', [
+                'order_id'    => $orderId,
+                'result_code' => $resultCode,
+                'new_status'  => $order->order_status
+            ]);
+
+            return response()->json([
+                'message' => 'Payment failed or already processed.',
+                'status'  => $order->order_status
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Client Confirm Error', [
+                'order_id' => $orderId,
+                'error'    => $e->getMessage()
+            ]);
+
+            return response()->json(['message' => 'Internal server error.'], 500);
+        }
+    }
+
+    /* -----------------------------------------------------
+        MoMo IPN Notify Callback
+    ------------------------------------------------------*/
     public function momoNotify(Request $request)
     {
         $data = $request->all();
 
-        $required = ['accessKey','amount','extraData','message','orderId','orderInfo','orderType','partnerCode','payType','requestId','responseTime','resultCode','transId','signature'];
-        foreach ($required as $k) {
-            if (!array_key_exists($k, $data)) {
-                Log::warning('MoMo notify missing key', ['missing' => $k, 'data' => $data]);
-                return response()->json(['resultCode'=>0,'message'=>'OK']);
+        $required = [
+            'accessKey', 'amount', 'extraData', 'message', 'orderId',
+            'orderInfo', 'orderType', 'partnerCode', 'payType',
+            'requestId', 'responseTime', 'resultCode', 'transId', 'signature'
+        ];
+
+        foreach ($required as $key) {
+            if (!isset($data[$key])) {
+                Log::warning('MoMo notify missing key', ['missing' => $key]);
+                return response()->json(['resultCode' => 0, 'message' => 'OK']);
             }
         }
 
         $rawHash =
-            "accessKey=" . $data['accessKey'] .
-            "&amount=" . $data['amount'] .
-            "&extraData=" . $data['extraData'] .
-            "&message=" . $data['message'] .
-            "&orderId=" . $data['orderId'] .
-            "&orderInfo=" . $data['orderInfo'] .
-            "&orderType=" . $data['orderType'] .
-            "&partnerCode=" . $data['partnerCode'] .
-            "&payType=" . $data['payType'] .
-            "&requestId=" . $data['requestId'] .
-            "&responseTime=" . $data['responseTime'] .
-            "&resultCode=" . $data['resultCode'] .
-            "&transId=" . $data['transId'];
+            "accessKey={$data['accessKey']}&amount={$data['amount']}"
+            . "&extraData={$data['extraData']}&message={$data['message']}"
+            . "&orderId={$data['orderId']}&orderInfo={$data['orderInfo']}"
+            . "&orderType={$data['orderType']}&partnerCode={$data['partnerCode']}"
+            . "&payType={$data['payType']}&requestId={$data['requestId']}"
+            . "&responseTime={$data['responseTime']}&resultCode={$data['resultCode']}"
+            . "&transId={$data['transId']}";
 
-        $expectedSignature = hash_hmac('sha256', $rawHash, env('MOMO_SECRET_KEY'));
-        $isValid = $expectedSignature === $data['signature'];
+        $isValid = hash_hmac('sha256', $rawHash, env('MOMO_SECRET_KEY')) === $data['signature'];
 
-        Log::info('MoMo Notify', ['data' => $data, 'valid' => $isValid]);
+        Log::info('MoMo Notify', [
+            'valid' => $isValid,
+            'data'  => $data
+        ]);
 
         $orderId = explode("_", $data['orderId'])[0];
 
+        // Valid success
         if ($isValid && intval($data['resultCode']) === 0) {
-            $order = Order::find($orderId);
-            if ($order) {
-                $order->payment_status = 'paid';
-                $order->order_status = 'completed';
-                $order->save();
-            }
+            try {
+                DB::beginTransaction();
 
-            MomoPayment::where('orderId', $data['orderId'])
-                ->update(['is_success' => true]);
+                $order = Order::lockForUpdate()->find($orderId);
+
+                if ($order && $order->payment_status !== 'paid') {
+                    $order->payment_status = 'paid';
+                    $order->order_status   = 'completed';
+                    $order->save();
+
+                    Log::info('MoMo IPN Success: Order updated to paid/completed', [
+                        'order_id' => $orderId
+                    ]);
+                }
+
+                MomoPayment::where('orderId', $data['orderId'])
+                    ->update(['is_success' => true]);
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('MoMo IPN Transaction Error', [
+                    'order_id' => $orderId,
+                    'error'    => $e->getMessage()
+                ]);
+            }
         }
 
-        return response()->json(["resultCode" => 0, "message" => "OK"]);
+        return response()->json(['resultCode' => 0, 'message' => 'OK']);
     }
 }

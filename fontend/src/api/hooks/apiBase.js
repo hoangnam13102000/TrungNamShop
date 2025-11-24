@@ -22,8 +22,8 @@ const toFormData = (data) => {
 /** API CRUD generator (RESTful) */
 export const createCRUD = (endpoint) => ({
   /** Get list */
-  getAll: async () => {
-    const res = await api.get(endpoint);
+  getAll: async (params) => {
+    const res = await api.get(endpoint, { params });
     if (Array.isArray(res.data)) return res.data;
     if (Array.isArray(res.data.data)) return res.data.data;
     return res.data?.data ?? [];

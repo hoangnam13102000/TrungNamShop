@@ -72,7 +72,7 @@ const AdminSidebar = ({
         { label: "Quản lý giảm giá", path: "/quan-tri/quan-ly-giam-gia" },
       ],
     },
-    { label: "Linh kiện", icon: <FaBox />, path: "/quan-tri/linh-kien" },
+    // { label: "Linh kiện", icon: <FaBox />, path: "/quan-tri/linh-kien" },
     {
       label: "Nhân viên",
       icon: <FaUser />,
