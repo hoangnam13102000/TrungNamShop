@@ -94,10 +94,12 @@ yarn dev
 
 ### 3.Cấu Hình API Key (Gemini)
 
+# Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
+
+  1. Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
+
+  2. Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
+
 ```bash
-Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
-
-# 1. Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
-
-# 2. Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
-
+  VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
+```
