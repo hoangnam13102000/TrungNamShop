@@ -50,7 +50,7 @@
 * **Yarn**
 * **Cơ sở dữ liệu** (MySQL)
 
-### 1. Backend (Laravel)
+## 1. Backend (Laravel)
 
 ```bash
 # 1. Clone repository
@@ -77,7 +77,7 @@ php artisan serve
 
 ```
 
-### 2. **Frontend (React/Vite)**
+## 2. **Frontend (React/Vite)**
 
 ```bash
 # 1. Di chuyển vào thư mục gốc của dự án nếu chưa ở đó
@@ -94,9 +94,9 @@ yarn dev
 
 ```
 
-### 3.Cấu Hình API Key (Gemini)
+## 3.Cấu Hình API Key (Gemini)
 
-# Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
+### Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
 
   1. Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
 
@@ -105,8 +105,9 @@ yarn dev
 ```bash
   VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
 ```
-### 4.Cấu Hình Thanh Toán Momo
-# Để kích hoạt chức năng thanh toán trực tuyến qua Momo, bạn cần cấu hình các biến môi trường sau trong tệp .env ở Backend:
+## 4.Cấu Hình Thanh Toán Momo
+
+### Để kích hoạt chức năng thanh toán trực tuyến qua Momo, bạn cần cấu hình các biến môi trường sau trong tệp .env ở Backend:
 
   1. Đăng ký tài khoản Đối tác Momo: Lấy các thông tin cấu hình từ cổng quản lý của Momo.
 
