@@ -35,7 +35,7 @@
 | **Build Tool** | **Vite** | ^7.x | Công cụ build/dev server siêu nhanh. |
 | **Styling** | **Tailwind CSS** | ^3.x | Khung CSS utility-first linh hoạt. |
 | **AI Integration**| **Gemini API**| Mới nhất| Cung cấp khả năng Chatbot đàm thoại thông minh. |
-| **Quản lý gói** | **Yarn** | ^1.22/4.x| Công cụ quản lý dependency nhanh và đáng tin cậy. |
+| **Quản lý gói** | **Yarn** | ^1.22/2.x| Công cụ quản lý dependency nhanh và đáng tin cậy. |
 | **Cơ sở dữ liệu**| **MySQL/PostgreSQL**| Tùy chọn | Cơ sở dữ liệu quan hệ mạnh mẽ. |
 
 ---
@@ -46,7 +46,7 @@
 
 * **PHP** (>= 8.1) **(Khuyến nghị >= 8.2 cho Laravel 12)**
 * **Composer**
-* **Node.js** (>= 18.x)
+* **Node.js** (>= 22.x)
 * **Yarn**
 * **Cơ sở dữ liệu** (MySQL)
 
@@ -86,9 +86,7 @@ cd TechPhone
 # 2. Cài đặt các dependency bằng Yarn
 yarn install
 
-# 3. Cấu hình khóa API Gemini (xem mục dưới)
-
-# 4. Chạy Vite Development Server
+# 3. Chạy Vite Development Server
 yarn dev
 # Vite sẽ chạy và tự động reload, thường tại http://localhost:5173
 
@@ -100,10 +98,13 @@ yarn dev
 
   1. Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
 
-  2. Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
+  2. Thêm khóa vào tệp .env ở thư mục gốc của dự án theo cú pháp:
 
 ```bash
-  VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
+  GEMINI_API_KEY="YOUR_API_KEY_HERE"
+  GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+  GEMINI_MODEL=gemini-2.5-flash
+
 ```
 ## 4.Cấu Hình Thanh Toán Momo
 

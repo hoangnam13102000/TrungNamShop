@@ -69,7 +69,6 @@ class PaymentController extends Controller
 
         Log::info('MoMo Request Payload', $payload);
 
-        // CURL call
         $ch = curl_init($endpoint);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
@@ -133,7 +132,6 @@ class PaymentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Lock order
             $order = Order::lockForUpdate()->find($orderId);
 
             if (!$order) {
@@ -142,28 +140,32 @@ class PaymentController extends Controller
                 return response()->json(['message' => 'Order not found'], 404);
             }
 
-            // Success
             if ($resultCode === 0) {
                 if ($order->payment_status !== 'paid') {
                     $order->payment_status = 'paid';
-                    $order->order_status   = 'processing';
+
+                    // ⭐⭐⭐ CHỈ SỬA ĐÚNG CHỖ NÀY ⭐⭐⭐
+                    if ($order->delivery_method === 'pickup') {
+                        $order->order_status = 'completed';
+                    } else {
+                        $order->order_status = 'pending';
+                    }
+
                     $order->save();
 
                     Log::info('Client Confirm Success', [
                         'order_id' => $orderId,
-                        'status'   => 'updated_to_paid_processing'
+                        'status'   => 'updated_to_paid'
                     ]);
                 }
 
                 DB::commit();
-
                 return response()->json([
                     'message' => 'Payment confirmed and order updated successfully.',
                     'status'  => 'paid'
                 ]);
             }
 
-            // Failed or canceled
             if ($order->order_status === 'draft' || $order->payment_status === 'unpaid') {
                 $order->payment_status = 'failed';
                 $order->order_status   = 'canceled';
@@ -232,7 +234,6 @@ class PaymentController extends Controller
 
         $orderId = explode("_", $data['orderId'])[0];
 
-        // Valid success
         if ($isValid && intval($data['resultCode']) === 0) {
             try {
                 DB::beginTransaction();
@@ -241,10 +242,17 @@ class PaymentController extends Controller
 
                 if ($order && $order->payment_status !== 'paid') {
                     $order->payment_status = 'paid';
-                    $order->order_status   = 'completed';
+
+                    // ⭐⭐⭐ CHỈ SỬA ĐÚNG CHỖ NÀY ⭐⭐⭐
+                    if ($order->delivery_method === 'pickup') {
+                        $order->order_status = 'completed';
+                    } else {
+                        $order->order_status = 'pending';
+                    }
+
                     $order->save();
 
-                    Log::info('MoMo IPN Success: Order updated to paid/completed', [
+                    Log::info('MoMo IPN Success: Order updated to paid', [
                         'order_id' => $orderId
                     ]);
                 }
@@ -257,7 +265,7 @@ class PaymentController extends Controller
                 DB::rollBack();
                 Log::error('MoMo IPN Transaction Error', [
                     'order_id' => $orderId,
-                    'error'    => $e->getMessage()
+                    'error' => $e->getMessage()
                 ]);
             }
         }
