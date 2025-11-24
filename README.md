@@ -2,8 +2,8 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-^12.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-^18.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-^3.0-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-^4.0-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-^4.1.14-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-^7.1.7-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
 [![Yarn](https://img.shields.io/badge/Yarn-^1.22-2C8EBB?style=for-the-badge&logo=yarn)](https://yarnpkg.com/)
 [![AI Powered](https://img.shields.io/badge/AI_Powered-Gemini-FF6B00?style=for-the-badge&logo=google)](https://ai.google/technologies/gemini)
 
