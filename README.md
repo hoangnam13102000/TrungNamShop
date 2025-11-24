@@ -119,7 +119,7 @@ yarn dev
 MOMO_PARTNER_CODE="YOUR_PARTNER_CODE"
 MOMO_ACCESS_KEY="YOUR_ACCESS_KEY"
 MOMO_SECRET_KEY="YOUR_SECRET_KEY"
-MOMO_ENDPOINT="[https://test-payment.momo.vn/v2/gateway/api/create](https://test-payment.momo.vn/v2/gateway/api/create)" # Hoặc endpoint chính thức
+MOMO_ENDPOINT="[https://test-payment.momo.vn/v2/gateway/api/create](https://test-payment.momo.vn/v2/gateway/api/create)" 
 MOMO_RETURN_URL="[http://127.0.0.1:8000/api/momo/return](http://127.0.0.1:8000/api/momo/return)"
 MOMO_NOTIFY_URL="[http://127.0.0.1:8000/api/momo/ipn](http://127.0.0.1:8000/api/momo/ipn)"
 
