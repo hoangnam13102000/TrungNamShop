@@ -1,6 +1,6 @@
 # 📱 TechPhone - Website Thương Mại Điện Tử Điện Thoại Tích Hợp AI
 
-[![Laravel](https://img.shields.io/badge/Laravel-^10.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-^12.0-FF2D20?style=for-the-badge&logo=laravel)](https://laravel.com)
 [![React](https://img.shields.io/badge/React-^18.0-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-^3.0-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-^4.0-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
@@ -9,18 +9,19 @@
 
 ## 🌟 Giới Thiệu
 
-**TechPhone** là một nền tảng thương mại điện tử chuyên bán điện thoại di động, được xây dựng trên bộ công nghệ hiện đại: **Laravel (Backend API)** kết hợp với **React/Vite/Tailwind CSS (Frontend)**.
+**TechPhone** là một nền tảng thương mại điện tử chuyên bán điện thoại di động, được xây dựng trên bộ công nghệ hiện đại: **Laravel (Backend API) Phiên bản ^12.0** kết hợp với **React/Vite/Tailwind CSS (Frontend)**.
 
 Điểm nổi bật của dự án là việc tích hợp **Trợ lý AI Chatbot** sử dụng **API Gemini** của Google và một **Hệ thống Gợi ý Sản phẩm (Recommendation System)** thông minh, nhằm cá nhân hóa và tối ưu hóa trải nghiệm mua sắm của khách hàng.
 
 ---
 
-## ✨ Tính Năng Nổi Bật
+##  Tính Năng Nổi Bật
 
 * **🛒 Giao Diện Mua Sắm Hiện Đại:** Sử dụng React/Vite cho giao diện người dùng nhanh chóng, mượt mà (Single Page Application - SPA experience).
+* **💰 Tích Hợp Thanh Toán Momo:** Hỗ trợ thanh toán nhanh chóng và an toàn qua cổng **Momo Payment Gateway** trực tiếp trên website.
 * **🤖 Trợ Lý AI Chatbot:** Tích hợp **API Gemini** giúp người dùng tra cứu thông tin sản phẩm, so sánh cấu hình, và nhận gợi ý mua hàng chuyên sâu.
 * **💡 Hệ Thống Gợi Ý Thông Minh:** Đề xuất sản phẩm dựa trên hành vi người dùng, lịch sử xem, và các thuật toán liên quan để tăng tỷ lệ chuyển đổi.
-* **🛡️ Backend Mạnh Mẽ:** Laravel 10+ đóng vai trò là API Backend bảo mật, có cấu trúc rõ ràng và dễ dàng mở rộng.
+* **🛡️ Backend Mạnh Mẽ:** **Laravel 12+** đóng vai trò là API Backend bảo mật, có cấu trúc rõ ràng và dễ dàng mở rộng.
 * **🎨 Thiết Kế Responsive:** Giao diện được xây dựng hoàn toàn bằng **Tailwind CSS**, đảm bảo hiển thị đẹp mắt trên mọi kích thước màn hình.
 
 ---
@@ -29,7 +30,7 @@
 
 | Lĩnh vực | Công nghệ | Phiên bản | Mô tả |
 | :--- | :--- | :--- | :--- |
-| **Backend** | **Laravel** | ^10.x | Khung PHP mạnh mẽ và bảo mật. |
+| **Backend** | **Laravel** | **^12.x** | Khung PHP mạnh mẽ và bảo mật. |
 | **Frontend** | **React** | ^18.x | Thư viện JavaScript hàng đầu để xây dựng UI. |
 | **Build Tool** | **Vite** | ^4.x | Công cụ build/dev server siêu nhanh. |
 | **Styling** | **Tailwind CSS** | ^3.x | Khung CSS utility-first linh hoạt. |
@@ -43,17 +44,17 @@
 
 ### Yêu cầu Tiên quyết
 
-* **PHP** (>= 8.1)
+* **PHP** (>= 8.1) **(Khuyến nghị >= 8.2 cho Laravel 12)**
 * **Composer**
 * **Node.js** (>= 18.x)
 * **Yarn**
-* **Cơ sở dữ liệu** (MySQL hoặc PostgreSQL)
+* **Cơ sở dữ liệu** (MySQL)
 
 ### 1. Backend (Laravel)
 
 ```bash
 # 1. Clone repository
-git clone (https://github.com/hoangnam13102000/TrungNamShop.git)
+git clone [https://github.com/hoangnam13102000/TrungNamShop.git](https://github.com/hoangnam13102000/TrungNamShop.git)
 cd TechPhone
 
 # 2. Cài đặt các thư viện PHP
@@ -72,7 +73,8 @@ php artisan migrate --seed
 
 # 7. Khởi động Laravel Server (Mở Terminal 1)
 php artisan serve
-# Server sẽ chạy tại http://127.0.0.1:8000
+# Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
 ```
 
 ### 2. **Frontend (React/Vite)**
@@ -102,4 +104,22 @@ yarn dev
 
 ```bash
   VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
+```
+### 4.Cấu Hình Thanh Toán Momo
+# Để kích hoạt chức năng thanh toán trực tuyến qua Momo, bạn cần cấu hình các biến môi trường sau trong tệp .env ở Backend:
+
+  1. Đăng ký tài khoản Đối tác Momo: Lấy các thông tin cấu hình từ cổng quản lý của Momo.
+
+  2. Thêm các biến sau vào .env:
+     
+```bash
+
+# Cổng thanh toán Momo
+MOMO_PARTNER_CODE="YOUR_PARTNER_CODE"
+MOMO_ACCESS_KEY="YOUR_ACCESS_KEY"
+MOMO_SECRET_KEY="YOUR_SECRET_KEY"
+MOMO_ENDPOINT="[https://test-payment.momo.vn/v2/gateway/api/create](https://test-payment.momo.vn/v2/gateway/api/create)" # Hoặc endpoint chính thức
+MOMO_RETURN_URL="[http://127.0.0.1:8000/api/momo/return](http://127.0.0.1:8000/api/momo/return)"
+MOMO_NOTIFY_URL="[http://127.0.0.1:8000/api/momo/ipn](http://127.0.0.1:8000/api/momo/ipn)"
+
 ```
