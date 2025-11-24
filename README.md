@@ -73,3 +73,24 @@ php artisan migrate --seed
 # 7. Khởi động Laravel Server
 php artisan serve
 # Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+
+### 2. Frontend (React/Vite)
+# 1. Di chuyển vào thư mục gốc của dự án nếu chưa ở đó
+cd TechPhone 
+
+# 2. Cài đặt các dependency bằng Yarn
+yarn install
+
+# 3. Cấu hình khóa API Gemini (xem mục dưới)
+
+# 4. Chạy Vite Development Server
+yarn dev
+# Vite sẽ chạy và tự động reload( http://localhost:5173)
+
+### Cấu Hình API Key (Gemini)
+
+Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
+Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
+Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
+VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
