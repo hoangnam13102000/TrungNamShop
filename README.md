@@ -70,63 +70,34 @@ php artisan key:generate
 # 6. Chạy Migration và Seeder 
 php artisan migrate --seed
 
-# 7. Khởi động Laravel Server
+# 7. Khởi động Laravel Server (Mở Terminal 1)
 php artisan serve
-# Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
+# Server sẽ chạy tại http://127.0.0.1:8000
+```
 
-
-## 🚀 Cài Đặt và Khởi Động Dự Án
-
-### Yêu cầu Tiên quyết
-
-* **PHP** (>= 8.1)
-* **Composer**
-* **Node.js** (>= 18.x)
-* **Yarn**
-* **Cơ sở dữ liệu** (MySQL hoặc PostgreSQL)
-
-### 1. Backend (Laravel)
+### 2. **Frontend (React/Vite)**
 
 ```bash
-# 1. Clone repository
-git clone [https://github.com/hoangnam13102000/TrungNamShop.git](https://github.com/hoangnam13102000/TrungNamShop.git)
-cd TechPhone
-
-# 2. Cài đặt các thư viện PHP
-composer install
-
-# 3. Sao chép và cấu hình biến môi trường
-cp .env.example .env
-
-# 4. Tạo App Key
-php artisan key:generate
-
-# 5. Cấu hình Database và các biến khác trong tệp .env
-
-# 6. Chạy Migration và Seeder
-php artisan migrate --seed
-
-# 7. Khởi động Laravel Server
-php artisan serve
-# Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
----
-### 2. **Frontend (React/Vite)**
 # 1. Di chuyển vào thư mục gốc của dự án nếu chưa ở đó
 cd TechPhone 
 
 # 2. Cài đặt các dependency bằng Yarn
 yarn install
 
-# 3. Cấu hình khóa API Gemini (tiến hành ngay sau bước này)
+# 3. Cấu hình khóa API Gemini (xem mục dưới)
 
-# 4. Khởi động Laravel Server (Terminal 1)
-# Mở một terminal mới và chạy lệnh sau:
-php artisan serve
-# Server Backend sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
+# 4. Chạy Vite Development Server
+yarn dev
+# Vite sẽ chạy và tự động reload, thường tại http://localhost:5173
 
-### Cấu Hình API Key (Gemini)
+```
 
+### 3.Cấu Hình API Key (Gemini)
+
+```bash
 Để kích hoạt tính năng Chatbot AI, bạn cần thiết lập khóa Gemini API Key.
-Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
-Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
-VITE_GEMINI_API_KEY="YOUR_API_KEY_HERE"
+
+# 1. Đăng ký hoặc truy cập Google AI Studio để tạo khóa.
+
+# 2. Thêm khóa vào tệp .env ở thư mục gốc của dự án (được sử dụng bởi Frontend qua Vite) theo cú pháp:
+
