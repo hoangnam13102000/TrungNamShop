@@ -75,18 +75,54 @@ php artisan serve
 # Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 
-### 2. Frontend (React/Vite)
+## 🚀 Cài Đặt và Khởi Động Dự Án
+
+### Yêu cầu Tiên quyết
+
+* **PHP** (>= 8.1)
+* **Composer**
+* **Node.js** (>= 18.x)
+* **Yarn**
+* **Cơ sở dữ liệu** (MySQL hoặc PostgreSQL)
+
+### 1. Backend (Laravel)
+
+```bash
+# 1. Clone repository
+git clone [https://github.com/hoangnam13102000/TrungNamShop.git](https://github.com/hoangnam13102000/TrungNamShop.git)
+cd TechPhone
+
+# 2. Cài đặt các thư viện PHP
+composer install
+
+# 3. Sao chép và cấu hình biến môi trường
+cp .env.example .env
+
+# 4. Tạo App Key
+php artisan key:generate
+
+# 5. Cấu hình Database và các biến khác trong tệp .env
+
+# 6. Chạy Migration và Seeder
+php artisan migrate --seed
+
+# 7. Khởi động Laravel Server
+php artisan serve
+# Server sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
+---
+### 2. **Frontend (React/Vite)**
 # 1. Di chuyển vào thư mục gốc của dự án nếu chưa ở đó
 cd TechPhone 
 
 # 2. Cài đặt các dependency bằng Yarn
 yarn install
 
-# 3. Cấu hình khóa API Gemini (xem mục dưới)
+# 3. Cấu hình khóa API Gemini (tiến hành ngay sau bước này)
 
-# 4. Chạy Vite Development Server
-yarn dev
-# Vite sẽ chạy và tự động reload( http://localhost:5173)
+# 4. Khởi động Laravel Server (Terminal 1)
+# Mở một terminal mới và chạy lệnh sau:
+php artisan serve
+# Server Backend sẽ chạy tại [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ### Cấu Hình API Key (Gemini)
 
