@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 
-export default function MomoResult({ setCartItems }) {
+export default function PaypalResult({ setCartItems }) {
   const navigate = useNavigate();
   const handledRef = useRef(false);
 
@@ -35,51 +35,43 @@ export default function MomoResult({ setCartItems }) {
     window.dispatchEvent(new Event("cartUpdated"));
   };
 
-  const handleConfirmation = async (orderId, resultCode) => {
+  const handlePaypalStatus = async (token, status) => {
     try {
-      const response = await fetch(`${apiBaseUrl}momo/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: Number(orderId),
-          result_code: resultCode,
-        }),
-      });
-
+      const response = await fetch(`${apiBaseUrl}order-by-paypal/${token}`);
       const data = await response.json();
-
       setDialog((prev) => ({ ...prev, open: false }));
 
-      if (!response.ok) {
-        throw new Error(data.message || "Lỗi không xác định từ server.");
-      }
+      if (!response.ok) throw new Error(data.message || "Lỗi từ server.");
 
-      if (resultCode === "0") {
+      const orderId = data.order_id;
+
+      if (status === "success" && data.payment_status === "paid") {
         clearCart();
         openDialog(
           "success",
           "Thanh toán thành công 🎉",
-          `Cảm ơn bạn! Đơn hàng #${orderId} đã được xác nhận và đang được xử lý.`,
+          `Đơn hàng #${orderId} đã được xác nhận.`,
+          () => navigate("/gio-hang")
+        );
+      } else if (status === "canceled" || status === "failed") {
+        openDialog(
+          "warning",
+          "Giao dịch thất bại ",
+          `Đơn hàng #${orderId} chưa thanh toán.`,
           () => navigate("/gio-hang")
         );
       } else {
         openDialog(
-          "warning",
-          "Giao dịch bị Hủy/Thất bại ⚠️",
-          `Đơn hàng #${orderId} đã được tạo nhưng giao dịch không thành công. Hệ thống đã chuyển đơn sang trạng thái Đã Hủy.`,
+          "error",
+          "Trạng thái không rõ",
+          `Đơn hàng #${orderId} có trạng thái thanh toán chưa rõ.`,
           () => navigate("/gio-hang")
         );
       }
     } catch (error) {
-      console.error("API Confirmation Error:", error);
-
-      setDialog((prev) => ({ ...prev, open: false }));
-
-      openDialog(
-        "error",
-        "Lỗi Hệ thống Xác nhận",
-        `Có lỗi xảy ra khi xác nhận đơn hàng. Vui lòng kiểm tra lại đơn hàng #${orderId} hoặc liên hệ hỗ trợ.`,
-        () => navigate("/ho-tro")
+      console.error("PayPal Status Error:", error);
+      openDialog("error", "Lỗi hệ thống", "Có lỗi khi kiểm tra đơn hàng.", () =>
+        navigate("/ho-tro")
       );
     }
   };
@@ -89,16 +81,16 @@ export default function MomoResult({ setCartItems }) {
     handledRef.current = true;
 
     const query = new URLSearchParams(window.location.search);
-    const resultCode = query.get("resultCode");
-    const orderId = query.get("orderId");
+    const status = query.get("status");
+    const token = query.get("token");
 
-    if (orderId && resultCode !== null) {
-      handleConfirmation(orderId, resultCode);
+    if (status && token) {
+      handlePaypalStatus(token, status);
     } else {
       openDialog(
         "error",
         "Truy cập không hợp lệ",
-        "Thiếu thông tin kết quả thanh toán. Vui lòng kiểm tra lại đơn hàng.",
+        "Thiếu thông tin kết quả thanh toán.",
         () => navigate("/gio-hang")
       );
     }
@@ -106,8 +98,7 @@ export default function MomoResult({ setCartItems }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-600 text-lg">Đang xử lý kết quả thanh toán...</p>
-
+      <p className="text-gray-600 text-lg">Đang xử lý kết quả thanh toán PayPal...</p>
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}

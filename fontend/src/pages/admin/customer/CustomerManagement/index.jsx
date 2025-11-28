@@ -1,5 +1,14 @@
 import { memo, useState, useMemo } from "react";
-import { FaEdit, FaEye, FaUser, FaPhone, FaEnvelope, FaTransgender, FaBirthdayCake, FaMapMarkerAlt } from "react-icons/fa";
+import {
+  FaEdit,
+  FaEye,
+  FaUser,
+  FaPhone,
+  FaEnvelope,
+  FaTransgender,
+  FaBirthdayCake,
+  FaMapMarkerAlt
+} from "react-icons/fa";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
@@ -24,7 +33,6 @@ const CustomerManagement = () => {
     "customers"
   );
 
-  // Dialog + Save handler
   const { dialog, handleSave, closeDialog } = useAdminHandler(crud, refetch, (item) => item?.full_name || "Không tên");
 
   // Search & pagination
@@ -61,7 +69,14 @@ const CustomerManagement = () => {
       label: "Ảnh đại diện",
       render: (value, row) => {
         const imgUrl = getImageUrl(row.avatar) || placeholder;
-        return <img src={imgUrl} alt="avatar" className="w-16 h-16 object-cover rounded-full border" onError={(e) => (e.target.src = placeholder)} />;
+        return (
+          <img
+            src={imgUrl}
+            alt="avatar"
+            className="w-16 h-16 object-cover rounded-full border"
+            onError={(e) => (e.target.src = placeholder)}
+          />
+        );
       },
     },
   ];
@@ -122,6 +137,7 @@ const CustomerManagement = () => {
           onClose={() => setViewItem(null)}
           data={[
             { icon: <FaUser />, label: "Username", value: viewItem.account?.username || "Không có" },
+            { icon: <FaUser />, label: "Bậc tài khoản", value: viewItem.account?.member_level || "Thành viên" }, 
             { icon: <FaUser />, label: "Họ tên", value: viewItem.full_name },
             { icon: <FaPhone />, label: "SĐT", value: viewItem.phone_number },
             { icon: <FaEnvelope />, label: "Email", value: viewItem.email },
@@ -134,7 +150,6 @@ const CustomerManagement = () => {
         />
       )}
 
-      {/* Dialog confirm / success / error */}
       <DynamicDialog
         open={dialog.open}
         mode={dialog.mode}

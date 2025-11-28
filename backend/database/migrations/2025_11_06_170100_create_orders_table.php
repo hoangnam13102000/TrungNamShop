@@ -30,12 +30,12 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->enum('delivery_method', ['pickup', 'delivery'])->default('delivery');
 
-            // Payment info: thêm 'vnpay' vào enum
+            
             $table->enum('payment_method', ['cash', 'paypal', 'bank_transfer', 'momo', 'vnpay'])
                 ->default('cash');
             $table->decimal('final_amount', 15, 2)->default(0)->comment('Tổng tiền cuối cùng sau giảm giá');
 
-            // Payment integration (PayPal, Momo, VNPay...)
+            
             $table->string('payment_gateway')->nullable()->comment('paypal, momo, vnpay, stripe...');
             $table->string('transaction_id')->nullable()->comment('Mã giao dịch trả về từ cổng thanh toán');
             $table->json('payment_response')->nullable()->comment('Phản hồi chi tiết từ cổng thanh toán');

@@ -1,5 +1,6 @@
 import React, { memo } from "react";
 import { FaTag, FaTimes, FaSpinner, FaLock, FaTruck } from "react-icons/fa";
+import PayPalButton from "./PayPalButton";
 
 const OrderSummary = ({
   getSubtotal,
@@ -13,7 +14,11 @@ const OrderSummary = ({
   isApplyingDiscount,
   handlePayment,
   cartItemsLength,
+  customerInfo = {},
+  orderId,
 }) => {
+  const paymentMethod = customerInfo?.payment_method || "";
+
   return (
     <div className="lg:col-span-1">
       <div className="sticky top-6 bg-gradient-to-br from-white to-blue-50 rounded-3xl shadow-xl border border-gray-100 p-8 space-y-6">
@@ -45,9 +50,7 @@ const OrderSummary = ({
 
           <div className="border-t-2 border-gray-100 pt-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-900 font-bold text-lg">
-                Tổng cộng
-              </span>
+              <span className="text-gray-900 font-bold text-lg">Tổng cộng</span>
               <span className="text-3xl font-black bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                 {getTotal().toLocaleString()}
               </span>
@@ -58,9 +61,7 @@ const OrderSummary = ({
 
         {/* Discount Code */}
         <div className="space-y-3">
-          <label className="block text-sm font-bold text-gray-900">
-            Mã giảm giá
-          </label>
+          <label className="block text-sm font-bold text-gray-900">Mã giảm giá</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -71,53 +72,30 @@ const OrderSummary = ({
               className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all disabled:bg-gray-100"
             />
             {appliedDiscount ? (
-              <button
-                onClick={removeDiscount}
-                className="px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all font-bold"
-              >
+              <button onClick={removeDiscount} className="px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all font-bold">
                 <FaTimes />
               </button>
             ) : (
-              <button
-                onClick={applyDiscount}
-                disabled={isApplyingDiscount}
-                className="px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all font-bold disabled:opacity-50"
-              >
-                {isApplyingDiscount ? (
-                  <FaSpinner className="animate-spin" />
-                ) : (
-                  "Áp dụng"
-                )}
+              <button onClick={applyDiscount} disabled={isApplyingDiscount} className="px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all font-bold disabled:opacity-50">
+                {isApplyingDiscount ? <FaSpinner className="animate-spin" /> : "Áp dụng"}
               </button>
             )}
           </div>
         </div>
 
-        {/* Trust Badges */}
-        <div className="bg-blue-50 rounded-2xl p-4 space-y-2 border border-blue-200">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <FaLock className="w-4 h-4 text-blue-600" />
-            <span>Thanh toán an toàn</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <FaTruck className="w-4 h-4 text-green-600" />
-            <span>Giao hàng miễn phí</span>
-          </div>
-        </div>
-
         {/* Checkout Button */}
-        <button
-          onClick={handlePayment}
-          disabled={isApplyingDiscount || cartItemsLength === 0}
-          className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {isApplyingDiscount ? (
-            <FaSpinner className="animate-spin" />
-          ) : (
-            <FaLock className="w-4 h-4" />
-          )}
-          {isApplyingDiscount ? "Đang xử lý..." : "Thanh toán ngay"}
-        </button>
+        {paymentMethod === "paypal" ? (
+          <PayPalButton orderId={orderId} totalAmount={getTotal()} />
+        ) : (
+          <button
+            onClick={handlePayment}
+            disabled={isApplyingDiscount || cartItemsLength === 0}
+            className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 text-lg flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isApplyingDiscount ? <FaSpinner className="animate-spin" /> : <FaLock className="w-4 h-4" />}
+            {isApplyingDiscount ? "Đang xử lý..." : "Thanh toán ngay"}
+          </button>
+        )}
       </div>
     </div>
   );

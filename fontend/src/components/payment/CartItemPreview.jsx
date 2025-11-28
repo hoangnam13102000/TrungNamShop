@@ -1,12 +1,12 @@
-// src/components/payment/CartItemPreview.jsx
+
 import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import { FaArrowLeft, FaBox } from "react-icons/fa";
 
-// Component này chỉ nhận dữ liệu cần thiết qua props
+
 const CartItemPreview = ({ cartItems, getCartItemImage }) => {
   if (!cartItems || cartItems.length === 0) {
-    return null; // Không hiển thị nếu không có sản phẩm (trường hợp này đã được xử lý ở Payment.jsx)
+    return null; 
   }
 
   return (

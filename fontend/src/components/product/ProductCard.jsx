@@ -13,7 +13,7 @@ const ProductCard = ({ product }) => {
 
   const oldPrice = Number(product.price ?? 0);
   const newPrice = Number(product.final_price ?? oldPrice);
-  const imageUrl = getImageUrl(product.primary_image?.image_path); // chỉ dùng cho hiển thị card
+  const imageUrl = getImageUrl(product.primary_image?.image_path); 
   const discountPercent = oldPrice > newPrice
     ? Math.round(((oldPrice - newPrice) / oldPrice) * 100)
     : null;

@@ -1,15 +1,16 @@
 import { FiEdit2, FiShoppingCart, FiLock } from "react-icons/fi";
+import { useNavigate } from "react-router-dom"; 
 import DynamicForm from "../../../components/formAndDialog/DynamicForm";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 import { useProfileLogic } from "../../../utils/profile/useProfileLogic";
 
 export default function Profile() {
+  const navigate = useNavigate(); // khởi tạo navigate
   const {
     isEditing,
     setIsEditing,
     isChangingPassword,
     setIsChangingPassword,
-    setShowHistory,
     dialog,
     profileData,
     isLoading,
@@ -58,7 +59,7 @@ export default function Profile() {
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setShowHistory(true)}
+                  onClick={() => navigate("/don-hang-cua-toi")} 
                   className="flex items-center justify-center gap-2 bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors duration-200 font-semibold shadow-sm"
                 >
                   <FiShoppingCart size={18} /> Lịch sử mua hàng
@@ -138,10 +139,22 @@ export default function Profile() {
                   </p>
                 </div>
               ))}
+
+            {/* Hiển thị cấp độ thành viên */}
+            {profileData.account?.member_level && (
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-3">
+                  Cấp độ thành viên
+                </p>
+                <span className="inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
+                  {profileData.account.member_level}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Dialog */}
+        {/* Dialog confirm / success / error */}
         <DynamicDialog
           open={dialog.open}
           mode={dialog.mode}

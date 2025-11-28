@@ -18,6 +18,8 @@ import {
   FaSearch,
   FaBars,
   FaTimes,
+  FaSignInAlt,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 import {
@@ -119,6 +121,26 @@ const Header = () => {
     label: brand.name,
     value: brand.id,
   }));
+
+  const handleMobileLogout = () => {
+    logoutHandler(navigate);
+    setShowMenu(false);
+  };
+
+  const handleMobileLoginClick = () => {
+    navigate("/dang-nhap");
+    setShowMenu(false);
+  };
+
+  const handleMobileProfileClick = () => {
+    navigate("/thong-tin-ca-nhan");
+    setShowMenu(false);
+  };
+
+  const handleMobileOrderClick = () => {
+    navigate("/don-hang-cua-toi");
+    setShowMenu(false);
+  };
 
   return (
     <>
@@ -328,6 +350,45 @@ const Header = () => {
                       <span className="text-sm font-medium">{brand.name}</span>
                     </button>
                   ))}
+
+                  {/* Mobile Auth Section */}
+                  <div className="border-t pt-2 mt-2">
+                    {!isProfileLoading && (
+                      <>
+                        {isLoggedIn ? (
+                          <>
+                            <button
+                              className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition w-full text-left"
+                              onClick={handleMobileProfileClick}
+                            >
+                              <span className="text-sm font-medium"> Thông tin cá nhân</span>
+                            </button>
+                            <button
+                              className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition w-full text-left"
+                              onClick={handleMobileOrderClick}
+                            >
+                              <span className="text-sm font-medium"> Đơn hàng của tôi</span>
+                            </button>
+                            <button
+                              className="flex items-center space-x-3 px-3 py-2.5 hover:bg-red-600 hover:text-white rounded-lg transition w-full text-left"
+                              onClick={handleMobileLogout}
+                            >
+                              <FaSignOutAlt className="text-sm" />
+                              <span className="text-sm font-medium">Đăng xuất</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="flex items-center space-x-3 px-3 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition w-full text-left font-medium"
+                            onClick={handleMobileLoginClick}
+                          >
+                            <FaSignInAlt className="text-sm" />
+                            <span className="text-sm">Đăng nhập</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </nav>
               </div>
             )}

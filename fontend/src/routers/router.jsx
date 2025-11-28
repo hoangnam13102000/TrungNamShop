@@ -59,7 +59,8 @@ export const ROUTERS = {
         CART:"gio-hang",
         PAYMENT:"thanh-toan",
         MYORDERS:"don-hang-cua-toi",
-        MOMORETURN:"payment-result",
+        MOMORETURN:"momo-result",
+        PAYPALRETURN:"paypal-result",
         NOTFOUND:"4-0-4"
     }
 

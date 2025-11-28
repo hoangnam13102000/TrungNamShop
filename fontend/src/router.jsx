@@ -1,18 +1,16 @@
 import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./routers/Navigation";
-import { ProtectedAdminRoute } from "./routers/auth/ProtectedRoute"; 
+import { ProtectedAdminRoute } from "./routers/auth/ProtectedRoute";
 
 // ADMIN PATH
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
 import DashBoard from "@page_admin/DashBoard";
 
-
 //----------------------ACCOUNT-------------------------------------
 import AccountList from "@page_admin/account/AccountList";
 import AccountTypeList from "@page_admin/account/AccountType";
 import MemberLevelList from "@page_admin/customer/MemberLevelList";
-
 
 //----------------------PRODUCT-------------------------------------
 import ProductManagement from "@page_admin/product/ProductManagement";
@@ -44,7 +42,6 @@ import CustomerManagement from "@page_admin/customer/CustomerManagement";
 import StoreManagement from "@page_admin/store/StoreManagement";
 import WarehouseManagement from "@page_admin/store/WarehouseManagement";
 
-
 //----------------------EMPLOYEES-------------------------------------
 import EmployeeManagement from "./pages/admin/employee/EmployeeManagement";
 import Reward from "./pages/admin/employee/Reward";
@@ -63,11 +60,11 @@ import ProductList from "@page_user/product/ProductList";
 import ProductsDetails from "@page_user/product/ProductsDetails";
 import MyOrder from "@page_user/OrderPage";
 
-
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
-import MomoReturn from "./pages/clients/Payment/momoReturn";
+import MomoResult from "./pages/clients/Payment/MomoReturn";
+import PaypalResult from "./pages/clients/Payment/PaypalReturn";
 import ProductImage from "./pages/admin/product/ProductImage";
 import NotFound from "./pages/404";
 
@@ -96,7 +93,7 @@ const adminRouter = [
   { path: ROUTERS.ADMIN.ACOUNT, element: <AccountList /> },
   { path: ROUTERS.ADMIN.POSITION, element: <PositionManagement /> },
   { path: ROUTERS.ADMIN.SALARYCOEFFICIENT, element: <SalaryCoefficient /> },
-  { path: ROUTERS.ADMIN.ALLOWANCE, element: <AllowanceManagement /> }, 
+  { path: ROUTERS.ADMIN.ALLOWANCE, element: <AllowanceManagement /> },
   { path: ROUTERS.ADMIN.ATTENDANCE, element: <AttendanceManagement /> },
   { path: ROUTERS.ADMIN.REWARD, element: <Reward /> },
   { path: ROUTERS.ADMIN.CUSTOMERMANAGEMENTL, element: <CustomerManagement /> },
@@ -119,7 +116,8 @@ const userRouter = [
   { path: ROUTERS.USER.CONTACT, element: <FeedbackPage /> },
   { path: ROUTERS.USER.CART, element: <Cart /> },
   { path: ROUTERS.USER.PAYMENT, element: <Payment /> },
-  { path: ROUTERS.USER.MOMORETURN, element: <MomoReturn /> },
+  { path: ROUTERS.USER.MOMORETURN, element: <MomoResult /> },
+  { path: ROUTERS.USER.PAYPALRETURN, element: <PaypalResult /> },
   { path: ROUTERS.USER.NOTFOUND, element: <NotFound /> },
   { path: ROUTERS.USER.MYORDERS, element: <MyOrder /> },
 ];
@@ -160,7 +158,6 @@ const RouterCustom = () => {
   if (isAdminRouter) {
     if (!isAuthenticated) return <Navigate to="/dang-nhap" replace />;
 
- 
     if (user?.role?.toLowerCase() === "khách hàng") {
       return <NotFound />;
     }

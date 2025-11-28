@@ -1,12 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-/** Hook GET ALL — hỗ trợ params (filters, pagination...) */
 export const useGetAll = (key, apiFn, options = {}) => {
   const { params, ...rest } = options;
 
   return useQuery({
-    queryKey: [key, params], // <-- thêm params vào queryKey để cache theo filter
-    queryFn: () => apiFn({ params }), // <-- truyền params xuống API
+    queryKey: [key, params], 
+    queryFn: () => apiFn({ params }), 
     ...rest,
     onSuccess: (data) => {
       console.log(`Fetched ${key}:`, data);

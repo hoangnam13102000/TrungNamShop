@@ -22,11 +22,16 @@ const MyOrders = () => {
   const { data: orders = [], isLoading: ordersLoading } = orderAPI.useGetAll();
 
   const orderDetailAPI = useCRUDApi("order-details");
-  const { data: allOrderDetails = [], refetch: refetchAllOrderDetails } = orderDetailAPI.useGetAll();
+  const { data: allOrderDetails = [], refetch: refetchAllOrderDetails } =
+    orderDetailAPI.useGetAll();
 
   const [invoiceModal, setInvoiceModal] = useState({ open: false, order: null });
   const [invoiceOrderDetails, setInvoiceOrderDetails] = useState([]);
   const [loadingInvoiceDetails, setLoadingInvoiceDetails] = useState(false);
+
+  // ======== FORMAT CURRENCY ========
+  const formatCurrency = (amount) =>
+    typeof amount === "number" ? amount.toLocaleString("vi-VN") : "0";
 
   // Lấy chi tiết hóa đơn khi mở modal
   const fetchInvoiceOrderDetails = useCallback(
@@ -94,11 +99,11 @@ const MyOrders = () => {
 
   const normalizeStatus = (status) => {
     const statusMap = {
-      "pending": "pending",
-      "processing": "processing",
-      "shipping": "shipped", 
-      "completed": "delivered", 
-      "cancelled": "cancelled",
+      pending: "pending",
+      processing: "processing",
+      shipping: "shipped",
+      completed: "delivered",
+      cancelled: "cancelled",
     };
     return statusMap[status?.toLowerCase()] || "pending";
   };
@@ -115,23 +120,12 @@ const MyOrders = () => {
     return statusMap[normalizedStatus] || statusMap.pending;
   };
 
-  const getStatusLabelByNormalized = (normalizedStatus) => {
-    const statusMap = {
-      pending: "Đang chờ",
-      processing: "Đang xử lý",
-      shipped: "Đang giao",
-      delivered: "Hoàn thành",
-      cancelled: "Đã hủy",
-    };
-    return statusMap[normalizedStatus] || "Chưa xác định";
-  };
-
   const getPaymentStatusColor = (status) => {
     const normalizedStatus = status?.toLowerCase();
     const statusMap = {
-      'paid': { bg: "bg-green-100", text: "text-green-700", label: "Đã thanh toán" },
-      'unpaid': { bg: "bg-orange-100", text: "text-orange-700", label: "Chưa thanh toán" },
-      'refunded': { bg: "bg-gray-100", text: "text-gray-700", label: "Đã hoàn tiền" },
+      paid: { bg: "bg-green-100", text: "text-green-700", label: "Đã thanh toán" },
+      unpaid: { bg: "bg-orange-100", text: "text-orange-700", label: "Chưa thanh toán" },
+      refunded: { bg: "bg-gray-100", text: "text-gray-700", label: "Đã hoàn tiền" },
     };
     return statusMap[normalizedStatus] || statusMap.unpaid;
   };
@@ -209,8 +203,17 @@ const MyOrders = () => {
             const paymentColor = getPaymentStatusColor(order.payment_status);
 
             const orderDetails = allOrderDetails.filter((d) => d.order_id === order.id);
-            const totalItems = orderDetails.reduce((sum, d) => sum + (d.quantity || 0), 0) || order.items_count || 0;
-            const totalAmount = orderDetails.reduce((sum, d) => sum + ((d.price_at_order || 0) * (d.quantity || 0)), 0) || order.total_amount || 0;
+            const totalItems =
+              orderDetails.reduce((sum, d) => sum + (d.quantity || 0), 0) || order.items_count || 0;
+
+            // ====== FINAL AMOUNT ======
+            const finalAmount =
+              typeof order.final_amount === "number"
+                ? order.final_amount
+                : orderDetails.reduce(
+                    (sum, d) => sum + (Number(d.price_at_order) || 0) * (Number(d.quantity) || 0),
+                    0
+                  ) - (Number(order.discount_amount) || 0);
 
             return (
               <div
@@ -264,7 +267,7 @@ const MyOrders = () => {
                       <div>
                         <p className="text-xs text-gray-600 font-semibold uppercase tracking-wide mb-3">Tóm tắt đơn hàng</p>
                         <p className="text-3xl font-bold text-red-600 mb-3">
-                          {Number(totalAmount).toLocaleString('vi-VN')} VNĐ
+                          {formatCurrency(finalAmount)} VNĐ
                         </p>
                       </div>
                       <div className="text-sm text-gray-600">

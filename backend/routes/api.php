@@ -34,10 +34,11 @@ use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\OrderDetailController;
-use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\RecommendationController;
-
+use App\Http\Controllers\MomoController;
+use App\Http\Controllers\PaypalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,14 +69,25 @@ Route::get('/user', function (Request $request) {
 
 
 // ------------------ Momo Payment ------------------
-Route::post('/momo/payment', [PaymentController::class, 'createMomoPayment']);
-Route::post('/momo/notify', [PaymentController::class, 'momoNotify']);
+Route::post('/momo/payment', [MomoController::class, 'createMomoPayment']);
+Route::post('/momo/notify', [MomoController::class, 'momoNotify']);
+Route::get('/momo/return', [MomoController::class, 'momoReturnHandler']);
 
-
-Route::post('/momo/confirm', [PaymentController::class, 'clientConfirmPayment']);
+Route::post('/momo/confirm', [MomoController::class, 'clientConfirmPayment']);
 Route::get('/discounts/validate', [DiscountController::class, 'validateDiscount']);
 
+// ------------------ PayPal Payment ------------------
+Route::post('/paypal/payment', [PaypalController::class, 'createPaypalPayment'])->name('paypal.create');
+Route::get('/paypal/success', [PaypalController::class, 'paypalSuccess'])->name('paypal.success');
+Route::get('/paypal/cancel', [PaypalController::class, 'paypalCancel'])->name('paypal.cancel');
+Route::get('/order-status/{orderId}', [PaypalController::class, 'orderStatus']);
+Route::get('/order-by-paypal/{token}', [PaypalController::class, 'orderByPaypal']);
 
+Route::prefix("dashboard")->group(function () {
+    Route::get("/revenue",       [DashboardController::class,"revenue"]);
+    Route::get('summary-30days', [DashboardController::class, 'summary30Days']);
+    Route::get('top-products', [DashboardController::class, 'topProducts']);
+});
 
 // Group Router for Admin
 Route::prefix('admin')->group(function () {

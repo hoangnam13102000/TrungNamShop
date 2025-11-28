@@ -101,7 +101,7 @@ const CustomerInfoForm = ({
           />
           {errors.address && (
             <p className="text-red-600 text-sm mt-2 flex items-center gap-1">
-              ⚠ {errors.address}
+               {errors.address}
             </p>
           )}
         </div>
@@ -168,6 +168,7 @@ const CustomerInfoForm = ({
               >
                 <option value="">-- Chọn phương thức --</option>
                 <option value="momo"> MoMo</option>
+                <option value="paypal"> Paypal</option>
                 <option value="cash">Thanh toán khi nhận</option>
               </select>
               {errors.payment_method && (

@@ -6,17 +6,24 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Discount;
 use App\Models\ProductDetail;
+use App\Models\AccountLevel;
 use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    /**
+     * Lấy danh sách đơn hàng
+     */
     public function index()
     {
         $orders = Order::with(['customer','employee','discount','store','details'])->get();
         return OrderResource::collection($orders);
     }
 
+    /**
+     * Hiển thị chi tiết đơn hàng
+     */
     public function show(string $id)
     {
         $order = Order::with(['customer','employee','discount','store','details'])->find($id);
@@ -24,6 +31,9 @@ class OrderController extends Controller
         return new OrderResource($order);
     }
 
+    /**
+     * Tạo đơn hàng mới
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -37,7 +47,7 @@ class OrderController extends Controller
             'recipient_phone'=>'required|string|max:20',
             'note'=>'nullable|string',
             'delivery_method'=>'required|in:pickup,delivery',
-            'payment_method'=>'required|in:cash,momo',
+            'payment_method'=>'required|in:cash,momo,paypal',
             'delivery_date'=>'nullable|date',
             'order_date'=>'nullable|date',
             'items'=>'required|array|min:1',
@@ -51,6 +61,7 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            // Tính tổng tiền
             $subtotal = collect($validated['items'])->sum(fn($item)=>$item['price_at_order']*$item['quantity']);
             $discountAmount = 0;
             if(!empty($validated['discount_id'])){
@@ -69,6 +80,7 @@ class OrderController extends Controller
                 $paymentStatus = 'paid';
             }
 
+            // Tạo order
             $order = Order::create(array_merge($validated,[
                 'final_amount'=>$finalAmount,
                 'order_status'=>$orderStatus,
@@ -76,6 +88,7 @@ class OrderController extends Controller
                 'payment_gateway'=>$paymentGateway,
             ]));
 
+            // Thêm chi tiết đơn hàng & giảm tồn kho
             foreach($validated['items'] as $item){
                 $order->details()->create([
                     'product_detail_id'=>$item['product_detail_id'] ?? null,
@@ -98,6 +111,25 @@ class OrderController extends Controller
                 }
             }
 
+            if($finalAmount >= 1000000){
+                $customer = $order->customer;
+                if($customer && $customer->account){
+                    $account = $customer->account;
+
+                    // Tính điểm thưởng: 100 điểm cho mỗi 1 triệu đồng
+                    $pointsToAdd = intval($finalAmount / 1000000) * 100;
+                    $account->reward_points += $pointsToAdd;
+
+                    // Nâng cấp bậc Đồng nếu >= 1000 điểm
+                    $levelDong = AccountLevel::where('name','Đồng')->first();
+                    if($levelDong && $account->reward_points >= 1000 && $account->account_level_id != $levelDong->id){
+                        $account->account_level_id = $levelDong->id;
+                    }
+
+                    $account->save();
+                }
+            }
+
             DB::commit();
 
             return response()->json([
@@ -115,6 +147,9 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Cập nhật đơn hàng
+     */
     public function update(Request $request,string $id)
     {
         $order = Order::find($id);
@@ -131,7 +166,7 @@ class OrderController extends Controller
             'recipient_phone'=>'required|string|max:20',
             'note'=>'nullable|string',
             'delivery_method'=>'required|in:pickup,delivery',
-            'payment_method'=>'required|in:cash,momo',
+            'payment_method'=>'required|in:cash,momo,paypal',
             'delivery_date'=>'nullable|date',
             'order_date'=>'nullable|date',
         ]);
@@ -163,6 +198,9 @@ class OrderController extends Controller
         return new OrderResource($order->load('details','discount'));
     }
 
+    /**
+     * Xóa đơn hàng
+     */
     public function destroy(string $id)
     {
         $order = Order::find($id);

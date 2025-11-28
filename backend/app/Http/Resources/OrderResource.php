@@ -46,20 +46,12 @@ class OrderResource extends JsonResource
             default => '—'
         };
 
-        $subtotal = $this->whenLoaded('details', function () {
-            if ($this->details) {
-                return $this->details->sum('subtotal');
-            }
-            return 0;
-        }, 0); 
-
-       
+        $subtotal = $this->details ? $this->details->sum('subtotal') : 0;
         $discountAmount = 0;
-        if ($this->whenLoaded('discount') && $this->discount) {
+        if ($this->discount) {
             $percentage = $this->discount->percentage > 100 ? 100 : $this->discount->percentage;
             $discountAmount = ($subtotal * $percentage) / 100;
         }
-
 
         return [
             'id' => $this->id,
@@ -95,10 +87,9 @@ class OrderResource extends JsonResource
                     'address' => $this->store->address,
                 ];
             }),
-            
+
             // Order Details 
             'details' => OrderDetailResource::collection($this->whenLoaded('details')),
-
 
             // Recipient info
             'recipient_name' => $this->recipient_name,
@@ -108,7 +99,7 @@ class OrderResource extends JsonResource
             // Amount Info 
             'discount_amount' => round($discountAmount, 2),
             'final_amount' => round($this->final_amount, 2),
-            
+
             // Other info
             'note' => $this->note,
             'payment_gateway' => $this->payment_gateway,

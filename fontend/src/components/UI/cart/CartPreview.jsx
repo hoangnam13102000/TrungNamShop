@@ -4,6 +4,7 @@ import { FaTrash, FaShoppingBag, FaCheck, FaTruck } from "react-icons/fa";
 import { getImageUrl } from "../../../utils/helpers/getImageUrl";
 import { removeItem, getCart } from "../../../utils/cart/cartUtils";
 
+
 const CartPreview = ({ items = [], onCartChange }) => {
   const totalPrice = items.reduce(
     (sum, item) => sum + (Number(item.final_price ?? item.price ?? 0) * (item.quantity || 1)),

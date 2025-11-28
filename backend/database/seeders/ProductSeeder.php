@@ -132,7 +132,6 @@ class ProductSeeder extends Seeder
             ],
         ];
 
-        // ⭐⭐ BẠN ĐANG THIẾU PHẦN NÀY ⭐⭐
         foreach ($products as $product) {
             Product::create($product);
         }

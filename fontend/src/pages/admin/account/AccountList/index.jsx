@@ -56,7 +56,7 @@ const AccountManagement = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [currentPage, filteredItems]);
-
+  console.log(accounts);
   /** 5. UI - Status Label */
   const renderStatusLabel = (val) => {
     const isActive = val === 1;
@@ -95,7 +95,8 @@ const AccountManagement = () => {
   const tableColumns = [
     { field: "username", label: "Tên tài khoản" },
     { field: "account_type.account_type_name", label: "Loại tài khoản" },
-    { field: "account_level.name", label: "Cấp độ thành viên" },
+    { field: "member_level", label: "Cấp độ thành viên" }, // read-only, từ accessor model
+    { field: "reward_points", label: "Điểm thưởng" },
     {
       field: "status",
       label: "Trạng thái",
@@ -108,11 +109,13 @@ const AccountManagement = () => {
     { icon: <FaTrash />, label: "Xóa", onClick: handleDelete },
   ];
 
+  // Form fields
   const formFields = [
     { name: "username", label: "Tên tài khoản", type: "text", required: true, disabled: !!crud.selectedItem },
     ...(!crud.selectedItem ? [{ name: "password", label: "Mật khẩu", type: "password", required: true, minLength: 6 }] : []),
     { name: "account_type_id", label: "Loại tài khoản", type: "select", options: accountTypeOptions, required: true },
-    { name: "account_level_id", label: "Cấp độ thành viên", type: "select", options: accountLevelOptions, required: true },
+    { name: "member_level", label: "Cấp độ thành viên", type: "text", disabled: true }, // read-only
+    { name: "reward_points", label: "Điểm thưởng", type: "number", required: false, disabled:true },
     { name: "status", label: "Trạng thái", type: "select", options: [{ value: 1, label: "Hoạt động" }, { value: 0, label: "Ngừng hoạt động" }], required: true },
   ];
 
