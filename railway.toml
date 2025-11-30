@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 # Build frontend trước
-buildCommand = "cd frontend && npm install && npm run build"
+buildCommand = "cd frontend && yarn install && yarn build"
 
 [deploy]
 # Chạy backend Laravel
