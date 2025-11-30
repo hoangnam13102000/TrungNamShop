@@ -1,16 +1,1 @@
-[build]
-builder = "nixpacks"
 
-# Build frontend trước
-buildCommand = "cd frontend && yarn install && yarn build"
-
-[deploy]
-# Chạy backend Laravel
-startCommand = "cd backend && php artisan serve --host=0.0.0.0 --port=$PORT"
-
-# Health check
-[[services.healthchecks]]
-name = "web health"
-path = "/api/health"
-timeout = 300
-interval = 15
