@@ -5,6 +5,7 @@ import RecommendedProducts from "../../../components/product/RecommendedProducts
 import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
 import ChatWidget from "../../../components/Chats/ChatWidget";
+import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
 
 const HomePage = () => {
   const { useGetAll } = useCRUDApi("products");
@@ -13,7 +14,11 @@ const HomePage = () => {
   const [topBrands, setTopBrands] = useState([]);
   const [userId, setUserId] = useState(null);
 
-  // Get account_id from localStorage
+  // Dialog state trung tâm
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addedProduct, setAddedProduct] = useState(null);
+
+  // Lấy account_id từ localStorage
   useEffect(() => {
     const storedId = localStorage.getItem("account_id");
     setUserId(storedId ? Number(storedId) : 1);
@@ -38,6 +43,16 @@ const HomePage = () => {
       setTopBrands(sortedBrands);
     }
   }, [products]);
+
+  // Lắng nghe event cartUpdated từ ProductCard
+  useEffect(() => {
+    const handler = (e) => {
+      setAddedProduct(e.detail.product);
+      setDialogOpen(true);
+    };
+    window.addEventListener("cartUpdated", handler);
+    return () => window.removeEventListener("cartUpdated", handler);
+  }, []);
 
   return (
     <div className="w-full relative">
@@ -123,6 +138,16 @@ const HomePage = () => {
 
       {/* Chat Widget */}
       <ChatWidget />
+
+      {/* Dialog trung tâm */}
+      <DynamicDialog
+        open={dialogOpen}
+        mode="success"
+        title="Thành công!"
+        message={addedProduct ? `${addedProduct.name} đã được thêm vào giỏ hàng.` : ""}
+        onClose={() => setDialogOpen(false)}
+        closeText="Đóng"
+      />
     </div>
   );
 };

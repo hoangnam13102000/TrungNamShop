@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { registerAPI } from "../../../api/auth/request";
+import { registerAPI, checkUsernameExists } from "../../../api/auth/request";
 import AuthWrapper from "../../../components/formAndDialog/AuthWapper";
 import { validateGeneral } from "../../../utils/forms/validate";
 
@@ -11,20 +11,25 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Validation rules
   const rules = {
     username: { required: true, message: "Vui lòng nhập tên đăng nhập" },
     password: { required: true, minLength: 6, message: "Mật khẩu tối thiểu 6 ký tự" },
     confirmPassword: { required: true, match: "password", message: "Mật khẩu xác nhận không khớp" },
   };
 
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e, showAlert) => {
     e.preventDefault();
+
+    // Validate fields
     const validationErrors = validateGeneral(formData, rules);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -33,6 +38,15 @@ export default function Register() {
 
     setLoading(true);
     try {
+      // Check if username already exists
+      const exists = await checkUsernameExists(formData.username);
+      if (exists) {
+        setErrors({ username: "Tên đăng nhập đã tồn tại" });
+        setLoading(false);
+        return;
+      }
+
+      // Register user
       await registerAPI({ username: formData.username, password: formData.password });
       showAlert("success", "Đăng ký thành công!", () => navigate("/dang-nhap"));
     } catch (err) {
@@ -107,7 +121,6 @@ export default function Register() {
               {loading ? "Đang xử lý..." : "Đăng ký"}
             </button>
 
-            {/* Link đồng bộ với Login */}
             <p className="text-sm text-gray-600 text-center mt-2">
               Đã có tài khoản?{" "}
               <Link to="/dang-nhap" className="text-red-500 hover:underline">

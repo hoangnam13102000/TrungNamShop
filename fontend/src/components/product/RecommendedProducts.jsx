@@ -6,7 +6,7 @@ const RecommendedProducts = () => {
   const userId = localStorage.getItem("account_id") || 1;
 
   // Sử dụng useCRUDApi như cũ
-  const { useGetAll } = useCRUDApi(`recommendations/${userId}`);
+  const { useGetAll } = useCRUDApi(`admin/recommendations/${userId}`);
   const { data: recommendedProducts = [] } = useGetAll();
 
   // Chuẩn hóa dữ liệu để giống product normal

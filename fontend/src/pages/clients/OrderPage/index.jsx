@@ -32,8 +32,6 @@ const MyOrders = () => {
   // ======== FORMAT CURRENCY ========
   const formatCurrency = (amount) =>
     typeof amount === "number" ? amount.toLocaleString("vi-VN") : "0";
-
-  // Lấy chi tiết hóa đơn khi mở modal
   const fetchInvoiceOrderDetails = useCallback(
     async (orderId) => {
       if (!orderId) return;

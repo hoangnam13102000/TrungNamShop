@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { FaEnvelope, FaUser, FaPhone, FaCommentDots, FaPaperPlane, FaCheckCircle } from "react-icons/fa";
 import { validateGeneral } from "../../../utils/forms/validate";
+import { useCustomerInfo } from "../../../utils/hooks/useCustomerInfo";
 
 const FeedbackPage = () => {
+  const { customerInfo } = useCustomerInfo(); // hook tự động điền info nếu khách đã login
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,8 +18,18 @@ const FeedbackPage = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [apiError, setApiError] = useState("");
 
-  // Define rules for this form
+  // Khi load trang, tự động điền thông tin khách nếu có
+  useEffect(() => {
+    if (customerInfo.name) setFormData(prev => ({
+      ...prev,
+      name: customerInfo.name || "",
+      phone: customerInfo.phone || "",
+      email: customerInfo.email || "" // nếu bạn lưu email khách, nếu không bỏ dòng này
+    }));
+  }, [customerInfo]);
+
   const rules = {
     name: { required: true, message: "Vui lòng nhập họ tên" },
     email: { required: true, type: "email", message: "Email không hợp lệ" },
@@ -28,33 +42,40 @@ const FeedbackPage = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
+    if (apiError) setApiError("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const validationErrors = validateGeneral(formData, rules);
-    if (Object.keys(validationErrors).length === 0) {
-      console.log("Form submitted:", formData);
-      setIsSubmitted(true);
-
-      setTimeout(() => {
-        setFormData({ name: "", email: "", phone: "", subject: "", type: "feedback", message: "" });
-        setIsSubmitted(false);
-      }, 3000);
-    } else {
+    if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      return;
+    }
+
+    try {
+      const res = await axios.post("http://127.0.0.1:8000/api/contact", formData);
+      if (res.data.success) {
+        setIsSubmitted(true);
+        setFormData({ name: "", email: "", phone: "", subject: "", type: "feedback", message: "" });
+        setErrors({});
+        setTimeout(() => setIsSubmitted(false), 3000);
+      }
+    } catch (error) {
+      console.error(error);
+      setApiError(error.response?.data?.message || "Gửi thất bại, vui lòng thử lại sau.");
     }
   };
 
   const handleReset = () => {
     setFormData({ name: "", email: "", phone: "", subject: "", type: "feedback", message: "" });
     setErrors({});
+    setApiError("");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 md:py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-8 md:mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">Góp Ý & Khiếu Nại</h1>
             <p className="text-gray-600 text-base md:text-lg">
@@ -62,7 +83,6 @@ const FeedbackPage = () => {
             </p>
           </div>
 
-          {/* Success Message */}
           {isSubmitted && (
             <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg flex items-center gap-3">
               <FaCheckCircle className="text-green-500 text-2xl flex-shrink-0" />
@@ -73,7 +93,12 @@ const FeedbackPage = () => {
             </div>
           )}
 
-          {/* Main Form */}
+          {apiError && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg text-red-700">
+              {apiError}
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10">
             <div className="space-y-6">
               {/* Name & Email */}

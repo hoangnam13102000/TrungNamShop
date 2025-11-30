@@ -1,25 +1,44 @@
 import { memo } from "react";
-import { Link } from "react-router-dom";
 
 const DashboardCard = ({ name, Icon, color, value, subValue, path }) => {
   return (
-    <Link
-      to={path || "#"}
-      className={`flex flex-col sm:flex-row items-center justify-between gap-3
-        p-5 sm:p-6 rounded-xl text-white ${color}
-        cursor-pointer hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]
-        transition-all shadow-md`}
+    <div
+      className={`group flex flex-col p-5 sm:p-6 lg:p-7 rounded-2xl text-white ${color}
+        hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 shadow-lg 
+        border border-white/20 backdrop-blur-sm overflow-hidden relative`}
     >
-      {/* Icon */}
-      {Icon && <Icon className="text-3xl sm:text-2xl" />}
+      {/* Animated background gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       
-      {/* Texts */}
-      <div className="flex flex-col items-center sm:items-start">
-        <span className="font-medium text-base sm:text-lg text-center sm:text-left">{name}</span>
-        {value && <span className="text-xl sm:text-2xl font-bold mt-1">{value}</span>}
-        {subValue && <span className="text-sm sm:text-base opacity-80 mt-0.5">{subValue}</span>}
+      {/* Content wrapper */}
+      <div className="relative z-10 flex flex-col h-full justify-between">
+        {/* Header - Icon & Name horizontal with wrap */}
+        <div className="flex items-start gap-2 sm:gap-3 mb-3">
+          {Icon && (
+            <div className="bg-white/20 p-2 sm:p-2.5 rounded-lg group-hover:bg-white/30 transition-all duration-300 flex-shrink-0">
+              <Icon className="text-lg sm:text-xl" />
+            </div>
+          )}
+          <span className="font-medium text-xs sm:text-sm lg:text-base text-left whitespace-normal break-words leading-tight">
+            {name}
+          </span>
+        </div>
+        
+        {/* Value section */}
+        <div className="flex flex-col min-w-0">
+          {value && (
+            <span className="text-base sm:text-lg lg:text-xl font-bold text-left break-words">
+              {value}
+            </span>
+          )}
+          {subValue && (
+            <span className="text-xs opacity-90 text-left break-words">
+              {subValue}
+            </span>
+          )}
+        </div>
       </div>
-    </Link>
+    </div>
   );
 };
 

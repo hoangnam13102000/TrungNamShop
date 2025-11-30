@@ -6,7 +6,10 @@ import { useGetAll, useMutate } from "./useBaseQuery";
  * @param {string} resource - tên resource, ví dụ 'products'
  */
 export const useCRUDApi = (resource) => {
-  const api = createCRUD(`/${resource}`);
+  
+  const endpoint = resource.includes("/") ? `/${resource}` : `/admin/${resource}`;
+
+  const api = createCRUD(endpoint);
 
   return {
     useGetAll: (options) => useGetAll(resource, api.getAll, options),

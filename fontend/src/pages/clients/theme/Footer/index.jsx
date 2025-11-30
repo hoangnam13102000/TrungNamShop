@@ -55,7 +55,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="/policy" className="hover:text-yellow-400">
+                <a href="/chinh-sach-bao-hanh" className="hover:text-yellow-400">
                   Chính sách bảo hành
                 </a>
               </li>
@@ -65,7 +65,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="/payment" className="hover:text-yellow-400">
+                <a href="/huong-dan-thanh-toan" className="hover:text-yellow-400">
                   Hướng dẫn thanh toán
                 </a>
               </li>

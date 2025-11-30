@@ -35,7 +35,7 @@ class DashboardController extends Controller
     /**
      * Summary 30 ngày
      */
-    public function summary30days()
+    public function summary30Days()
     {
         $now = Carbon::now();
         $start = $now->copy()->subDays(30);

@@ -35,6 +35,7 @@ import Review from "./pages/admin/product/Review";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ForgotPassword/ResetPassword";
 
 //----------------------CUSTOMER-------------------------------------
 
@@ -63,9 +64,11 @@ import MyOrder from "@page_user/OrderPage";
 import MasterLayout from "@page_user/theme/MasterLayout";
 import Cart from "@page_user/Cart";
 import Payment from "@page_user/Payment";
+import PaymentGuide from "./pages/clients/PaymentGuidePage";
 import MomoResult from "./pages/clients/Payment/MomoReturn";
 import PaypalResult from "./pages/clients/Payment/PaypalReturn";
 import ProductImage from "./pages/admin/product/ProductImage";
+import WarrantyPolicy from "./pages/clients/Policy";
 import NotFound from "./pages/404";
 
 //================= ADMIN ROUTER =================//
@@ -109,6 +112,7 @@ const userRouter = [
   { path: ROUTERS.USER.LOGIN, element: <Login /> },
   { path: ROUTERS.USER.REGISTER, element: <Register /> },
   { path: ROUTERS.USER.FORGOTPASSWORD, element: <ForgotPassword /> },
+  { path: ROUTERS.USER.RESETPASSWORD, element: <ResetPassword /> },
   { path: ROUTERS.USER.PROFILE, element: <ProfilePage /> },
   { path: ROUTERS.USER.PRODUCTLIST, element: <ProductList /> },
   { path: ROUTERS.USER.PRODUCTDETAILS, element: <ProductsDetails /> },
@@ -116,8 +120,10 @@ const userRouter = [
   { path: ROUTERS.USER.CONTACT, element: <FeedbackPage /> },
   { path: ROUTERS.USER.CART, element: <Cart /> },
   { path: ROUTERS.USER.PAYMENT, element: <Payment /> },
+  { path: ROUTERS.USER.PAYMENTGUIDE, element: <PaymentGuide /> },
   { path: ROUTERS.USER.MOMORETURN, element: <MomoResult /> },
   { path: ROUTERS.USER.PAYPALRETURN, element: <PaypalResult /> },
+  { path: ROUTERS.USER.POLICY, element: <WarrantyPolicy /> },
   { path: ROUTERS.USER.NOTFOUND, element: <NotFound /> },
   { path: ROUTERS.USER.MYORDERS, element: <MyOrder /> },
 ];

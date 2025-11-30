@@ -1,23 +1,24 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import display from "@banner/Forgot-password.png";
 import { validateGeneral } from "../../../utils/forms/validate";
 
 function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    // Validate email
+    // Validate username
     const errors = validateGeneral(
-      { email },
-      { email: { required: true, type: "email" } }
+      { username },
+      { username: { required: true } }
     );
     if (Object.keys(errors).length > 0) {
-      setError(errors.email);
+      setError(errors.username);
       setSuccess("");
       return;
     }
@@ -30,22 +31,25 @@ function ForgotPassword() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ username }),
         }
       );
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSuccess(result.message || "Liên kết đặt lại mật khẩu đã được gửi!");
-        setError("");
-        setEmail("");
+        // Redirect sang trang ResetPassword, truyền username + token qua URL
+        navigate(
+          `/reset-mat-khau?username=${encodeURIComponent(
+            username
+          )}&token=${encodeURIComponent(result.token)}`
+        );
       } else {
         setError(result.message || "Không thể gửi liên kết, vui lòng thử lại.");
         setSuccess("");
       }
     } catch (err) {
-      console.error("Lỗi gửi email reset:", err);
+      console.error("Lỗi gửi reset:", err);
       setError("Có lỗi xảy ra, vui lòng thử lại.");
       setSuccess("");
     }
@@ -63,21 +67,21 @@ function ForgotPassword() {
           />
         </div>
 
-        {/* Form email */}
+        {/* Form username */}
         <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">
             Quên mật khẩu
           </h2>
           <p className="text-center text-gray-600 mb-6 text-sm md:text-base">
-            Nhập email của bạn để nhận liên kết đặt lại mật khẩu.
+            Nhập tên đăng nhập để đặt lại mật khẩu.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
-              type="email"
-              placeholder="Nhập email của bạn"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Nhập tên đăng nhập"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition ${
                 error
                   ? "border-red-500 focus:ring-red-400"
@@ -91,7 +95,7 @@ function ForgotPassword() {
               type="submit"
               className="w-full bg-red-600 text-white py-3 rounded-lg shadow-md hover:bg-red-700 active:scale-95 transition transform font-semibold"
             >
-              Gửi liên kết
+              Gửi yêu cầu đặt lại mật khẩu
             </button>
           </form>
 

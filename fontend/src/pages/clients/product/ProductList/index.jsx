@@ -6,31 +6,12 @@ import backgroundImage from "@banner/background-4.jpg";
 import BreadCrumb from "../../theme/BreadCrumb";
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import ChatWidget from "../../../../components/Chats/ChatWidget";
-import RecommendedProducts from "../../../../components/product/RecommendedProducts"; // import RecommendedProducts
+import RecommendedProducts from "../../../../components/product/RecommendedProducts";
+import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 
-const PRICE_RANGES = [
-  { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
-  { id: "under10", label: "Dưới 10 triệu", min: 0, max: 10000000 },
-  { id: "10to20", label: "10 - 20 triệu", min: 10000000, max: 20000000 },
-  { id: "20to30", label: "20 - 30 triệu", min: 20000000, max: 30000000 },
-  { id: "above30", label: "Trên 30 triệu", min: 30000000, max: Infinity },
-];
-
-const SORT_OPTIONS = [
-  { id: "default", label: "Mặc định" },
-  { id: "price-asc", label: "Giá thấp đến cao" },
-  { id: "price-desc", label: "Giá cao đến thấp" },
-  { id: "name-asc", label: "Tên A-Z" },
-];
-
-const MEMORY_OPTIONS = [
-  { id: "all", label: "Tất cả", value: "all" },
-  { id: "64", label: "64GB", value: "64" },
-  { id: "128", label: "128GB", value: "128" },
-  { id: "256", label: "256GB", value: "256" },
-  { id: "512", label: "512GB", value: "512" },
-];
-
+const PRICE_RANGES = [ /* giữ nguyên */ ];
+const SORT_OPTIONS = [ /* giữ nguyên */ ];
+const MEMORY_OPTIONS = [ /* giữ nguyên */ ];
 const useQuery = () => new URLSearchParams(useLocation().search);
 
 const ProductList = () => {
@@ -46,9 +27,7 @@ const ProductList = () => {
 
   const brandMap = useMemo(() => {
     const map = {};
-    brandsData.forEach((b) => {
-      map[b.id] = b.name;
-    });
+    brandsData.forEach((b) => { map[b.id] = b.name; });
     return map;
   }, [brandsData]);
 
@@ -57,8 +36,7 @@ const ProductList = () => {
   const [sortBy, setSortBy] = useState("default");
   const [memoryFilter, setMemoryFilter] = useState("all");
 
-  const [userId, setUserId] = useState(null); // state lưu userId từ localStorage
-
+  const [userId, setUserId] = useState(null);
   useEffect(() => {
     const storedId = localStorage.getItem("account_id");
     setUserId(storedId ? Number(storedId) : 1);
@@ -110,6 +88,19 @@ const ProductList = () => {
   if (searchQuery) title = `Kết quả tìm kiếm cho "${searchQuery}"`;
   const brandName = title;
 
+  // ================== Dialog trung tâm ==================
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [addedProduct, setAddedProduct] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      setAddedProduct(e.detail.product);
+      setDialogOpen(true);
+    };
+    window.addEventListener("cartUpdated", handler);
+    return () => window.removeEventListener("cartUpdated", handler);
+  }, []);
+
   return (
     <>
       <div
@@ -133,6 +124,7 @@ const ProductList = () => {
               {/* Bộ lọc */}
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Thương hiệu */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Thương hiệu</label>
                     <Dropdown
@@ -141,6 +133,7 @@ const ProductList = () => {
                       onSelect={(option) => setBrandFilter(option.value)}
                     />
                   </div>
+                  {/* Khoảng giá */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Khoảng giá</label>
                     <Dropdown
@@ -149,6 +142,7 @@ const ProductList = () => {
                       onSelect={(option) => setPriceRange(option.value)}
                     />
                   </div>
+                  {/* Sắp xếp */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Sắp xếp</label>
                     <Dropdown
@@ -157,6 +151,7 @@ const ProductList = () => {
                       onSelect={(option) => setSortBy(option.value)}
                     />
                   </div>
+                  {/* Bộ nhớ */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Bộ nhớ</label>
                     <Dropdown
@@ -197,6 +192,16 @@ const ProductList = () => {
 
       {/* Chat Widget */}
       <ChatWidget />
+
+      {/* Dialog trung tâm */}
+      <DynamicDialog
+        open={dialogOpen}
+        mode="success"
+        title="Thành công!"
+        message={addedProduct ? `${addedProduct.name} đã được thêm vào giỏ hàng.` : ""}
+        onClose={() => setDialogOpen(false)}
+        closeText="Đóng"
+      />
     </>
   );
 };

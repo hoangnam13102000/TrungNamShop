@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\RecommendationController;
 use App\Http\Controllers\MomoController;
 use App\Http\Controllers\PaypalController;
+use App\Http\Controllers\ContactController;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,9 @@ use App\Http\Controllers\PaypalController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+Route::post('/check-username', [AuthController::class, 'checkUsername']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::post('/change-password', [AuthController::class, 'changePassword'])->middleware('auth:sanctum');
 // Get current user information (requires auth)
@@ -67,6 +71,11 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// ------------------ Chat bot ------------------
+Route::post('/chatbot', [ChatbotController::class, 'chat']);
+
+// ------------------ Concact ------------------
+Route::post('/contact', [ContactController::class, 'sendEmail']);
 
 // ------------------ Momo Payment ------------------
 Route::post('/momo/payment', [MomoController::class, 'createMomoPayment']);
@@ -85,8 +94,8 @@ Route::get('/order-by-paypal/{token}', [PaypalController::class, 'orderByPaypal'
 
 Route::prefix("dashboard")->group(function () {
     Route::get("/revenue",       [DashboardController::class,"revenue"]);
-    Route::get('summary-30days', [DashboardController::class, 'summary30Days']);
-    Route::get('top-products', [DashboardController::class, 'topProducts']);
+    Route::get('/summary-30days', [DashboardController::class, 'summary30Days']);
+    Route::get('/top-products', [DashboardController::class, 'topProducts']);
 });
 
 // Group Router for Admin
@@ -183,9 +192,6 @@ Route::prefix('admin')->group(function () {
     Route::apiResource('discounts', DiscountController::class);
     // ------------------Reviews ------------------
     Route::apiResource('reviews', ReviewController::class);
-
-    // ------------------ Chat bot ------------------
-    Route::post('/chatbot', [ChatbotController::class, 'chat']);
 
     // ------------------ Recommendations System ------------------
     Route::get('/recommendations/{product_id}', [RecommendationController::class, 'getRecommendations']);

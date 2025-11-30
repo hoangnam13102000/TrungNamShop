@@ -37,18 +37,6 @@ const InvoiceModal = ({ open, order, orderDetails = [], onClose }) => {
     refunded: "bg-blue-100 text-blue-800",
   };
 
-  // const deliveryMethodLabels = {
-  //   pickup: "Nhận tại cửa hàng",
-  //   delivery: "Giao tận nơi",
-  // };
-
-  // const paymentMethodLabels = {
-  //   cash: "Tiền mặt",
-  //   momo: "Ví Momo",
-  //   paypal: "Paypal",
-  //   vnpay: "VNPay",
-  //   bank_transfer: "Chuyển khoản",
-  // };
 
   const orderStatusClass =
     statusColors[order.order_status?.toLowerCase()] ||
@@ -58,7 +46,7 @@ const InvoiceModal = ({ open, order, orderDetails = [], onClose }) => {
     paymentColors[order.payment_status?.toLowerCase()] ||
     "bg-gray-100 text-gray-800";
 
-  // ===== FIX TÍNH TỔNG CHUẨN =====
+  // ===== Total =====
   const subtotal = Array.isArray(orderDetails)
     ? orderDetails.reduce((sum, detail) => {
         const price = Number(detail.price_at_order) || 0;

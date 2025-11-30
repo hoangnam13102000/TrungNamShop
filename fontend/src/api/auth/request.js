@@ -27,3 +27,7 @@ export const getCurrentUser = async (token) => {
   });
   return res.data;
 };
+export const checkUsernameExists = async (username) => {
+  const res = await axios.post(`${API_URL}/check-username`, { username });
+  return res.data.exists; 
+};

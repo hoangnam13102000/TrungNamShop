@@ -62,7 +62,7 @@ return [
     'providers' => [
         'accounts' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\Account::class),
+            'model' => App\Models\Account::class,
         ],
 
         // 'users' => [
@@ -93,7 +93,7 @@ return [
     'passwords' => [
         'accounts' => [
             'provider' => 'accounts',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_account_resets'),
             'expire' => 60,
             'throttle' => 60,
         ],

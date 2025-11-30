@@ -113,17 +113,22 @@ export default function Login() {
           {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
 
           {/* Show password */}
-          <div className="flex items-center mt-2">
-            <input
-              type="checkbox"
-              id="showPassword"
-              checked={showPassword}
-              onChange={() => setShowPassword(!showPassword)}
-              className="mr-2"
-            />
-            <label htmlFor="showPassword" className="text-sm">
-              Hiển thị mật khẩu
-            </label>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="showPassword"
+                checked={showPassword}
+                onChange={() => setShowPassword(!showPassword)}
+                className="mr-2"
+              />
+              <label htmlFor="showPassword" className="text-sm">
+                Hiển thị mật khẩu
+              </label>
+            </div>
+            <Link to="/quen-mat-khau" className="text-red-500 text-sm hover:text-red-600 transition">
+              Quên mật khẩu?
+            </Link>
           </div>
 
           {/* Submit */}

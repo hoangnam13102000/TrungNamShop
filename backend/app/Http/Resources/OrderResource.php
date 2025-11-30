@@ -27,6 +27,7 @@ class OrderResource extends JsonResource
         $paymentMethodLabel = match($paymentMethod) {
             'cash' => 'Tiền mặt',
             'momo' => 'Ví Momo',
+            'paypal'=>'Ví Paypal',
             default => '—'
         };
 

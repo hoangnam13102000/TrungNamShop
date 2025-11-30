@@ -69,7 +69,6 @@ export default function ChatWidget({ sessionId = null }) {
     const text = input.trim();
     if (!text) return;
 
-    // LẤY THÔNG TIN VAI TRÒ VÀ USERNAME TỪ LOCALSTORAGE
     const userRole = localStorage.getItem("role") || "khách hàng";
     const userName = localStorage.getItem("username") || "Khách hàng";
 
@@ -78,7 +77,6 @@ export default function ChatWidget({ sessionId = null }) {
     setInput("");
     setLoading(true);
 
-    // messages ở đây là trạng thái cũ, bao gồm các tin nhắn trước tin nhắn hiện tại
     const history = messages.slice(-8);
 
     try {
@@ -90,8 +88,8 @@ export default function ChatWidget({ sessionId = null }) {
           session_id: sessionId,
           history,
           save: false,
-          user_role: userRole, // GỬI THÊM VAI TRÒ CỦA NGƯỜI DÙNG
-          username: userName, // GỬI THÊM TÊN NGƯỜI DÙNG
+          user_role: userRole, 
+          username: userName, 
         }),
         credentials: "include",
       });

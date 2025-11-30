@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useGetAll, useMutate } from "../../hooks/useBaseQuery";
 
 // Tạo instance API
-const productDetailAPI = createCRUD("/product-details");
+const productDetailAPI = createCRUD("admin/product-details");
 
 // --- SỬA LẠI HOOK NÀY: Dùng getOne thay vì tự filter ---
 export const useProductDetailById = (productId) => {
