@@ -1,3 +1,4 @@
+// src/utils/hooks/useProfileLogic.js
 import { useState, useEffect } from "react";
 import { useCRUDApi } from "../../api/hooks/useCRUDApi";
 import { getImageUrl } from "../../utils/helpers/getImageUrl";
@@ -20,6 +21,7 @@ export function useProfileLogic() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [dialog, setDialog] = useState({ open: false });
 
+  const API = import.meta.env.VITE_API_URL; 
   // Lấy profile (customer hoặc employee)
   useEffect(() => {
     if (!accountId) return;
@@ -125,7 +127,7 @@ export function useProfileLogic() {
       onConfirm: async () => {
         try {
           const token = localStorage.getItem("token");
-          const response = await fetch("http://127.0.0.1:8000/api/change-password", {
+          const response = await fetch(`${API}/change-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({

@@ -14,7 +14,7 @@ export default function MomoResult({ setCartItems }) {
     onClose: null,
   });
 
-  const apiBaseUrl = "http://127.0.0.1:8000/api/";
+  const apiBaseUrl =import.meta.env.VITE_API_URL;
 
   const openDialog = (mode, title, message, onClose) => {
     setDialog({
@@ -37,7 +37,7 @@ export default function MomoResult({ setCartItems }) {
 
   const handleConfirmation = async (orderId, resultCode) => {
     try {
-      const response = await fetch(`${apiBaseUrl}momo/confirm`, {
+      const response = await fetch(`${apiBaseUrl}/momo/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,14 +58,14 @@ export default function MomoResult({ setCartItems }) {
         clearCart();
         openDialog(
           "success",
-          "Thanh toán thành công 🎉",
+          "Thanh toán thành công ",
           `Cảm ơn bạn! Đơn hàng #${orderId} đã được xác nhận và đang được xử lý.`,
           () => navigate("/gio-hang")
         );
       } else {
         openDialog(
           "warning",
-          "Giao dịch bị Hủy/Thất bại ⚠️",
+          "Giao dịch bị Hủy/Thất bại ",
           `Đơn hàng #${orderId} đã được tạo nhưng giao dịch không thành công. Hệ thống đã chuyển đơn sang trạng thái Đã Hủy.`,
           () => navigate("/gio-hang")
         );

@@ -1,3 +1,4 @@
+// src/utils/hooks/useOrderHandler.js
 import { useState, useCallback } from "react";
 import { validateGeneral } from "../../utils/forms/validate";
 import { useCRUDApi } from "../../api/hooks/useCRUDApi";
@@ -9,6 +10,8 @@ export const useOrderHandler = (cartItems, getTotal, appliedDiscount, setDialog)
 
   const { useCreate } = useCRUDApi("orders");
   const createOrder = useCreate();
+
+  const API = import.meta.env.VITE_API_URL; 
 
   const handleInputChange = useCallback(
     (e) => {
@@ -82,7 +85,7 @@ export const useOrderHandler = (cartItems, getTotal, appliedDiscount, setDialog)
 
       // 5. Xử lý thanh toán MoMo
       if (customerInfo.payment_method === "momo") {
-        const payRes = await fetch("http://127.0.0.1:8000/api/momo/payment", {
+        const payRes = await fetch(`${API}/momo/payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_id: orderId }),
@@ -113,12 +116,11 @@ export const useOrderHandler = (cartItems, getTotal, appliedDiscount, setDialog)
 
       // 7. Xử lý PayPal
       if (customerInfo.payment_method === "paypal") {
-        const payRes = await fetch("http://127.0.0.1:8000/api/paypal/payment", {
+        const payRes = await fetch(`${API}/paypal/payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_id: orderId }),
         });
-
         const payData = await payRes.json();
         if (payData.payment_url) {
           window.location.href = payData.payment_url; // redirect ngay sang PayPal
@@ -137,7 +139,7 @@ export const useOrderHandler = (cartItems, getTotal, appliedDiscount, setDialog)
         message: error.response?.data?.message || error.message || "Có lỗi xảy ra khi tạo đơn hàng.",
       });
     }
-  }, [cartItems, customerId, customerInfo, appliedDiscount, createOrder, getTotal, setDialog]);
+  }, [cartItems, customerId, customerInfo, appliedDiscount, createOrder, getTotal, setDialog, API]);
 
   return {
     customerInfo,

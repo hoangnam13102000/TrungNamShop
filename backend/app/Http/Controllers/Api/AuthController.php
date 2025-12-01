@@ -10,9 +10,10 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+
 class AuthController extends Controller
 {
-    // Đăng ký
+    // ================= REGISTER =================
     public function register(Request $request)
     {
         $request->validate([
@@ -22,7 +23,7 @@ class AuthController extends Controller
 
         $account = Account::create([
             'username' => $request->username,
-            'password' => $request->password,
+            'password' => Hash::make($request->password),  // Hash password before store
             'status' => 1,
             'account_type_id' => 3,
             'account_level_id' => 1,
@@ -36,7 +37,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // Đăng nhập
+    // ================= LOGIN =================
     public function login(Request $request)
     {
         $request->validate([
@@ -46,125 +47,123 @@ class AuthController extends Controller
 
         $account = Account::where('username', $request->username)->first();
 
+        // Check if user exists + validate password
         if (!$account || !Hash::check($request->password, $account->password)) {
-            throw ValidationException::withMessages([
-                'username' => ['Tên đăng nhập hoặc mật khẩu không đúng.'],
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect username or password.'
+            ], 401);
         }
 
         $token = $account->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'user' => $account,
             'token' => $token,
         ]);
     }
 
-    // Đăng xuất
+    // ================= LOGOUT =================
     public function logout(Request $request)
     {
+        // Remove all tokens of this user
         $request->user()->tokens()->delete();
 
-        return response()->json(['message' => 'Đăng xuất thành công']);
+        return response()->json(['message' => 'Logged out successfully']);
     }
 
-    // Thay đổi mật khẩu
+    // ================= CHANGE PASSWORD =================
     public function changePassword(Request $request)
     {
         $request->validate([
             'current_password' => 'required',
-            'new_password' => 'required|min:6|confirmed', // new_password_confirmation
+            'new_password' => 'required|min:6|confirmed',
         ]);
 
         $user = $request->user();
 
+        // Verify old password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Mật khẩu hiện tại không đúng'
-            ], 400);
+                'message' => 'Current password is incorrect'
+            ]);
         }
 
-        $user->password = $request->new_password;
+        // Update new password
+        $user->password = Hash::make($request->new_password);
         $user->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Đổi mật khẩu thành công'
+            'message' => 'Password changed successfully'
         ]);
     }
 
-    // Quên mật khẩu (tạo token dựa trên username)
+    // ================= FORGOT PASSWORD =================
     public function forgotPassword(Request $request)
     {
-        $request->validate([
-            'username' => 'required|string|exists:accounts,username',
-        ]);
+        $request->validate(['username' => 'required|exists:accounts,username']);
 
-        $account = Account::where('username', $request->username)->first();
+        // Generate recovery token
+        $token = Str::random(50);
 
-        // Tạo token random
-        $token = Str::random(60);
-
-        // Lưu token hash vào bảng password_account_resets
         DB::table('password_account_resets')->updateOrInsert(
-            ['username' => $account->username],
-            ['token' => Hash::make($token), 'created_at' => Carbon::now()]
+            ['username' => $request->username],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
         );
 
-        // Trong thực tế bạn gửi token này qua email/SMS
         return response()->json([
             'success' => true,
-            'message' => 'Token đặt lại mật khẩu đã được tạo!',
-            'token' => $token
+            'message' => 'Reset password token generated',
+            'token' => $token // Frontend receives this to redirect to reset page
         ]);
     }
 
-    // Reset password bằng username + token
+    // ================= RESET PASSWORD =================
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'username' => 'required|string|exists:accounts,username',
+            'username' => 'required|exists:accounts,username',
             'token' => 'required|string',
-            'password' => 'required|min:6|confirmed', // password_confirmation
+            'password' => 'required|min:6|confirmed'
         ]);
 
         $record = DB::table('password_account_resets')
             ->where('username', $request->username)
             ->first();
 
+        // Validate token
         if (!$record || !Hash::check($request->token, $record->token)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+                'message' => 'Invalid or expired token'
             ], 400);
         }
 
-        // Reset mật khẩu
+        // Update account password
         $account = Account::where('username', $request->username)->first();
-        $account->password = $request->password;
+        $account->password = Hash::make($request->password);
         $account->save();
 
-        // Xóa token sau khi reset
+        // Remove used token
         DB::table('password_account_resets')->where('username', $request->username)->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Đặt lại mật khẩu thành công!'
+            'message' => 'Password reset successfully!'
         ]);
     }
 
-    // Kiểm tra username đã tồn tại
+    // ================= CHECK USERNAME EXISTS =================
     public function checkUsername(Request $request)
     {
-        $request->validate([
-            'username' => 'required|string',
-        ]);
-
-        $exists = Account::where('username', $request->username)->exists();
-
         return response()->json([
-            'exists' => $exists
+            'exists' => Account::where('username', $request->username)->exists()
         ]);
     }
 }

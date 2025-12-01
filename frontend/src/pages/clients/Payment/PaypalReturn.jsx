@@ -14,7 +14,7 @@ export default function PaypalResult({ setCartItems }) {
     onClose: null,
   });
 
-  const apiBaseUrl = "http://127.0.0.1:8000/api/";
+  const apiBaseUrl = import.meta.env.VITE_API_URL;
 
   const openDialog = (mode, title, message, onClose) => {
     setDialog({
@@ -37,7 +37,7 @@ export default function PaypalResult({ setCartItems }) {
 
   const handlePaypalStatus = async (token, status) => {
     try {
-      const response = await fetch(`${apiBaseUrl}order-by-paypal/${token}`);
+      const response = await fetch(`${apiBaseUrl}/order-by-paypal/${token}`);
       const data = await response.json();
       setDialog((prev) => ({ ...prev, open: false }));
 

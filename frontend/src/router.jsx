@@ -5,7 +5,7 @@ import { ProtectedAdminRoute } from "./routers/auth/ProtectedRoute";
 
 // ADMIN PATH
 import { ROUTERS, ADMIN_PATH } from "./routers/router";
-import DashBoard from "@page_admin/DashBoard";
+import Dashboard from "@page_admin/Dashboard";
 
 //----------------------ACCOUNT-------------------------------------
 import AccountList from "@page_admin/account/AccountList";
@@ -73,7 +73,7 @@ import NotFound from "./pages/404";
 
 //================= ADMIN ROUTER =================//
 const adminRouter = [
-  { path: ROUTERS.ADMIN.DASHBOARD, element: <DashBoard /> },
+  { path: ROUTERS.ADMIN.DASHBOARD, element: <Dashboard /> },
   { path: ROUTERS.ADMIN.PRODUCTMANAGEMENT, element: <ProductManagement /> },
   { path: ROUTERS.ADMIN.PRODUCTDETAILS, element: <ProductDetail /> },
   { path: ROUTERS.ADMIN.COLOR, element: <Color /> },

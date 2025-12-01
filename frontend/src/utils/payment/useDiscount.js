@@ -6,6 +6,7 @@ export const useDiscount = (getSubtotal, setDialog) => {
   const [appliedDiscount, setAppliedDiscount] = useState(null);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
+  const API = import.meta.env.VITE_API_URL; 
 
   const getDiscountAmount = useCallback(() => {
     if (!appliedDiscount) return 0;
@@ -13,13 +14,11 @@ export const useDiscount = (getSubtotal, setDialog) => {
     return (subtotal * appliedDiscount.percentage) / 100;
   }, [appliedDiscount, getSubtotal]);
 
- 
   const getTotal = useCallback(() => {
     const subtotal = getSubtotal();
     return subtotal - getDiscountAmount();
   }, [getSubtotal, getDiscountAmount]);
 
-  
   const applyDiscount = useCallback(async () => {
     if (!discountCode.trim()) {
       setDialog({
@@ -33,12 +32,13 @@ export const useDiscount = (getSubtotal, setDialog) => {
 
     setIsApplyingDiscount(true);
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/api/discounts/validate?code=${discountCode}`
-      );
-      const discountData = await response.json();
+      const res = await fetch(`${API}/discounts/validate?code=${discountCode}`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const discountData = await res.json();
 
-      if (response.ok && discountData.valid) {
+      if (res.ok && discountData.valid) {
         setAppliedDiscount({
           id: discountData.discount.id,
           code: discountData.discount.code,
@@ -57,7 +57,7 @@ export const useDiscount = (getSubtotal, setDialog) => {
           title: "Lỗi",
           message: discountData.message || "Mã giảm giá không hợp lệ",
         });
-        setAppliedDiscount(null); // Đảm bảo reset nếu thất bại
+        setAppliedDiscount(null); // reset nếu thất bại
       }
     } catch (error) {
       console.error("Lỗi khi áp dụng mã giảm giá:", error);
@@ -67,13 +67,12 @@ export const useDiscount = (getSubtotal, setDialog) => {
         title: "Lỗi",
         message: "Có lỗi xảy ra khi áp dụng mã giảm giá",
       });
-      setAppliedDiscount(null); // Đảm bảo reset nếu có lỗi
+      setAppliedDiscount(null);
     } finally {
       setIsApplyingDiscount(false);
     }
-  }, [discountCode, setDialog]);
+  }, [discountCode, setDialog, API]);
 
-  // Logic xóa mã giảm giá
   const removeDiscount = useCallback(() => {
     setAppliedDiscount(null);
     setDiscountCode("");

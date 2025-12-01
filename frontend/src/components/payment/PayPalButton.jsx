@@ -3,32 +3,40 @@ import { PayPalButtons } from "@paypal/react-paypal-js";
 import axios from "axios";
 
 export default function PayPalButton({ orderId, totalAmount }) {
-  
+  const apiBaseUrl = import.meta.env.VITE_API_URL;
+
   if (!orderId) return <p>Tạo đơn hàng trước khi thanh toán!</p>;
 
   return (
     <PayPalButtons
       createOrder={() => {
-        return axios.post("http://127.0.0.1:8000/api/paypal/create", {
+        return axios.post(`${apiBaseUrl}/paypal/create`, {
           orderId,
           amount: totalAmount,
         })
-        .then(res => res.data.paypal_order_id); // server tạo orderID
+        .then(res => res.data.id);
       }}
 
       onApprove={(data) => {
-        return axios.post("http://127.0.0.1:8000/api/paypal/capture", {
+        return axios.post(`${apiBaseUrl}/paypal/capture`, {
           orderId,
           paypalOrderId: data.orderID,
         })
         .then(() => {
           localStorage.removeItem("cart");
-          window.location.href = "/gio-hang"; // clear cart & complete
+          alert("Thanh toán thành công!");
+          window.location.href = "/gio-hang";
         })
-        .catch(err => alert("Capture lỗi!"));
+        .catch(err => {
+          console.error(err.response?.data || err);
+          alert("Xác nhận thanh toán thất bại!");
+        });
       }}
 
-      onError={() => alert("PayPal lỗi, thử lại")}
+      onError={(err) => {
+        console.error("PayPal Error:", err);
+        alert("PayPal lỗi, thử lại sau.");
+      }}
     />
   );
 }

@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { FaEnvelope, FaUser, FaPhone, FaCommentDots, FaPaperPlane, FaCheckCircle } from "react-icons/fa";
 import { validateGeneral } from "../../../utils/forms/validate";
 import { useCustomerInfo } from "../../../utils/hooks/useCustomerInfo";
 
 const FeedbackPage = () => {
-  const { customerInfo } = useCustomerInfo(); // hook tự động điền info nếu khách đã login
+  const { customerInfo } = useCustomerInfo();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -20,13 +19,14 @@ const FeedbackPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  // Khi load trang, tự động điền thông tin khách nếu có
+  const API = import.meta.env.VITE_API_URL; // sử dụng biến môi trường
+
   useEffect(() => {
     if (customerInfo.name) setFormData(prev => ({
       ...prev,
       name: customerInfo.name || "",
       phone: customerInfo.phone || "",
-      email: customerInfo.email || "" // nếu bạn lưu email khách, nếu không bỏ dòng này
+      email: customerInfo.email || ""
     }));
   }, [customerInfo]);
 
@@ -53,16 +53,25 @@ const FeedbackPage = () => {
     }
 
     try {
-      const res = await axios.post("http://127.0.0.1:8000/api/contact", formData);
-      if (res.data.success) {
+      const res = await fetch(`${API}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         setIsSubmitted(true);
         setFormData({ name: "", email: "", phone: "", subject: "", type: "feedback", message: "" });
         setErrors({});
         setTimeout(() => setIsSubmitted(false), 3000);
+      } else {
+        setApiError(data.message || "Gửi thất bại, vui lòng thử lại sau.");
       }
     } catch (error) {
       console.error(error);
-      setApiError(error.response?.data?.message || "Gửi thất bại, vui lòng thử lại sau.");
+      setApiError("Gửi thất bại, vui lòng thử lại sau.");
     }
   };
 
