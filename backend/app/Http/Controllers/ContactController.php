@@ -27,10 +27,10 @@ class ContactController extends Controller
             Mail::raw(
                 "Tên: $data[name]\nEmail: $data[email]\nSĐT: $data[phone]\nLoại: $data[type]\nNội dung:\n$data[message]",
                 function ($message) use ($data) {
-                    $message->to('hoangnam131020@gmail.com')        // email nhận
+                    $message->to('hoangnam131020@gmail.com')        
                         ->subject("[$data[type]] $data[subject]")
                         ->from(config('mail.from.address'), config('mail.from.name')) // TechPhone
-                        ->replyTo($data['email'], $data['name']); // email khách
+                        ->replyTo($data['email'], $data['name']); 
                 }
             );
 

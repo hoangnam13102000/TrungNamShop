@@ -49,7 +49,7 @@ export default function PaypalResult({ setCartItems }) {
         clearCart();
         openDialog(
           "success",
-          "Thanh toán thành công 🎉",
+          "Thanh toán thành công",
           `Đơn hàng #${orderId} đã được xác nhận.`,
           () => navigate("/gio-hang")
         );

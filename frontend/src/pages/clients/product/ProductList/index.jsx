@@ -9,9 +9,28 @@ import ChatWidget from "../../../../components/Chats/ChatWidget";
 import RecommendedProducts from "../../../../components/product/RecommendedProducts";
 import DynamicDialog from "../../../../components/formAndDialog/DynamicDialog";
 
-const PRICE_RANGES = [ /* giữ nguyên */ ];
-const SORT_OPTIONS = [ /* giữ nguyên */ ];
-const MEMORY_OPTIONS = [ /* giữ nguyên */ ];
+const PRICE_RANGES = [
+  { id: "all", label: "Tất cả mức giá", min: 0, max: Infinity },
+  { id: "under10", label: "Dưới 10 triệu", min: 0, max: 10000000 },
+  { id: "10to20", label: "10 - 20 triệu", min: 10000000, max: 20000000 },
+  { id: "20to30", label: "20 - 30 triệu", min: 20000000, max: 30000000 },
+  { id: "above30", label: "Trên 30 triệu", min: 30000000, max: Infinity },
+];
+
+const SORT_OPTIONS = [
+  { id: "default", label: "Mặc định" },
+  { id: "price-asc", label: "Giá thấp đến cao" },
+  { id: "price-desc", label: "Giá cao đến thấp" },
+  { id: "name-asc", label: "Tên A-Z" },
+];
+
+const MEMORY_OPTIONS = [
+  { id: "all", label: "Tất cả", value: "all" },
+  { id: "64", label: "64GB", value: "64" },
+  { id: "128", label: "128GB", value: "128" },
+  { id: "256", label: "256GB", value: "256" },
+  { id: "512", label: "512GB", value: "512" },
+];
 const useQuery = () => new URLSearchParams(useLocation().search);
 
 const ProductList = () => {
