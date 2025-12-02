@@ -1,30 +1,28 @@
-# Base image PHP 8.2 FPM
+# 1. Base image PHP-FPM
 FROM php:8.2-fpm
 
-# Cài các package cần thiết và extension PHP
+# 2. Cài dependencies hệ thống
 RUN apt-get update && apt-get install -y \
     zip unzip git curl libzip-dev libxml2-dev libonig-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql mbstring zip xml
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip xml \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Cài Composer
+# 3. Cài Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# 4. Thiết lập working directory
 WORKDIR /app
-
-# Copy toàn bộ code
 COPY . .
 
-# Install dependencies Laravel
+# 5. Install dependencies PHP
 RUN composer install --no-dev --optimize-autoloader
 
-# Cache config/routes/views
-RUN php artisan config:cache \
- && php artisan route:cache \
- && php artisan view:cache
+# 6. Cache Laravel configs, routes, views
+RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
-# Expose port Render yêu cầu
+# 7. Expose port Render yêu cầu
 EXPOSE 8080
 
-# Start PHP-FPM (Render sẽ handle port 8080)
-CMD ["php-fpm"]
+# 8. Start command: chạy Laravel server
+# Tự động migrate nếu muốn
+CMD php artisan migrate --force && php -S 0.0.0.0:8080 -t public
