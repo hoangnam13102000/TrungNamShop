@@ -1,4 +1,4 @@
-FROM php:8.2-fpm AS build
+FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
     zip unzip git curl libzip-dev libxml2-dev libonig-dev \
@@ -6,20 +6,14 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-COPY . /app
 WORKDIR /app
+COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
-
 RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
+# Expose port Render needs
+EXPOSE 8080
 
-FROM nginx:stable-alpine
-
-COPY --from=build /app /var/www/html
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-
-RUN chown -R nginx:nginx /var/www/html
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Start Laravel on Render port
+CMD php -S 0.0.0.0:8080 -t public
