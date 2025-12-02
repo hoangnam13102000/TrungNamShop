@@ -1,8 +1,11 @@
 #!/bin/sh
 
-# Migrate database (không fail nếu lỗi)
-php artisan migrate --force || true
+# Chờ database (tránh lỗi connection refused)
+echo "Waiting for database..."
+sleep 5
 
-# Start PHP-FPM (Render bind port tự động)
-echo "==> Starting PHP built-in server on port 8080..."
-exec php -S 0.0.0.0:8080 -t public
+# Chạy migrate
+php /var/www/html/artisan migrate --force
+
+# Khởi động nginx (hoặc php-fpm)
+exec "$@"
