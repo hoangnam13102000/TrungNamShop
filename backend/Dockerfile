@@ -1,31 +1,28 @@
+# 1. Base image PHP-FPM
 FROM php:8.2-fpm
 
-# Install dependencies
+# 2. Cài dependencies hệ thống
 RUN apt-get update && apt-get install -y \
-    zip unzip git curl libzip-dev libxml2-dev libonig-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip xml
+    zip unzip git curl libzip-dev libxml2-dev libonig-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip xml \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
+# 3. Cài Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# 4. Thiết lập working directory
 WORKDIR /app
-
-# Copy Laravel source code
 COPY . .
 
-# Install Laravel dependencies
+# 5. Install dependencies PHP
 RUN composer install --no-dev --optimize-autoloader
 
-# Create entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# 6. Cache Laravel configs, routes, views
+RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
-# Expose port Render requires
+# 7. Expose port Render yêu cầu
 EXPOSE 8080
 
-# Use entrypoint to migrate before start
-ENTRYPOINT ["/entrypoint.sh"]
-
-# Start Laravel Server
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "public"]
+# 8. Start command: chạy Laravel server
+# Tự động migrate nếu muốn
+CMD php artisan migrate --force && php -S 0.0.0.0:8080 -t public
