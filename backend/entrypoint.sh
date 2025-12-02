@@ -4,4 +4,5 @@
 php artisan migrate --force || true
 
 # Start PHP-FPM (Render bind port tự động)
-exec php-fpm
+echo "==> Starting PHP built-in server on port 8080..."
+exec php -S 0.0.0.0:8080 -t public
