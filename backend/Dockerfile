@@ -10,29 +10,27 @@ RUN apt-get update && apt-get install -y \
 # 3. Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# 4. Working directory
+# 4. Working dir
 WORKDIR /app
 COPY . .
 
-# 5. Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev
+# 5. Install dependencies (bao gồm faker)
+RUN composer install --optimize-autoloader
 
-# 6. Cache config & routes
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# 6. Cache config, routes, views
+RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
-# 7. Fix permissions
+# 7. Set permissions cho storage và bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# 8. Create storage symbolic link
-RUN php artisan storage:link || true  # tránh lỗi nếu link đã tồn tại
+# 8. Tạo symbolic link storage → public/storage
+RUN php artisan storage:link || true
 
 # 9. Expose port
 EXPOSE 8080
 
-# 10. Start Laravel with built-in PHP server
+# 10. Start Laravel: migrate + seed + serve
 CMD php artisan migrate --force \
     && php artisan db:seed --force \
     && php -S 0.0.0.0:8080 -t public
