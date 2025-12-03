@@ -9,7 +9,7 @@ import {
   FaTrash,
 } from "react-icons/fa";
 
-export default function ChatWidget({ sessionId = null }) {
+export default function ChatWidget({ sessionId = null, isStacked = false }) {
   const STORAGE_KEY = `chat_history_${sessionId || "guest"}`;
   const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
@@ -162,8 +162,12 @@ export default function ChatWidget({ sessionId = null }) {
   // ===========================================
   //        COMPONENT RENDER
   // ===========================================
+  const positionStyle = isStacked 
+    ? {} 
+    : { position: "fixed", right: "1rem", bottom: "1.5rem", zIndex: 50 };
+
   return (
-    <div style={{ position: "fixed", right: "1rem", bottom: "1.5rem", zIndex: 50 }}>
+    <div style={positionStyle}>
       <div className="flex flex-col items-end gap-3" style={{ maxHeight: "calc(100vh - 120px)" }}>
         {open && (
           <div
@@ -314,22 +318,29 @@ export default function ChatWidget({ sessionId = null }) {
         )}
 
         {/* Toggle Button */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-slate-900 text-white shadow-2xl hover:shadow-3xl flex items-center justify-center transition-all hover:scale-110 duration-300 active:scale-95 relative overflow-hidden group"
-          title="Mở trợ lý ảo"
-        >
-          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-          <div className="absolute inset-0 rounded-full border-2 border-blue-300 opacity-0 group-hover:opacity-30 animate-pulse"></div>
+        <div className="group relative">
+          <button
+            onClick={() => setOpen(!open)}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-slate-900 text-white shadow-2xl hover:shadow-3xl flex items-center justify-center transition-all hover:scale-110 duration-300 active:scale-95 relative overflow-hidden"
+            title="Mở trợ lý ảo"
+          >
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-blue-300 opacity-0 group-hover:opacity-30 animate-pulse"></div>
 
-          <FaComments size={28} className="relative z-10" />
+            <FaComments size={28} className="relative z-10" />
 
-          {messages.length > 0 && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
-              {Math.min(messages.length, 9)}
-            </div>
-          )}
-        </button>
+            {messages.length > 0 && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
+                {Math.min(messages.length, 9)}
+              </div>
+            )}
+          </button>
+
+          {/* Text Label*/}
+          <div className="bg-white text-gray-800 px-4 py-2 rounded-lg shadow-lg font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none absolute right-full mr-3 top-1/2 -translate-y-1/2">
+            Trợ lý ảo
+          </div>
+        </div>
       </div>
     </div>
   );

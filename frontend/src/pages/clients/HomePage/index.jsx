@@ -135,10 +135,14 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Messenger Widget */}
-      <ChatBubble/>
-      {/* Chat Widget */}
-      <ChatWidget />
+      {/* Chat Bubbles Wrapper - Xếp dọc */}
+      <div style={{ position: "fixed", bottom: "1rem", right: "1rem", zIndex: 999, display: "flex", flexDirection: "column", gap: "1rem", alignItems: "flex-end" }}>
+        {/* Messenger Chat - Khai báo trước, nằm trên */}
+        <ChatBubble isStacked={true} />
+
+        {/* Chat Widget - Khai báo sau, nằm dưới */}
+        <ChatWidget isStacked={true} />
+      </div>
 
       {/* Dialog trung tâm */}
       <DynamicDialog
