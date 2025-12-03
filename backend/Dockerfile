@@ -27,16 +27,12 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # 8. Create storage symbolic link
-RUN php artisan storage:link
+RUN php artisan storage:link || true  # tránh lỗi nếu link đã tồn tại
 
-# 9. Optional: copy storage contents to public if php -S dùng
-RUN mkdir -p public/storage \
-    && cp -r storage/app/public/* public/storage/
-
-# 10. Expose port
+# 9. Expose port
 EXPOSE 8080
 
-# 11. Start Laravel with built-in PHP server
+# 10. Start Laravel with built-in PHP server
 CMD php artisan migrate --force \
     && php artisan db:seed --force \
     && php -S 0.0.0.0:8080 -t public
