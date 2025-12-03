@@ -6,7 +6,7 @@ import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
 import ChatWidget from "../../../components/Chats/ChatWidget";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
-import MessengerButton from "../../../components/Chats/MessengerChat";
+import ChatBubble from "../../../components/Chats/MessengerChat";
 const HomePage = () => {
   const { useGetAll } = useCRUDApi("products");
   const { data: products = [], isLoading } = useGetAll();
@@ -44,7 +44,6 @@ const HomePage = () => {
     }
   }, [products]);
 
-  // Lắng nghe event cartUpdated từ ProductCard
   useEffect(() => {
     const handler = (e) => {
       setAddedProduct(e.detail.product);
@@ -136,8 +135,8 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Chat Widget */}
-      <MessengerButton />
+      {/* Messenger Widget */}
+      <ChatBubble/>
       {/* Chat Widget */}
       <ChatWidget />
 
