@@ -6,7 +6,7 @@ import { useCRUDApi } from "../../../api/hooks/useCRUDApi";
 import backgroundImage from "@banner/background-4.jpg";
 import ChatWidget from "../../../components/Chats/ChatWidget";
 import DynamicDialog from "../../../components/formAndDialog/DynamicDialog";
-
+import MessengerButton from "../../../components/Chats/MessengerChat";
 const HomePage = () => {
   const { useGetAll } = useCRUDApi("products");
   const { data: products = [], isLoading } = useGetAll();
@@ -136,6 +136,8 @@ const HomePage = () => {
         </div>
       )}
 
+      {/* Chat Widget */}
+      <MessengerButton />
       {/* Chat Widget */}
       <ChatWidget />
 
