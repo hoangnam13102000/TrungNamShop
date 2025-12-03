@@ -58,6 +58,17 @@ use App\Http\Controllers\ContactController;
 //         return $request->user();
 //     });
 // });
+Route::prefix('v1')->group(function () {
+    
+    // Public endpoints
+    Route::get('/status', function () {
+        return response()->json([
+            'api' => 'TrungNamShop API v1',
+            'status' => 'operational',
+            'timestamp' => now()
+        ]);
+    });
+});
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
