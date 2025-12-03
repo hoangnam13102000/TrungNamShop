@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Account;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
@@ -21,9 +19,10 @@ class AuthController extends Controller
             'password' => 'required|min:6',
         ]);
 
+        // Không Hash::make – Model đã tự hash bằng setPasswordAttribute
         $account = Account::create([
             'username' => $request->username,
-            'password' => Hash::make($request->password),  // Hash password before store
+            'password' => $request->password,
             'status' => 1,
             'account_type_id' => 3,
             'account_level_id' => 1,
@@ -47,7 +46,7 @@ class AuthController extends Controller
 
         $account = Account::where('username', $request->username)->first();
 
-        // Check if user exists + validate password
+        // Check login
         if (!$account || !Hash::check($request->password, $account->password)) {
             return response()->json([
                 'success' => false,
@@ -67,7 +66,6 @@ class AuthController extends Controller
     // ================= LOGOUT =================
     public function logout(Request $request)
     {
-        // Remove all tokens of this user
         $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
@@ -83,7 +81,6 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        // Verify old password
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
@@ -91,8 +88,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Update new password
-        $user->password = Hash::make($request->new_password);
+        // Không Hash::make – Model tự hash
+        $user->password = $request->new_password;
         $user->save();
 
         return response()->json([
@@ -106,7 +103,6 @@ class AuthController extends Controller
     {
         $request->validate(['username' => 'required|exists:accounts,username']);
 
-        // Generate recovery token
         $token = Str::random(50);
 
         DB::table('password_account_resets')->updateOrInsert(
@@ -120,7 +116,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Reset password token generated',
-            'token' => $token // Frontend receives this to redirect to reset page
+            'token' => $token
         ]);
     }
 
@@ -137,7 +133,6 @@ class AuthController extends Controller
             ->where('username', $request->username)
             ->first();
 
-        // Validate token
         if (!$record || !Hash::check($request->token, $record->token)) {
             return response()->json([
                 'success' => false,
@@ -145,12 +140,12 @@ class AuthController extends Controller
             ], 400);
         }
 
-        // Update account password
         $account = Account::where('username', $request->username)->first();
-        $account->password = Hash::make($request->password);
+
+        // Không Hash::make – Model tự hash
+        $account->password = $request->password;
         $account->save();
 
-        // Remove used token
         DB::table('password_account_resets')->where('username', $request->username)->delete();
 
         return response()->json([
