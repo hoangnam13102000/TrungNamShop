@@ -15,7 +15,13 @@ return [
     'allowed_methods' => ['*'],
 
     // Các origin được phép truy cập
-    'allowed_origins' => ['http://localhost:5173'], // frontend của bạn
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'https://*.vercel.app',
+        'https://trung-nam-shop-ao6x.vercel.app/',
+    ],
+
+
 
     'allowed_origins_patterns' => [],
 
