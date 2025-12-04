@@ -30,10 +30,9 @@ class ProductImageController extends Controller
 
         $images = $query->get();
 
+        // Trả về URL (local hoặc Supabase)
         $images->transform(function ($img) {
-            $img->image_url = $img->image_path 
-                ? Storage::url($img->image_path) 
-                : $img->supabase_url;
+            $img->image_url = $img->image_path;
             return $img;
         });
 
@@ -55,33 +54,24 @@ class ProductImageController extends Controller
         ]);
 
         $file = $request->file('image');
-        $supabaseName = "products/" . uniqid() . "_" . $file->getClientOriginalName();
 
         if (app()->environment('local')) {
-            // LOCAL → lưu file local
-            $localPath = $this->uploadService->uploadLocal($file);
-            $image = ProductImage::create([
-                'product_id' => $validated['product_id'],
-                'product_detail_id' => $validated['product_detail_id'] ?? null,
-                'color_id' => $validated['color_id'] ?? null,
-                'image_path' => $localPath,
-                'is_primary' => $validated['is_primary'] ?? false,
-            ]);
-            $image->image_url = Storage::url($localPath);
-            $image->supabase_url = null;
+            // Local dev → lưu file vào storage
+            $path = $this->uploadService->uploadLocal($file);
         } else {
-            // SERVER thật → chỉ upload Supabase
-            $supabaseUrl = $this->uploadService->uploadSupabase($file, $supabaseName);
-            $image = ProductImage::create([
-                'product_id' => $validated['product_id'],
-                'product_detail_id' => $validated['product_detail_id'] ?? null,
-                'color_id' => $validated['color_id'] ?? null,
-                'image_path' => null,
-                'is_primary' => $validated['is_primary'] ?? false,
-                'supabase_url' => $supabaseUrl,
-            ]);
-            $image->image_url = $supabaseUrl;
+            // Server thật → upload Supabase, không lưu file local
+            $path = $this->uploadService->uploadSupabase($file, 'products/' . uniqid() . '_' . $file->getClientOriginalName());
         }
+
+        $image = ProductImage::create([
+            'product_id' => $validated['product_id'],
+            'product_detail_id' => $validated['product_detail_id'] ?? null,
+            'color_id' => $validated['color_id'] ?? null,
+            'image_path' => $path,
+            'is_primary' => $validated['is_primary'] ?? false,
+        ]);
+
+        $image->image_url = $path;
 
         return response()->json([
             'message' => 'Image created successfully',
@@ -92,9 +82,7 @@ class ProductImageController extends Controller
     public function show(string $id)
     {
         $image = ProductImage::with(['product', 'color'])->findOrFail($id);
-        $image->image_url = $image->image_path 
-            ? Storage::url($image->image_path) 
-            : $image->supabase_url;
+        $image->image_url = $image->image_path;
 
         return response()->json($image);
     }
@@ -113,26 +101,22 @@ class ProductImageController extends Controller
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $supabaseName = "products/" . uniqid() . "_" . $file->getClientOriginalName();
 
             if (app()->environment('local')) {
-                // LOCAL → xóa cũ, lưu local mới
+                // Local → xóa file cũ, lưu file mới
                 $this->uploadService->deleteLocal($image->image_path);
-                $localPath = $this->uploadService->uploadLocal($file);
-                $validated['image_path'] = $localPath;
-                $image->supabase_url = null;
-                $image->image_url = Storage::url($localPath);
+                $path = $this->uploadService->uploadLocal($file);
             } else {
-                // SERVER → upload Supabase mới
-                $supabaseUrl = $this->uploadService->uploadSupabase($file, $supabaseName);
-                $validated['image_path'] = null;
-                $image->supabase_url = $supabaseUrl;
-                $image->image_url = $supabaseUrl;
+                // Server → upload Supabase mới
+                $path = $this->uploadService->uploadSupabase($file, 'products/' . uniqid() . '_' . $file->getClientOriginalName());
             }
+
+            $validated['image_path'] = $path;
         }
 
-        unset($validated['image']);
+        unset($validated['image']); // bỏ key image cũ
         $image->update($validated);
+        $image->image_url = $image->image_path;
 
         return response()->json([
             'message' => 'Image updated successfully',
@@ -144,12 +128,11 @@ class ProductImageController extends Controller
     {
         $image = ProductImage::findOrFail($id);
 
-        if ($image->image_path) {
+        if (app()->environment('local') && $image->image_path) {
             $this->uploadService->deleteLocal($image->image_path);
-        }
-
-        if ($image->supabase_url) {
-            $this->uploadService->deleteSupabase($image->supabase_url);
+        } else if (!app()->environment('local') && $image->image_path) {
+            // Server → xóa Supabase nếu muốn
+            $this->uploadService->deleteSupabase($image->image_path);
         }
 
         $image->delete();
