@@ -34,17 +34,9 @@ class UploadService
         }
     }
 
-    /**
-     * Upload file lên Supabase
-     * Tự động bỏ qua nếu đang chạy LOCAL
-     */
+    /** Upload file lên Supabase (trả về URL) */
     public function uploadSupabase($file, $fileName)
     {
-        // 🔥 Nếu môi trường local → không upload Supabase
-        if (app()->environment('local')) {
-            return null;
-        }
-
         $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucket}/{$fileName}";
 
         $response = $this->client->put($url, [
@@ -63,20 +55,11 @@ class UploadService
         return null;
     }
 
-    /**
-     * Xóa file trên Supabase
-     * Tự động bỏ qua nếu local
-     */
+    /** Xóa file trên Supabase */
     public function deleteSupabase($publicUrl)
     {
         if (!$publicUrl) return;
 
-        // 🔥 Nếu local → không xóa Supabase
-        if (app()->environment('local')) {
-            return;
-        }
-
-        // Chuyển public URL -> file path
         $prefix = "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucket}/";
         $filePath = str_replace($prefix, '', $publicUrl);
 
