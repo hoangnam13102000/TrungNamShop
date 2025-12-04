@@ -32,14 +32,13 @@ RUN php artisan storage:link || true
 # 9. Create folder for product images
 RUN mkdir -p storage/app/public/products
 
-# 10. Optional: add sample images (fake images) for seeding
-# This ensures /storage/products/... always có file
-COPY docker_samples/products/* storage/app/public/products/
+# 10. Optional sample image copy (DISABLED)
+# COPY docker_samples/products/ storage/app/public/products/
 
 # 11. Expose port
 EXPOSE 8080
 
-# 12. Start Laravel: migrate + seed + built-in server
+# 12. Start Laravel: migrate + seed + serve
 CMD php artisan migrate --force \
     && php artisan db:seed --force \
     && php -S 0.0.0.0:8080 -t public
