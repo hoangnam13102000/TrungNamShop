@@ -51,10 +51,10 @@ class DatabaseSeeder extends Seeder
 
 
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
 
         $this->call(StoreSeeder::class);
     }
