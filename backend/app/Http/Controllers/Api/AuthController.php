@@ -8,6 +8,9 @@ use App\Models\Account;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
+
 
 class AuthController extends Controller
 {
@@ -15,13 +18,14 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'username' => 'required|unique:accounts,username',
+            'username' => 'required|string|max:255|unique:accounts,username',
+            'email'    => 'nullable|email|unique:accounts,email',
             'password' => 'required|min:6',
         ]);
 
-        // Không Hash::make – Model đã tự hash bằng setPasswordAttribute
         $account = Account::create([
             'username' => $request->username,
+            'email'    => $request->email, 
             'password' => $request->password,
             'status' => 1,
             'account_type_id' => 3,
@@ -35,6 +39,7 @@ class AuthController extends Controller
             'token' => $token,
         ], 201);
     }
+
 
     // ================= LOGIN =================
     public function login(Request $request)
@@ -101,58 +106,78 @@ class AuthController extends Controller
     // ================= FORGOT PASSWORD =================
     public function forgotPassword(Request $request)
     {
-        $request->validate(['username' => 'required|exists:accounts,username']);
+        $request->validate([
+            'email' => 'required|email|exists:accounts,email'
+        ]);
 
-        $token = Str::random(50);
+        $token = Str::random(64);
 
-        DB::table('password_account_resets')->updateOrInsert(
-            ['username' => $request->username],
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $request->email],
             [
                 'token' => Hash::make($token),
                 'created_at' => now()
             ]
         );
 
+        // ✅ LINK ĐÚNG
+        $link = config('app.frontend_url')
+            . '/reset-mat-khau?token=' . $token
+            . '&email=' . urlencode($request->email);
+
+        Mail::to($request->email)->send(new ResetPasswordMail($link));
+
         return response()->json([
             'success' => true,
-            'message' => 'Reset password token generated',
-            'token' => $token
+            'message' => 'Email đặt lại mật khẩu đã được gửi.'
         ]);
     }
+
 
     // ================= RESET PASSWORD =================
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'username' => 'required|exists:accounts,username',
-            'token' => 'required|string',
-            'password' => 'required|min:6|confirmed'
+            'email' => 'required|email|exists:accounts,email',
+            'token' => 'required',
+            'password' => 'required|min:6|confirmed',
         ]);
 
-        $record = DB::table('password_account_resets')
-            ->where('username', $request->username)
+        $record = DB::table('password_resets')
+            ->where('email', $request->email)
             ->first();
 
-        if (!$record || !Hash::check($request->token, $record->token)) {
+        if (!$record) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid or expired token'
+                'message' => 'Yêu cầu đặt lại mật khẩu không tồn tại.'
             ], 400);
         }
 
-        $account = Account::where('username', $request->username)->first();
+        // Check token
+        if (!Hash::check($request->token, $record->token)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+            ], 400);
+        }
 
-        // Không Hash::make – Model tự hash
+        // Update password (Model tự hash)
+        $account = Account::where('email', $request->email)->first();
         $account->password = $request->password;
         $account->save();
 
-        DB::table('password_account_resets')->where('username', $request->username)->delete();
+        // Xoá token sau khi dùng
+        DB::table('password_resets')
+            ->where('email', $request->email)
+            ->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Password reset successfully!'
+            'message' => 'Đặt lại mật khẩu thành công.'
         ]);
     }
+
 
     // ================= CHECK USERNAME EXISTS =================
     public function checkUsername(Request $request)

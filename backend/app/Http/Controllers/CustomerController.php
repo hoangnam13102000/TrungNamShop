@@ -15,16 +15,18 @@ class CustomerController extends Controller
     {
         $query = Customer::with('account');
 
-        // Lọc theo account_id nếu có
         if ($request->filled('account_id')) {
             $query->where('account_id', $request->account_id);
         }
 
         $customers = $query->get();
 
-        $customers->transform(function ($c) {
-            $c->avatar_url = $c->avatar ? Storage::url($c->avatar) : null;
-            return $c;
+        // Chuẩn hóa avatar thành URL
+        $customers->transform(function ($customer) {
+            if ($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+                $customer->avatar = asset('storage/' . $customer->avatar);
+            }
+            return $customer;
         });
 
         return response()->json($customers);
@@ -40,24 +42,31 @@ class CustomerController extends Controller
             'full_name'    => 'nullable|string|max:255',
             'address'      => 'nullable|string|max:255',
             'phone_number' => 'nullable|string|max:20',
-            'email'        => 'nullable|email|max:255',
             'birth_date'   => 'nullable|date',
             'gender'       => 'nullable|in:male,female',
             'avatar'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
-        // Upload avatar nếu có
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('customers', 'public');
             $validated['avatar'] = $path;
         }
 
         $customer = Customer::create($validated);
-        $customer->avatar_url = $customer->avatar ? Storage::url($customer->avatar) : null;
+
+        // Cập nhật email của account nếu có
+        if ($request->filled('email') && $customer->account) {
+            $customer->account->email = $request->email;
+            $customer->account->save();
+        }
+
+        if ($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+            $customer->avatar = asset('storage/' . $customer->avatar);
+        }
 
         return response()->json([
             'message' => 'Customer created successfully',
-            'data' => $customer
+            'data'    => $customer->load('account'),
         ], 201);
     }
 
@@ -67,7 +76,10 @@ class CustomerController extends Controller
     public function show(string $id)
     {
         $customer = Customer::with('account')->findOrFail($id);
-        $customer->avatar_url = $customer->avatar ? Storage::url($customer->avatar) : null;
+
+        if ($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+            $customer->avatar = asset('storage/' . $customer->avatar);
+        }
 
         return response()->json($customer);
     }
@@ -77,37 +89,40 @@ class CustomerController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::with('account')->findOrFail($id);
 
-        // Validate tất cả trường, avatar nullable
         $validated = $request->validate([
-            'account_id'   => 'sometimes|exists:accounts,id',
             'full_name'    => 'nullable|string|max:255',
             'address'      => 'nullable|string|max:255',
             'phone_number' => 'nullable|string|max:20',
-            'email'        => 'nullable|email|max:255',
             'birth_date'   => 'nullable|date',
             'gender'       => 'nullable|in:male,female',
             'avatar'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
-        // Nếu có avatar mới → xóa avatar cũ & upload mới
         if ($request->hasFile('avatar')) {
             if ($customer->avatar && Storage::disk('public')->exists($customer->avatar)) {
                 Storage::disk('public')->delete($customer->avatar);
             }
-
             $path = $request->file('avatar')->store('customers', 'public');
             $validated['avatar'] = $path;
         }
 
         $customer->update($validated);
 
-        $customer->avatar_url = $customer->avatar ? Storage::url($customer->avatar) : null;
+        // Cập nhật email của account nếu có
+        if ($request->filled('email') && $customer->account) {
+            $customer->account->email = $request->email;
+            $customer->account->save();
+        }
+
+        if ($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+            $customer->avatar = asset('storage/' . $customer->avatar);
+        }
 
         return response()->json([
             'message' => 'Customer updated successfully',
-            'data' => $customer
+            'data'    => $customer->load('account'),
         ]);
     }
 
@@ -118,12 +133,16 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
 
-        if ($customer->avatar && Storage::disk('public')->exists($customer->avatar)) {
-            Storage::disk('public')->delete($customer->avatar);
+        if ($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+            if (Storage::disk('public')->exists($customer->avatar)) {
+                Storage::disk('public')->delete($customer->avatar);
+            }
         }
 
         $customer->delete();
 
-        return response()->json(['message' => 'Customer deleted successfully']);
+        return response()->json([
+            'message' => 'Customer deleted successfully',
+        ]);
     }
 }

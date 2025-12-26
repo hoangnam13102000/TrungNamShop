@@ -7,8 +7,9 @@ import {
   FaEnvelope,
   FaTransgender,
   FaBirthdayCake,
-  FaMapMarkerAlt
+  FaMapMarkerAlt,
 } from "react-icons/fa";
+
 import { useCRUDApi } from "../../../../api/hooks/useCRUDApi";
 import useAdminCrud from "../../../../utils/hooks/useAdminCrud1";
 import useAdminHandler from "../../../../components/common/useAdminHandler";
@@ -19,32 +20,50 @@ import { getImageUrl } from "../../../../utils/helpers/getImageUrl";
 import placeholder from "../../../../assets/admin/logoicon1.jpg";
 
 const CustomerManagement = () => {
+  // ================= API =================
   const customerAPI = useCRUDApi("customers");
-  const { data: customers = [], isLoading, isError, refetch } = customerAPI.useGetAll();
+  const { data: customers = [], isLoading, isError, refetch } =
+    customerAPI.useGetAll();
   const create = customerAPI.useCreate();
   const update = customerAPI.useUpdate();
 
-  // CRUD logic
+  // ================= CRUD =================
   const crud = useAdminCrud(
     {
-      create: create.mutateAsync,
-      update: async (id, data) => update.mutateAsync({ id, data }),
+      create: async (data) => {
+        const payload = { ...data };
+        delete payload.email;
+        return create.mutateAsync(payload);
+      },
+      update: async (id, data) => {
+        const payload = { ...data };
+        delete payload.email;
+        return update.mutateAsync({ id, data: payload });
+      },
     },
     "customers"
   );
 
-  const { dialog, handleSave, closeDialog } = useAdminHandler(crud, refetch, (item) => item?.full_name || "Không tên");
+  const { dialog, handleSave, closeDialog } = useAdminHandler(
+    crud,
+    refetch,
+    (item) => item?.full_name || "Không tên"
+  );
 
-  // Search & pagination
+  // ================= STATE =================
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewItem, setViewItem] = useState(null);
   const itemsPerPage = 5;
 
-  const filteredItems = useMemo(
-    () => customers.filter((c) => (c.full_name || "").toLowerCase().includes(search.toLowerCase().trim())),
-    [customers, search]
-  );
+  // ================= FILTER =================
+  const filteredItems = useMemo(() => {
+    return customers.filter((c) =>
+      (c.full_name || "")
+        .toLowerCase()
+        .includes(search.toLowerCase().trim())
+    );
+  }, [customers, search]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
@@ -53,12 +72,12 @@ const CustomerManagement = () => {
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage]);
 
-  // Table columns and actions
+  // ================= TABLE =================
   const tableColumns = [
     { field: "account.username", label: "Username" },
     { field: "full_name", label: "Họ tên" },
     { field: "phone_number", label: "SĐT" },
-    { field: "email", label: "Email" },
+    { field: "account.email", label: "Email" },
     {
       field: "birth_date",
       label: "Ngày sinh",
@@ -67,7 +86,7 @@ const CustomerManagement = () => {
     {
       field: "avatar",
       label: "Ảnh đại diện",
-      render: (value, row) => {
+      render: (_, row) => {
         const imgUrl = getImageUrl(row.avatar) || placeholder;
         return (
           <img
@@ -81,25 +100,59 @@ const CustomerManagement = () => {
     },
   ];
 
+  // ================= ACTIONS =================
   const tableActions = [
     { icon: <FaEye />, label: "Xem", onClick: setViewItem },
-    { icon: <FaEdit />, label: "Sửa", onClick: crud.handleEdit },
+    {
+      icon: <FaEdit />,
+      label: "Sửa",
+      onClick: (item) => {
+        crud.handleEdit({
+          ...item,
+          username: item.account?.username || "",
+          email: item.account?.email || "", // ✅ QUAN TRỌNG
+        });
+      },
+    },
   ];
 
-  // Form fields
+  // ================= FORM =================
   const formFields = [
-    { name: "account.username", label: "Username", type: "text", disabled: true },
+    { name: "username", label: "Username", type: "text", disabled: true },
+
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      disabled: true,
+    },
+
     { name: "full_name", label: "Họ tên", type: "text", required: true },
     { name: "address", label: "Địa chỉ", type: "text" },
     { name: "phone_number", label: "SĐT", type: "text" },
-    { name: "email", label: "Email", type: "email" },
     { name: "birth_date", label: "Ngày sinh", type: "date" },
-    { name: "gender", label: "Giới tính", type: "select", options: [{ label: "Nam", value: "male" }, { label: "Nữ", value: "female" }] },
+    {
+      name: "gender",
+      label: "Giới tính",
+      type: "select",
+      options: [
+        { label: "Nam", value: "male" },
+        { label: "Nữ", value: "female" },
+      ],
+    },
     { name: "avatar", label: "Ảnh đại diện", type: "file" },
   ];
 
-  if (isLoading) return <div className="p-6 text-center text-gray-600">Đang tải...</div>;
-  if (isError) return <div className="p-6 text-center text-red-500">Có lỗi xảy ra khi tải dữ liệu khách hàng.</div>;
+  // ================= RENDER =================
+  if (isLoading)
+    return <div className="p-6 text-center">Đang tải...</div>;
+
+  if (isError)
+    return (
+      <div className="p-6 text-center text-red-500">
+        Lỗi tải dữ liệu khách hàng
+      </div>
+    );
 
   return (
     <>
@@ -111,7 +164,6 @@ const CustomerManagement = () => {
           setSearch(e.target.value);
           setCurrentPage(1);
         }}
-        onAdd={crud.handleAdd}
         tableColumns={tableColumns}
         tableData={paginatedItems}
         tableActions={tableActions}
@@ -120,7 +172,7 @@ const CustomerManagement = () => {
         onPageChange={setCurrentPage}
         formModal={{
           open: crud.openForm,
-          title: crud.mode === "edit" ? "Sửa khách hàng" : "Thêm khách hàng",
+          title: "Sửa khách hàng",
           fields: formFields,
           initialData: crud.selectedItem,
           errors: crud.errors,
@@ -129,24 +181,47 @@ const CustomerManagement = () => {
         onFormClose={crud.handleCloseForm}
       />
 
-      {/* View dialog */}
+      {/* ===== VIEW DIALOG ===== */}
       {viewItem && (
         <CommonViewDialog
           title="Chi tiết khách hàng"
           open={!!viewItem}
           onClose={() => setViewItem(null)}
-          data={[
-            { icon: <FaUser />, label: "Username", value: viewItem.account?.username || "Không có" },
-            { icon: <FaUser />, label: "Bậc tài khoản", value: viewItem.account?.member_level || "Thành viên" }, 
-            { icon: <FaUser />, label: "Họ tên", value: viewItem.full_name },
-            { icon: <FaPhone />, label: "SĐT", value: viewItem.phone_number },
-            { icon: <FaEnvelope />, label: "Email", value: viewItem.email },
-            { icon: <FaMapMarkerAlt />, label: "Địa chỉ", value: viewItem.address || "—" },
-            { icon: <FaTransgender />, label: "Giới tính", value: viewItem.gender === "male" ? "Nam" : "Nữ" },
-            { icon: <FaBirthdayCake />, label: "Ngày sinh", value: viewItem.birth_date ? new Date(viewItem.birth_date).toLocaleDateString() : "—" },
-            { icon: <FaBirthdayCake />, label: "Ngày tạo", value: viewItem.created_at ? new Date(viewItem.created_at).toLocaleDateString() : "—" },
-          ]}
           avatar={getImageUrl(viewItem.avatar) || placeholder}
+          data={[
+            {
+              icon: <FaUser />,
+              label: "Username",
+              value: viewItem.account?.username || "—",
+            },
+            {
+              icon: <FaEnvelope />,
+              label: "Email",
+              value: viewItem.account?.email || "—",
+            },
+            {
+              icon: <FaPhone />,
+              label: "SĐT",
+              value: viewItem.phone_number || "—",
+            },
+            {
+              icon: <FaMapMarkerAlt />,
+              label: "Địa chỉ",
+              value: viewItem.address || "—",
+            },
+            {
+              icon: <FaTransgender />,
+              label: "Giới tính",
+              value: viewItem.gender === "male" ? "Nam" : "Nữ",
+            },
+            {
+              icon: <FaBirthdayCake />,
+              label: "Ngày sinh",
+              value: viewItem.birth_date
+                ? new Date(viewItem.birth_date).toLocaleDateString()
+                : "—",
+            },
+          ]}
         />
       )}
 
@@ -157,10 +232,6 @@ const CustomerManagement = () => {
         message={dialog.message}
         onClose={closeDialog}
         onConfirm={dialog.onConfirm}
-        confirmText={dialog.confirmText}
-        cancelText={dialog.cancelText}
-        closeText={dialog.closeText}
-        customButtons={dialog.customButtons}
       />
     </>
   );

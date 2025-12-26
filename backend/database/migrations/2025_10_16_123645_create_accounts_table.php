@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('account_level_id');
 
             $table->string('username')->unique();
+            $table->string('email')->nullable()->unique();
             $table->integer('reward_points')->default(0);
             $table->string('password');
             $table->string('token')->nullable();
@@ -28,25 +29,26 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->foreign('account_type_id')
-                  ->references('id')
-                  ->on('account_types')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('account_types')
+                ->onDelete('cascade');
 
             $table->foreign('account_level_id')
-                  ->references('id')
-                  ->on('account_levels')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('account_levels')
+                ->onDelete('cascade');
         });
-         DB::table('accounts')->insert([
-        'account_type_id' => 1,
-        'account_level_id' => 1,
-        'username' => 'admin',
-        'password' => Hash::make('123456'),
-        'reward_points' => 0,
-        'status' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+        DB::table('accounts')->insert([
+            'account_type_id'  => 1,
+            'account_level_id' => 1,
+            'username'         => 'admin',
+            'email'            => 'hoangnam131020@gmail.com', 
+            'password'         => Hash::make('123456'),
+            'reward_points'    => 0,
+            'status'           => 1,
+            'created_at'       => now(),
+            'updated_at'       => now(),
+        ]);
     }
 
     /**

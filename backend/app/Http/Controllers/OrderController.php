@@ -111,21 +111,19 @@ class OrderController extends Controller
                 }
             }
 
+            // Cộng điểm thưởng nếu >= 1 triệu
             if($finalAmount >= 1000000){
                 $customer = $order->customer;
                 if($customer && $customer->account){
                     $account = $customer->account;
-
-                    // Tính điểm thưởng: 100 điểm cho mỗi 1 triệu đồng
                     $pointsToAdd = intval($finalAmount / 1000000) * 100;
                     $account->reward_points += $pointsToAdd;
 
-                    // Nâng cấp bậc Đồng nếu >= 1000 điểm
+                    // Nâng cấp bậc Đồng nếu >=1000 điểm
                     $levelDong = AccountLevel::where('name','Đồng')->first();
                     if($levelDong && $account->reward_points >= 1000 && $account->account_level_id != $levelDong->id){
                         $account->account_level_id = $levelDong->id;
                     }
-
                     $account->save();
                 }
             }
@@ -169,23 +167,25 @@ class OrderController extends Controller
             'payment_method'=>'required|in:cash,momo,paypal',
             'delivery_date'=>'nullable|date',
             'order_date'=>'nullable|date',
+            'order_status'=>'nullable|in:pending,processing,shipped,delivered,cancelled',
+            'payment_status'=>'nullable|in:paid,unpaid,refunded',
         ]);
 
-        $orderStatus = 'pending';
-        $paymentStatus = 'unpaid';
+        // Lấy giá trị từ frontend nếu có
+        $orderStatus = $validated['order_status'] ?? null;
+        $paymentStatus = $validated['payment_status'] ?? null;
         $paymentGateway = $validated['payment_method'] === 'momo' ? 'momo' : null;
 
-        if($validated['delivery_method']==='pickup' && $validated['payment_method']==='cash'){
-            $orderStatus = 'completed';
-            $paymentStatus = 'paid';
-        }
+        $updateData = array_merge($validated, [
+            'payment_gateway' => $paymentGateway,
+        ]);
 
-        $order->update(array_merge($validated,[
-            'order_status'=>$orderStatus,
-            'payment_status'=>$paymentStatus,
-            'payment_gateway'=>$paymentGateway,
-        ]));
+        if($orderStatus) $updateData['order_status'] = $orderStatus;
+        if($paymentStatus) $updateData['payment_status'] = $paymentStatus;
 
+        $order->update($updateData);
+
+        // Recalculate final_amount
         $subtotal = $order->details->sum(fn($d)=>$d->subtotal);
         $discountAmount = 0;
         if(!empty($order->discount_id)){
